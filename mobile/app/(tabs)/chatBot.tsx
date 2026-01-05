@@ -4,7 +4,7 @@ export default function chatBot() {
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Time to whip you up a magical recipe!</Text>
-            <Text>Answer these few questions</Text>
+            <Text>Click below to get started</Text>
         </View>
     )
 }
