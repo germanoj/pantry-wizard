@@ -23,6 +23,14 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
       />
+            <Tabs.Screen
+        name="login"
+        options={{
+          title: 'Login/Register',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} color={color} />,
+        }}
+      />
+
       <Tabs.Screen
         name="chatBot"
         options={{
@@ -32,8 +40,9 @@ export default function TabLayout() {
       
       <Tabs.Screen
         name="explore"
+        name="saved"
         options={{
-          title: 'Explore',
+          title: 'Saved Recipes',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
         }}
       />
