@@ -32,6 +32,14 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
+        name="chatBot"
+        options={{
+          title: 'Wizard',
+        }}
+      />
+      
+      <Tabs.Screen
+        name="explore"
         name="saved"
         options={{
           title: 'Saved Recipes',
