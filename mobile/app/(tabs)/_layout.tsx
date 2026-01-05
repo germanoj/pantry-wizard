@@ -48,6 +48,14 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Feather size={24} name="heart" color={color} />,
         }}
       />
+
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'My Page',
+          tabBarIcon: ({ color }) => <Feather size={24} name="user" color={color} />,
+        }}
+      />
     </Tabs>
   );
 }
