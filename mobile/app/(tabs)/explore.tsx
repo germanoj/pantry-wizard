@@ -1,3 +1,5 @@
+/*this came with download. keeping for reference*/
+
 import { Image } from 'expo-image';
 import { Platform, StyleSheet } from 'react-native';
 
