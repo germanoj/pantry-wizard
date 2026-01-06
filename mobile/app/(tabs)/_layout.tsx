@@ -1,8 +1,6 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 
-import {Stack} from "expo-router"
-
 import { HapticTab } from '@/components/haptic-tab';
 //import { IconSymbol } from '@/components/ui/icon-symbol';
 import Feather from 'react-native-vector-icons/Feather';
