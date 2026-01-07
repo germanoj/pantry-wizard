@@ -1,30 +1,32 @@
 import express from "express";
 import cors from "cors";
+import "dotenv/config";
+import OpenAI from "openai";
 
 const app = express();
 export default app;
 
-const app = express();
-export default app;
-
-app.use(
-  cors({
-    origin: ["http://localhost:8081", "http://localhost:19006", "http://localhost:19000"],
-    credentials: true,
-  })
-);
-
+// ===== Middleware =====
+app.use(cors()); // dev-safe: allow all origins
 app.use(express.json());
 
+// ===== OpenAI client =====
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
+// ===== Health check =====
 app.get("/health", (req, res) => {
   res.json({ ok: true });
 });
 
-// Phase 3.1 helpers: parse pantry + simple matching
+// =======================================================
+// =============== STUB / FALLBACK GENERATOR ==============
+// =======================================================
+
 function parsePantry(pantryText) {
   return pantryText
-    .split(/[\n,]+/g) // split by commas or newlines
+    .split(/[\n,]+/g)
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
 }
@@ -36,33 +38,13 @@ function includesAny(pantry, options) {
 app.post("/api/generate", (req, res) => {
   const { pantryText } = req.body ?? {};
 
-  // Validation
   if (typeof pantryText !== "string" || pantryText.trim().length === 0) {
     return res.status(400).json({ error: "pantryText is required" });
   }
 
-  if (pantryText.length > 8000) {
-    return res
-      .status(413)
-      .json({ error: "pantryText too long (max 8000 chars)" });
-  }
-
   const pantry = parsePantry(pantryText);
 
-  // Candidate templates (fake AI)
   const candidates = [
-    {
-      title: "Pantry Pasta",
-      requiresAny: ["pasta", "spaghetti", "noodles"],
-      uses: ["pasta", "garlic", "olive oil"],
-      missing: ["parmesan (optional)"],
-      steps: [
-        "Boil pasta in salted water.",
-        "Sauté garlic in olive oil.",
-        "Toss pasta with the garlic oil. Season to taste.",
-      ],
-      timeMinutes: 20,
-    },
     {
       title: "Simple Rice Bowl",
       requiresAny: ["rice"],
@@ -72,11 +54,19 @@ app.post("/api/generate", (req, res) => {
       timeMinutes: 15,
     },
     {
+      title: "Pantry Pasta",
+      requiresAny: ["pasta", "noodles"],
+      uses: ["pasta", "garlic", "olive oil"],
+      missing: ["parmesan (optional)"],
+      steps: ["Boil pasta.", "Sauté garlic.", "Toss and season."],
+      timeMinutes: 20,
+    },
+    {
       title: "Tuna Toast",
       requiresAny: ["bread", "toast"],
       uses: ["bread", "tuna", "mayo"],
       missing: ["lemon (optional)"],
-      steps: ["Toast bread.", "Mix tuna + mayo.", "Assemble and season."],
+      steps: ["Toast bread.", "Mix tuna.", "Assemble."],
       timeMinutes: 10,
     },
   ];
@@ -87,20 +77,22 @@ app.post("/api/generate", (req, res) => {
     matched.length > 0
       ? matched.slice(0, 3).map((c) => ({
           title: c.title,
-          ingredientsUsed: c.uses.filter((x) => pantry.includes(x)),
+          ingredientsUsed: c.uses.filter((x) =>
+            pantry.some((p) => p.includes(x) || x.includes(p))
+          ),
           missingIngredients: c.missing,
           steps: c.steps,
           timeMinutes: c.timeMinutes,
         }))
       : [
           {
-            title: "Chef’s Choice (No strong matches)",
+            title: "Chef’s Choice",
             ingredientsUsed: pantry.slice(0, 6),
-            missingIngredients: ["one protein", "one veggie", "one sauce"],
+            missingIngredients: ["protein", "vegetable", "sauce"],
             steps: [
-              "Pick a protein + veggie you have (or can buy).",
-              "Choose a carb (rice/pasta/bread).",
-              "Cook each simply, then combine with a sauce/spice.",
+              "Choose a protein.",
+              "Choose a vegetable.",
+              "Cook and combine.",
             ],
             timeMinutes: 25,
           },
@@ -109,6 +101,69 @@ app.post("/api/generate", (req, res) => {
   res.json({ recipes });
 });
 
+// =======================================================
+// ===================== REAL AI ROUTE ====================
+// =======================================================
+
+app.post("/api/generate-ai", async (req, res) => {
+  try {
+    const { pantryText } = req.body ?? {};
+
+    if (typeof pantryText !== "string" || pantryText.trim().length === 0) {
+      return res.status(400).json({ error: "pantryText is required" });
+    }
+
+    if (!process.env.OPENAI_API_KEY) {
+      return res
+        .status(500)
+        .json({ error: "OPENAI_API_KEY not set on server" });
+    }
+
+    const prompt = `
+You are a helpful cooking assistant.
+
+Given this list of pantry ingredients:
+${pantryText}
+
+Generate 3 realistic recipes.
+
+Rules:
+- Use AS MANY of the provided ingredients as possible
+- Do NOT invent ingredients unless marked as optional
+- Each recipe should include:
+  - title
+  - ingredientsUsed (array)
+  - missingIngredients (array, optional items only)
+  - steps (array of strings)
+  - timeMinutes (number)
+
+Return ONLY valid JSON in this exact shape:
+{
+  "recipes": [ ... ]
+}
+`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: "You are a precise JSON-only API." },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.6,
+    });
+
+    const raw = completion.choices[0].message.content;
+
+    const parsed = JSON.parse(raw);
+
+    return res.json(parsed);
+  } catch (err) {
+    console.error("AI ERROR:", err);
+    return res.status(500).json({ error: "AI generation failed" });
+  }
+});
+
+// ===== Start server =====
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
