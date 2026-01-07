@@ -4,18 +4,8 @@ import cors from "cors";
 const app = express();
 export default app;
 
-const app = express();
-export default app;
-
-app.use(
-  cors({
-    origin: ["http://localhost:8081", "http://localhost:19006", "http://localhost:19000"],
-    credentials: true,
-  })
-);
-
+app.use(cors());
 app.use(express.json());
-
 
 app.get("/health", (req, res) => {
   res.json({ ok: true });

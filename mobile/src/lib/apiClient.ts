@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "../../app/config/api";
+import { API_BASE_URL } from "../config/api";
 import type { Recipe } from "../types/recipe";
 
 export type GenerateResponse = {
