@@ -5,12 +5,9 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome to Pantry Wizard 🧙‍♂️</Text>
-
-      <Link href="/generate" asChild>
-        <Pressable style={styles.button}>
-          <Text style={styles.buttonText}>Go to Generate</Text>
-        </Pressable>
-      </Link>
+      <Text><Link style={styles.link} href="/Login">Login</Link> to see past recipes and ask the wize wizard for more food inspo</Text>
+      <Text><Link style={styles.link} href="/register">Register</Link> a new account</Text>
+      <Text> Or visit the <Link style={styles.link} href="/chatBot">wizard</Link> as a guest</Text>
     </View>
   );
 }
@@ -39,4 +36,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
+    link: {color: "blue"}
 });
