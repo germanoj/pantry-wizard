@@ -1,6 +1,5 @@
+import { API_BASE_URL } from "../../app/config/api";
 import type { Recipe } from "../types/recipe";
-
-const API_BASE_URL = "http://localhost:3000";
 
 export type GenerateResponse = {
   recipes: Recipe[];
