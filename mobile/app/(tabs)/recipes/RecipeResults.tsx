@@ -35,7 +35,11 @@ const RECIPES = [
     id: "2",
     title: "Broccoli Chicken Salad with Crunch Dressing",
     time: "15 min",
+<<<<<<< HEAD
     image: require("../../../assets/images/pasta.png"),
+=======
+    //image: require("../../../assets/images/pasta.png"),
+>>>>>>> 8c805ef (added login page)
     ingredients: [
       "Chicken",
       "Broccoli",
