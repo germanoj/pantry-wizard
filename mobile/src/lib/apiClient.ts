@@ -1,6 +1,6 @@
 import type { Recipe } from "../types/recipe";
 
-const API_BASE_URL = "http://10.0.11.159:3000";
+const API_BASE_URL = "http://localhost:3000";
 
 export type GenerateResponse = {
   recipes: Recipe[];
@@ -9,7 +9,7 @@ export type GenerateResponse = {
 export async function generateRecipes(
   pantryText: string
 ): Promise<GenerateResponse> {
-  const res = await fetch(`${API_BASE_URL}/api/generate`, {
+  const res = await fetch(`${API_BASE_URL}/api/generate-ai`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ pantryText }),
