@@ -8,7 +8,7 @@ const RECIPES = [
     id: "1",
     title: "Chicken Stew with Cheerios and Broccoli",
     time: "20 min",
-    image: require("../../../assets/images/pasta.png"),
+    image: null,
     ingredients: [
       "Chicken",
       "Broccoli",
@@ -35,11 +35,8 @@ const RECIPES = [
     id: "2",
     title: "Broccoli Chicken Salad with Crunch Dressing",
     time: "15 min",
-<<<<<<< HEAD
-    image: require("../../../assets/images/pasta.png"),
-=======
-    //image: require("../../../assets/images/pasta.png"),
->>>>>>> 8c805ef (added login page)
+    image: null,
+
     ingredients: [
       "Chicken",
       "Broccoli",
@@ -62,7 +59,7 @@ const RECIPES = [
     id: "3",
     title: "Crunchy Chicken and Broccoli Casserole",
     time: "30 min",
-    image: require("../../../assets/images/pasta.png"),
+    image: null,
     ingredients: [
       "Chicken",
       "Broccoli",

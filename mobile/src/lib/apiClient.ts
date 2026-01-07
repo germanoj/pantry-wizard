@@ -8,6 +8,7 @@ export type GenerateResponse = {
 export async function generateRecipes(
   pantryText: string
 ): Promise<GenerateResponse> {
+  console.log("AI request to:", `${API_BASE_URL}/api/generate`);
   const res = await fetch(`${API_BASE_URL}/api/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

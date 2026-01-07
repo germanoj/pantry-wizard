@@ -17,7 +17,14 @@ export default function RecipeCard({
   return (
     <Pressable onPress={onPress} style={styles.card}>
       {/*Image */}
-      <Image style={styles.image} source={image} />
+      {/* Image */}
+      {image ? (
+        <Image style={styles.image} source={image} />
+      ) : (
+        <View style={[styles.image, styles.placeholder]}>
+          <Text style={{ fontSize: 10, color: "#999" }}>No Image</Text>
+        </View>
+      )}
 
       {/* Content */}
       <View style={styles.content}>
@@ -68,5 +75,12 @@ const styles = StyleSheet.create({
   },
   action: {
     fontSize: 18,
+  },
+  placeholder: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f9f9f9",
   },
 });
