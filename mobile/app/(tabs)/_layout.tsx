@@ -29,7 +29,7 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="login"
+        name="loginReg"
         options={{
           title: "Login/Register",
           tabBarIcon: ({ color }) => (
