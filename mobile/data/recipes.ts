@@ -1,9 +1,9 @@
-export const RECIPES = [
+export const MOCK_RECIPES = [
   {
     id: "1",
     title: "Chicken Stew with Cheerios and Broccoli",
     time: "20 min",
-    image: require("../../../assets/images/pasta.png"),
+    image: require("../assets/images/pasta.png"),
     ingredients: [
       "Chicken",
       "Broccoli",
@@ -13,24 +13,24 @@ export const RECIPES = [
       "Salt",
       "Pepper",
     ],
-    summary:
+    description:
       "A hearty and healthy chicken stew perfect for cold days.  This stew combines tender chicken pieces with fresh broccoli and crunchy Cheerios for a delightful texture. Simmered in a flavorful broth, it's a comforting meal that warms the soul.",
     steps: [
-      "1. Heat olive oil in a large pot over medium heat.",
+      "Heat olive oil in a large pot over medium heat.",
       "Add garlic and sauté until fragrant.",
-      "2. Add chicken pieces and cook until browned on all sides.",
-      "3. Pour in broth and bring to a boil.",
-      "4. Reduce heat and let simmer for 15 minutes.",
-      "5. Add broccoli and cook for an additional 5 minutes until tender.",
-      "6. Stir in Cheerios just before serving for added crunch.",
-      "7. Season with salt and pepper to taste. Serve hot.",
+      "Add chicken pieces and cook until browned on all sides.",
+      "Pour in broth and bring to a boil.",
+      "Reduce heat and let simmer for 15 minutes.",
+      "Add broccoli and cook for an additional 5 minutes until tender.",
+      "Stir in Cheerios just before serving for added crunch.",
+      "Season with salt and pepper to taste. Serve hot.",
     ],
   },
   {
     id: "2",
     title: "Broccoli Chicken Salad with Crunch Dressing",
     time: "15 min",
-    image: require("../../../assets/images/pasta.png"),
+    image: require("../assets/images/soup.png"),
     ingredients: [
       "Chicken",
       "Broccoli",
@@ -42,18 +42,18 @@ export const RECIPES = [
       "salt",
       "pepper",
     ],
-    summary:
+    description:
       "A refreshing and healthy broccoli chicken salad with a unique crunch dressing. This salad combines tender chicken pieces with fresh broccoli and a tangy, crunchy dressing for a satisfying meal.",
     steps: [
-      "1. In a large bowl, combine cooked chicken pieces and chopped broccoli.",
-      "2. In a separate bowl, whisk together mayonnaise, Greek yogurt, apple cider vinegar, honey, salt, and pepper to create the dressing.",
+      "In a large bowl, combine cooked chicken pieces and chopped broccoli.",
+      "In a separate bowl, whisk together mayonnaise, Greek yogurt, apple cider vinegar, honey, salt, and pepper to create the dressing.",
     ],
   },
   {
     id: "3",
     title: "Crunchy Chicken and Broccoli Casserole",
     time: "30 min",
-    image: require("../../../assets/images/pasta.png"),
+    image: require("../assets/images/tacos.png"),
     ingredients: [
       "Chicken",
       "Broccoli",
@@ -63,14 +63,14 @@ export const RECIPES = [
       "Salt",
       "Pepper",
     ],
-    summary:
+    description:
       "A delicious and easy-to-make crunchy chicken and broccoli casserole. This dish features tender chicken pieces and fresh broccoli baked in a creamy sauce, topped with a crispy breadcrumb and cheese crust for added texture.",
     steps: [
-      "1. Preheat oven to 375°F (190°C).",
-      "2. In a large skillet, heat olive oil over medium heat. Add garlic and sauté until fragrant.",
-      "3. Add chicken pieces and cook until browned on all sides.",
-      "4. In a large bowl, combine cooked chicken, steamed broccoli, and your choice of creamy sauce (like a mix of cream of mushroom soup and sour cream).",
-      "5. Transfer the mixture to a greased baking dish.",
+      "Preheat oven to 375°F (190°C).",
+      "In a large skillet, heat olive oil over medium heat. Add garlic and sauté until fragrant.",
+      "Add chicken pieces and cook until browned on all sides.",
+      "In a large bowl, combine cooked chicken, steamed broccoli, and your choice of creamy sauce (like a mix of cream of mushroom soup and sour cream).",
+      "Transfer the mixture to a greased baking dish.",
     ],
   },
 ];

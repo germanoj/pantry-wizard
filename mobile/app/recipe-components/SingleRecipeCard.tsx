@@ -8,7 +8,6 @@ import {
   Pressable,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import RecipeResults from "./RecipeResults";
 
 export interface SingleRecipeCardProps {
   title: string;
@@ -43,6 +42,8 @@ export default function SingleRecipeCard({
 
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.time}>{time}</Text>
+        {/*Description */}
+        <Text style={styles.description}>{description}</Text>
 
         {/*Ingredients */}
         <Text style={styles.sectionTitle}>Ingredients</Text>

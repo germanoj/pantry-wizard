@@ -15,7 +15,7 @@ export default function RecipeCard({
   onPress,
 }: RecipeCardProps) {
   return (
-    <Pressable onPress={onPress} style={styles.card}>
+    <Pressable onPress={onPress} style={styles.card} accessibilityRole="button">
       {/*Image */}
       <Image style={styles.image} source={image} />
 
@@ -43,6 +43,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 12,
     padding: 12,
+    marginBottom: 12,
   },
   image: {
     width: 70,
