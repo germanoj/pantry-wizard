@@ -1,0 +1,76 @@
+export const MOCK_RECIPES = [
+  {
+    id: "1",
+    title: "Chicken Stew with Cheerios and Broccoli",
+    time: "20 min",
+    image: require("../assets/images/pasta.png"),
+    ingredients: [
+      "Chicken",
+      "Broccoli",
+      "Cheerios",
+      "Olive Oil",
+      "Garlic",
+      "Salt",
+      "Pepper",
+    ],
+    description:
+      "A hearty and healthy chicken stew perfect for cold days.  This stew combines tender chicken pieces with fresh broccoli and crunchy Cheerios for a delightful texture. Simmered in a flavorful broth, it's a comforting meal that warms the soul.",
+    steps: [
+      "Heat olive oil in a large pot over medium heat.",
+      "Add garlic and sauté until fragrant.",
+      "Add chicken pieces and cook until browned on all sides.",
+      "Pour in broth and bring to a boil.",
+      "Reduce heat and let simmer for 15 minutes.",
+      "Add broccoli and cook for an additional 5 minutes until tender.",
+      "Stir in Cheerios just before serving for added crunch.",
+      "Season with salt and pepper to taste. Serve hot.",
+    ],
+  },
+  {
+    id: "2",
+    title: "Broccoli Chicken Salad with Crunch Dressing",
+    time: "15 min",
+    image: require("../assets/images/soup.png"),
+    ingredients: [
+      "Chicken",
+      "Broccoli",
+      "Mayonnaise",
+      "Greek Yogurt",
+      "Apple Cider Vinegar",
+      "lettuce",
+      "honey",
+      "salt",
+      "pepper",
+    ],
+    description:
+      "A refreshing and healthy broccoli chicken salad with a unique crunch dressing. This salad combines tender chicken pieces with fresh broccoli and a tangy, crunchy dressing for a satisfying meal.",
+    steps: [
+      "In a large bowl, combine cooked chicken pieces and chopped broccoli.",
+      "In a separate bowl, whisk together mayonnaise, Greek yogurt, apple cider vinegar, honey, salt, and pepper to create the dressing.",
+    ],
+  },
+  {
+    id: "3",
+    title: "Crunchy Chicken and Broccoli Casserole",
+    time: "30 min",
+    image: require("../assets/images/tacos.png"),
+    ingredients: [
+      "Chicken",
+      "Broccoli",
+      "Cheerios",
+      "Olive Oil",
+      "Garlic",
+      "Salt",
+      "Pepper",
+    ],
+    description:
+      "A delicious and easy-to-make crunchy chicken and broccoli casserole. This dish features tender chicken pieces and fresh broccoli baked in a creamy sauce, topped with a crispy breadcrumb and cheese crust for added texture.",
+    steps: [
+      "Preheat oven to 375°F (190°C).",
+      "In a large skillet, heat olive oil over medium heat. Add garlic and sauté until fragrant.",
+      "Add chicken pieces and cook until browned on all sides.",
+      "In a large bowl, combine cooked chicken, steamed broccoli, and your choice of creamy sauce (like a mix of cream of mushroom soup and sour cream).",
+      "Transfer the mixture to a greased baking dish.",
+    ],
+  },
+];
