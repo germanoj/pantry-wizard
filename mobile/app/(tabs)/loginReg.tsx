@@ -7,7 +7,7 @@ export default function LoginPage() {
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Welcome back!</Text>
-            <Text> <Link style={styles.link} href="/Login">Login</Link>to check your fave recipes</Text> {/*add login form here*/}
+            <Text> <Link style={styles.link} href="/login">Login</Link>to check your fave recipes</Text> {/*add login form here*/}
             <Text style={styles.title}>First time using Pantry Wizard?</Text> 
             <Text>Click <Link style={styles.link} href="/register">here</Link> to make an account to save all your unique recipes!</Text> {/*add register redirect/form here*/}
         </View>
