@@ -20,10 +20,10 @@ export default function LoginPage() {
 
       await mockLogin(email, password);
 
-      Alert.alert("Welcome back!", "You're logged in. Let's get cookin'!");
-      router.replace("/profile");
+      Alert.alert("Welcome back!", "Logged in.");
+      router.replace("/(tabs)");
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Hmm the magic isn't magic-ing... login failed. Try again?");
+      Alert.alert("Error", err.message || "Login failed");
     } finally {
       setLoading(false);
     }
@@ -51,11 +51,11 @@ export default function LoginPage() {
       />
 
       <Pressable style={styles.button} onPress={onLogin} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? "Casting spell..." : "Accio!"}</Text>
+        <Text style={styles.buttonText}>{loading ? "Casting spell..." : "Log in"}</Text>
       </Pressable>
 
       <Text style={styles.linkRow}>
-        First time visiting the wizard? <Link href="/register">Create an account</Link>
+        New here? <Link href="/register">Create an account</Link>
       </Text>
     </View>
   );
@@ -64,8 +64,8 @@ export default function LoginPage() {
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#fff", padding: 20 },
   title: { fontSize: 28, fontWeight: "700", marginBottom: 10 },
-  input: { width: "25%", borderWidth: 1, borderColor: "#ddd", borderRadius: 12, padding: 12, fontSize: 16, marginTop: 10 },
-  button: { width: "25%", backgroundColor: "#111", padding: 14, borderRadius: 12, alignItems: "center", marginTop: 12 },
+  input: { width: "100%", borderWidth: 1, borderColor: "#ddd", borderRadius: 12, padding: 12, fontSize: 16, marginTop: 10 },
+  button: { width: "100%", backgroundColor: "#111", padding: 14, borderRadius: 12, alignItems: "center", marginTop: 12 },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
   linkRow: { marginTop: 12, fontSize: 14 },
 });
