@@ -32,14 +32,19 @@ export default function SingleRecipeCard({
     <SafeAreaView style={styles.container}>
       {/*Header with Back Button */}
       <View style={styles.header}>
-        <Pressable onPress={onBack}>
+        <Pressable onPress={onBack} disabled={!onBack}>
           <Text style={styles.backText}>‹ Back</Text>
         </Pressable>
       </View>
       {/*Scrollable Content */}
       <ScrollView contentContainerStyle={styles.content}>
-        <Image source={image} style={styles.image} />
-
+        {image ? (
+          <Image source={image} style={styles.image} />
+        ) : (
+          <View style={[styles.image, styles.placeholder]}>
+            <Text style={{ color: "#999" }}>No Image</Text>
+          </View>
+        )}
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.time}>{time}</Text>
         {/*Description */}
@@ -105,5 +110,12 @@ const styles = StyleSheet.create({
   listItem: {
     marginTop: 6,
     fontSize: 14,
+  },
+  placeholder: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f9f9f9",
   },
 });
