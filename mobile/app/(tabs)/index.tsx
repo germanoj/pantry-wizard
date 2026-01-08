@@ -1,19 +1,13 @@
-import { Text, View, StyleSheet, Button } from "react-native";
-import { router } from "expo-router";
-
+import { Text, View, StyleSheet, Pressable } from "react-native";
+import { Link } from "expo-router";
 
 export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome to Pantry Wizard 🧙‍♂️</Text>
-    <Button
-        title="Login to your account"
-        onPress={() => router.push("/login")}
-      />
-     <Button
-        title="Or visit the wizard as a guest"
-        onPress={() => router.push("/chatBot")}
-      />
+      <Text><Link style={styles.link} href="/Login">Login</Link> to see past recipes and ask the wize wizard for more food inspo</Text>
+      <Text><Link style={styles.link} href="/register">Register</Link> a new account</Text>
+      <Text> Or visit the <Link style={styles.link} href="/chatBot">wizard</Link> as a guest</Text>
     </View>
   );
 }
@@ -24,9 +18,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#fff",
+    padding: 24,
+    gap: 16,
   },
   title: {
     fontSize: 24,
     fontWeight: "600",
   },
+  button: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#ccc",
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+    link: {color: "blue"}
 });

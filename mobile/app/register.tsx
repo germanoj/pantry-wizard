@@ -69,7 +69,7 @@ export default function RegisterPage() {
             />
 
             <Pressable style ={styles.button} onPress={onRegister} disabled={loading}>
-              <Text style={styles.buttonText}>{loading? "Bibbity, bobbity..." : "Boo!"}</Text>
+              <Text style={styles.buttonText}>{loading? "1...2...3..." : "Poof!"}</Text>
             </Pressable>
 
             <Text style={styles.linkRow}>
