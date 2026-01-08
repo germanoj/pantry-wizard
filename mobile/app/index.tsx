@@ -18,6 +18,7 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import LottieView from "lottie-react-native";
+import { AnimatedView } from "react-native-reanimated/lib/typescript/component/View";
 
 
 export default function IntroSplash() {
@@ -31,6 +32,7 @@ export default function IntroSplash() {
   //lottie visibility
   const [showSparkles, setShowSparkles] = useState(false);
   const [showPoof, setShowPoof] = useState(false);
+  const [showWand, setShowWand] = useState(true); //to unmount the wand (clear it when it finishes)
 
 // reanimated values
   const logoOpacity = useSharedValue(0);
@@ -39,6 +41,8 @@ export default function IntroSplash() {
 
   const actionsOpacity = useSharedValue(0);
   const actionsY = useSharedValue(12);
+
+  const wandOpacity = useSharedValue(1);
 
 
     // Timeline:
@@ -71,16 +75,23 @@ export default function IntroSplash() {
     transform: [{ translateY: actionsY.value }],
   }));
 
-  return (
-    <View style={styles.container}>
+  const wandStyle = useAnimatedStyle(() => ({
+    opacity: wandOpacity.value,
+  }));
 
-    <LottieView
+  return (
+    <View pointerEvents="none" style={styles.container}>
+    {showWand && (
+        <Animated.View style ={[StyleSheet.absoluteFill, wandStyle]} pointerEvents={"none"}>
+        <LottieView
         ref={wandRef}
         source={require("../assets/lottie/magicWand.json")}
         autoPlay={false}
         loop={false} // no loops
         style={styles.lottie}
         onAnimationFinish={() => {
+         //hide wand completely
+            setShowWand(false);
           // 2) Sparkles next
           setShowSparkles(true);
           // tiny delay helps feel like the wand “caused” it
@@ -94,6 +105,8 @@ export default function IntroSplash() {
           setTimeout(() => startLogoTimeline(), 350);
         }}
       />
+      </Animated.View>
+    )}
 
       {/* Sparkles */}
       {showSparkles && (
@@ -110,6 +123,7 @@ export default function IntroSplash() {
 
 {/* 3) Poof (plays once, then disappears) */}
       {showPoof && (
+        <View pointerEvents="none" style={styles.poofWrap}>
         <LottieView
           ref={poofRef}
           source={require("../assets/lottie/poof.json")}
@@ -118,6 +132,7 @@ export default function IntroSplash() {
           style={styles.lottie}
           onAnimationFinish={() => setShowPoof(false)}
         />
+        </View>
       )}
 
       {/* logo */}
@@ -198,4 +213,19 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "white"
   },
+  poofWrap: {
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  width: 260,
+  height: 260,
+  transform: [
+    { translateX: -100 }, // left to right, lower number is left
+    { translateY: -200 }, // this bit moves it up and down
+  ],
+},
+poofLottie: { //here controls size
+  width: "100%",
+  height: "100%",
+},
 });
