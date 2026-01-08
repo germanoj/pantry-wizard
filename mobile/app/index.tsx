@@ -18,7 +18,7 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import LottieView from "lottie-react-native";
-import { AnimatedView } from "react-native-reanimated/lib/typescript/component/View";
+//import { AnimatedView } from "react-native-reanimated/lib/typescript/component/View";
 
 
 export default function IntroSplash() {
@@ -80,7 +80,7 @@ export default function IntroSplash() {
   }));
 
   return (
-    <View pointerEvents="none" style={styles.container}>
+    <View style={styles.container}>
     {showWand && (
         <Animated.View style ={[StyleSheet.absoluteFill, wandStyle]} pointerEvents={"none"}>
         <LottieView
@@ -91,7 +91,7 @@ export default function IntroSplash() {
         style={styles.lottie}
         onAnimationFinish={() => {
          //hide wand completely
-            setShowWand(false);
+          setShowWand(false);
           // 2) Sparkles next
           setShowSparkles(true);
           // tiny delay helps feel like the wand “caused” it
@@ -110,14 +110,17 @@ export default function IntroSplash() {
 
       {/* Sparkles */}
       {showSparkles && (
+          <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+
         <LottieView
           ref={sparklesRef}
           source={require("../assets/lottie/sparkles.json")}
           autoPlay={false}
-          loop={false} // no loop
+          loop={true} // yes loop, its cute
           style={styles.lottie}
           onAnimationFinish={() => setShowSparkles(false)}
         />
+        </View>
       )}
       
 
@@ -129,7 +132,7 @@ export default function IntroSplash() {
           source={require("../assets/lottie/poof.json")}
           autoPlay={false}
           loop={false} // no loop
-          style={styles.lottie}
+          style={styles.poofLottie}
           onAnimationFinish={() => setShowPoof(false)}
         />
         </View>

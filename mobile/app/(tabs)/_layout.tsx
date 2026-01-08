@@ -45,7 +45,15 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <WizardHatIcon size={24} color={color} />,
         }}
       />
-
+      <Tabs.Screen
+        name="recipes"
+        options={{
+          title: "Recipes",
+          tabBarIcon: ({ color }) => (
+            <Feather name="book-open" size={24} color={color} />
+          ),
+        }}
+      />
       <Tabs.Screen
         name="saved"
         options={{

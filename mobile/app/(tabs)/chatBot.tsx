@@ -1,19 +1,19 @@
-import { Text, View, StyleSheet, Pressable } from 'react-native';
+import { Text, View, StyleSheet, Pressable } from "react-native";
 import { Link } from "expo-router";
 
-
 export default function chatBot() {
-    return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Time to whip you up a magical recipe!</Text>
-            <Text>Click below to get started</Text>
-            <Link href="/generate">
-                    <Pressable style={styles.button}>
-                      <Text style={styles.buttonText}>Visit the Wizard</Text> {/*change the wording in generate stack*/}
-                    </Pressable>
-                  </Link>
-        </View>
-    )
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Time to whip you up a magical recipe!</Text>
+      <Text>Click below to get started</Text>
+      <Link href="/generate">
+        <Pressable style={styles.button}>
+          <Text style={styles.buttonText}>Visit the Wizard</Text>{" "}
+          {/*change the wording in generate stack*/}
+        </Pressable>
+      </Link>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({

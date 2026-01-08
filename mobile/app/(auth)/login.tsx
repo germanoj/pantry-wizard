@@ -61,8 +61,18 @@ export default function LoginPage() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#fff", padding: 20 },
-  title: { fontSize: 28, fontWeight: "700", marginBottom: 10 },
+  container: { 
+    flex: 1, 
+    alignItems: "center", 
+    justifyContent: "center", 
+    backgroundColor: "#fff", 
+    padding: 20, 
+  },
+  title: { 
+    fontSize: 28, 
+    fontWeight: "700", 
+    marginBottom: 10 
+  },
   input: { width: "100%", borderWidth: 1, borderColor: "#ddd", borderRadius: 12, padding: 12, fontSize: 16, marginTop: 10 },
   button: { width: "100%", backgroundColor: "#111", padding: 14, borderRadius: 12, alignItems: "center", marginTop: 12 },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
