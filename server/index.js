@@ -19,6 +19,9 @@ const openai = new OpenAI({
 app.get("/health", (req, res) => {
   res.json({ ok: true });
 });
+app.get("/", (req, res) => {
+  res.send("Pantry Wizard API is running. Try GET /health");
+});
 
 // =======================================================
 // =============== STUB / FALLBACK GENERATOR ==============
