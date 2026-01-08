@@ -85,13 +85,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#fff",
+    padding: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: "600",
+    marginBottom: 10,
   },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 12, padding: 12, fontSize: 16 },
-  button: { backgroundColor: "#111", padding: 14, borderRadius: 12, alignItems: "center" },
+  input: { width: "100%", borderWidth: 1, borderColor: "#ddd", borderRadius: 12, padding: 12, fontSize: 16, marginTop: 10 },
+  button: { width: "100%", backgroundColor: "#111", padding: 14, borderRadius: 12, alignItems: "center", marginTop: 12 },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
   linkRow: { marginTop: 8, fontSize: 14 },
   link: { color: "blue"}
