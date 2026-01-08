@@ -20,11 +20,10 @@ export default function LoginPage() {
 
       await mockLogin(email, password);
 
-      Alert.alert("Welcome back!", "Logged in.");
-      router.replace("/(tabs)");
+      Alert.alert("Welcome back!", "You're logged in. Let's get cookin'!");
+      router.replace("/profile");
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Login failed");
-    } finally {
+      Alert.alert("Error", err.message || "Hmm the magic isn't magic-ing... login failed. Try again?");    } finally {
       setLoading(false);
     }
   };
@@ -51,11 +50,11 @@ export default function LoginPage() {
       />
 
       <Pressable style={styles.button} onPress={onLogin} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? "Casting spell..." : "Log in"}</Text>
+        <Text style={styles.buttonText}>{loading ? "Casting spell..." : "Accio"}</Text>
       </Pressable>
 
       <Text style={styles.linkRow}>
-        New here? <Link href="/register">Create an account</Link>
+       First time visiting the wizard? <Link href="/register">Create an account</Link>
       </Text>
     </View>
   );
