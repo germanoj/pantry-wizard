@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Text, View, StyleSheet, Alert, TextInput, Pressable } from "react-native";
 import { Link, router } from "expo-router";
 
-import { mockLogin } from "../library/auth"; // adjust if your auth file lives elsewhere
+import { mockLogin } from "../../library/auth"; // adjust if your auth file lives elsewhere
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
