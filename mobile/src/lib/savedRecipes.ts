@@ -1,42 +1,23 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "../config/api";
 import type { Recipe } from "../types/recipe";
 
-const KEY = "SAVED_RECIPES";
-
-export type SavedRecipe = Recipe & {
-  savedAt: string;
-};
-
-export async function getSavedRecipes(): Promise<SavedRecipe[]> {
-  const raw = await AsyncStorage.getItem(KEY);
-  if (!raw) return [];
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
-}
-
 export async function saveRecipe(recipe: Recipe) {
-  const existing = await getSavedRecipes();
+  const res = await fetch(`${API_BASE_URL}/api/user-recipes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ recipe }),
+  });
 
-  const alreadySaved = existing.some((r) => r.title === recipe.title);
-  if (alreadySaved) {
-    console.log("Already saved:", recipe.title);
-    return;
-  }
-
-  const updated: SavedRecipe[] = [
-    { ...recipe, savedAt: new Date().toISOString() },
-    ...existing,
-  ];
-
-  await AsyncStorage.setItem(KEY, JSON.stringify(updated));
-  console.log("Saved recipe:", recipe.title);
+  const text = await res.text();
+  if (!res.ok) throw new Error(text || `HTTP ${res.status}`);
+  return JSON.parse(text) as { ok: boolean; recipeId: string };
 }
 
-export async function removeRecipe(title: string) {
-  const existing = await getSavedRecipes();
-  const updated = existing.filter((r) => r.title !== title);
-  await AsyncStorage.setItem(KEY, JSON.stringify(updated));
+export async function fetchSavedRecipes() {
+  const res = await fetch(`${API_BASE_URL}/api/user-recipes`);
+  const text = await res.text();
+  if (!res.ok) throw new Error(text || `HTTP ${res.status}`);
+  return JSON.parse(text) as {
+    recipes: Array<Recipe & { id: string; savedAt: string }>;
+  };
 }
