@@ -35,3 +35,29 @@ CREATE TABLE tried_recipes (
     is_tried BOOLEAN DEFAULT FALSE,
     UNIQUE (user_id, recipe_id)
 );
+
+CREATE TABLE IF NOT EXISTS saved_recipes (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    ingredients_used TEXT[] NOT NULL DEFAULT '{}',
+    missing_ingredients TEXT[] NOT NULL DEFAULT '{}',
+    steps TEXT[] NOT NULL DEFAULT '{}',
+    time_minutes INTEGER,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS saved_recipes_user_id_idx
+  ON saved_recipes(user_id);
+
+CREATE INDEX IF NOT EXISTS saved_recipes_created_at_idx
+  ON saved_recipes(created_at DESC);
+
+INSERT INTO users (id, username, email, password)
+VALUES (
+  '00000000-0000-0000-0000-000000000001',
+  'dev',
+  'dev@local.test',
+  'dev'
+)
+ON CONFLICT (email) DO NOTHING;
