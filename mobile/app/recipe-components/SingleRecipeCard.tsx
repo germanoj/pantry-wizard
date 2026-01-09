@@ -16,7 +16,10 @@ export interface SingleRecipeCardProps {
   description?: string;
   ingredients?: string[];
   steps?: string[];
-  onBack?: () => void;
+  isNotInterested?: boolean;
+  onMakeNow?: () => void;
+  onSaveForLater?: () => void;
+  onToggleNotInterested?: () => void;
 }
 
 export default function SingleRecipeCard({
@@ -26,18 +29,20 @@ export default function SingleRecipeCard({
   description,
   ingredients = [],
   steps = [],
-  onBack,
+  isNotInterested = false,
+  onMakeNow,
+  onSaveForLater,
+  onToggleNotInterested,
 }: SingleRecipeCardProps) {
   return (
     <SafeAreaView style={styles.container}>
-      {/*Header with Back Button */}
-      <View style={styles.header}>
-        <Pressable onPress={onBack} disabled={!onBack}>
-          <Text style={styles.backText}>‹ Back</Text>
-        </Pressable>
-      </View>
       {/*Scrollable Content */}
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          isNotInterested && styles.notInterested,
+        ]}
+      >
         {image ? (
           <Image source={image} style={styles.image} />
         ) : (
@@ -47,6 +52,35 @@ export default function SingleRecipeCard({
         )}
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.time}>{time}</Text>
+
+        {/* Action Buttons */}
+        <View style={styles.actionsBar}>
+          <Pressable onPress={onMakeNow} style={styles.actionBtn} hitSlop={8}>
+            <Text style={styles.actionIcon}>🧙‍♂️</Text>
+            <Text style={styles.actionLabel}>Make Now</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={onSaveForLater}
+            style={styles.actionBtn}
+            hitSlop={8}
+          >
+            <Text style={styles.actionIcon}>💾</Text>
+            <Text style={styles.actionLabel}>Save for Later</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={onToggleNotInterested}
+            style={styles.actionBtn}
+            hitSlop={8}
+          >
+            <Text style={styles.actionIcon}>👎</Text>
+            <Text style={styles.actionLabel}>
+              {isNotInterested ? "Yuck" : "Dislike"}
+            </Text>
+          </Pressable>
+        </View>
+
         {/*Description */}
         <Text style={styles.description}>{description}</Text>
 
@@ -72,13 +106,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-  },
-  header: {
-    padding: 16,
-  },
-  backText: {
-    fontSize: 16,
-    fontWeight: "600",
   },
   content: {
     padding: 16,
@@ -117,5 +144,38 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#f9f9f9",
+  },
+  actionsBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+
+  actionBtn: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.08)",
+    borderRadius: 12,
+    backgroundColor: "#fff",
+  },
+
+  actionIcon: {
+    fontSize: 24,
+    marginBottom: 6,
+  },
+
+  actionLabel: {
+    fontSize: 11,
+    color: "#444",
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  notInterested: {
+    opacity: 0.75,
   },
 });
