@@ -291,6 +291,19 @@ app.get("/api/user-recipes", async (req, res) => {
   }
 });
 
+app.get("/_debug/routes", (req, res) => {
+  const routes = [];
+  app._router?.stack?.forEach((layer) => {
+    if (layer.route?.path) {
+      const methods = Object.keys(layer.route.methods)
+        .filter((m) => layer.route.methods[m])
+        .map((m) => m.toUpperCase());
+      routes.push({ path: layer.route.path, methods });
+    }
+  });
+  res.json({ routes });
+});
+
 // ===== Start server =====
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
