@@ -1,6 +1,7 @@
-import { FlatList } from "react-native";
+import { FlatList, View } from "react-native";
 import { useRouter } from "expo-router";
 import RecipeCard from "./RecipeCard";
+import { useNotInterested } from "../../state/NotInterestedContext";
 
 export interface Recipe {
   id: string;
@@ -14,29 +15,40 @@ export interface Recipe {
 
 interface Props {
   recipes: Recipe[];
+  cardHeight?: number;
 }
 
-export default function RecipeResults({ recipes }: Props) {
+export default function RecipeResults({ recipes, cardHeight }: Props) {
   const router = useRouter();
+
+  // ✅ Use shared state from context
+  const { isNotInterested, toggleNotInterested } = useNotInterested();
 
   return (
     <FlatList
       data={recipes}
       keyExtractor={(item) => item.id}
-      contentContainerStyle={{ padding: 16 }}
+      contentContainerStyle={{ padding: 16, paddingBottom: 12 }}
       style={{ flex: 1 }}
+      showsVerticalScrollIndicator={false}
+      ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
       renderItem={({ item }) => (
-        <RecipeCard
-          title={item.title}
-          time={item.time}
-          image={item.image}
-          onPress={() =>
-            router.push({
-              pathname: "/recipe/[id]",
-              params: { id: item.id },
-            })
-          }
-        />
+        <View style={cardHeight ? { height: cardHeight } : undefined}>
+          <RecipeCard
+            title={item.title}
+            time={item.time}
+            image={item.image}
+            style={{ flex: 1 }}
+            isNotInterested={isNotInterested(item.id)}
+            onToggleNotInterested={() => toggleNotInterested(item.id)}
+            onPress={() =>
+              router.push({
+                pathname: "/recipe/[id]",
+                params: { id: item.id },
+              })
+            }
+          />
+        </View>
       )}
     />
   );
