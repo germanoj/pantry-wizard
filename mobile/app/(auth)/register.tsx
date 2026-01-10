@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { Text, View, StyleSheet, Alert, TextInput, Pressable } from 'react-native';
 import { Link, router } from 'expo-router';
 /*if logged in do not need to see this page*/
+import { useTheme } from '@/src/theme/usetheme';
+import { WizardBody, WizardTitle } from '@/src/components/WizardText';
+import { Card } from '@/src/components/Card';
 
 import { mockRegister } from '@/library/auth';
 
@@ -36,7 +39,8 @@ export default function RegisterPage() {
   } finally {
       setLoading(false);
   }
-};
+  };
+
 /*    const res = await mockRegister(email, password, {
         method: "POST",
         headers: { "Content-Type": "application/json"},
@@ -46,10 +50,12 @@ export default function RegisterPage() {
       const data = await res.json();
       if(!res.ok) throw new Error(data)
     }*/
-  return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Welcome muggle!</Text>
-            <Text style={styles.title}>Create your account:</Text>
+    const theme = useTheme();
+    return (
+    <View style={[styles.container, {backgroundColor: theme.background}]}>
+            <Card>
+            <WizardTitle>Welcome muggle!</WizardTitle>
+            <WizardTitle>Create your account:</WizardTitle>
 
             <TextInput
               value={email}
@@ -72,12 +78,14 @@ export default function RegisterPage() {
               <Text style={styles.buttonText}>{loading? "1...2...3..." : "Poof!"}</Text>
             </Pressable>
 
-            <Text style={styles.linkRow}>
+            <WizardBody style={styles.linkRow}>
               Already met the wizard? Log in <Link style={styles.link} href="/login">here!</Link>
-            </Text>
+            </WizardBody>
+            </Card>
         </View>
     )
 }
+
 
 const styles = StyleSheet.create({
   container: {
