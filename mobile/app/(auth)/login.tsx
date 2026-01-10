@@ -1,8 +1,11 @@
 import { useState } from "react";
-import { Text, View, StyleSheet, Alert, TextInput, Pressable } from "react-native";
+import { View, StyleSheet, Alert, TextInput, Pressable } from "react-native";
 import { Link, router } from "expo-router";
 
 import { mockLogin } from "../../library/auth";
+import { useTheme } from "@/src/theme/usetheme";
+import { WizardBody, WizardTitle } from '@/src/components/WizardText';
+import { Card } from '@/src/components/Card';
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -28,9 +31,12 @@ export default function LoginPage() {
     }
   };
 
+  const theme = useTheme();
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Log in</Text>
+    <View style={[styles.container, {backgroundColor: theme.background}]}>
+      <Card>
+      <WizardTitle>Log in</WizardTitle>
 
       <TextInput
         value={email}
@@ -50,12 +56,13 @@ export default function LoginPage() {
       />
 
       <Pressable style={styles.button} onPress={onLogin} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? "Casting spell..." : "Accio"}</Text>
+        <WizardBody style={styles.buttonText}>{loading ? "Casting spell..." : "Accio"}</WizardBody>
       </Pressable>
 
-      <Text style={styles.linkRow}>
+      <WizardBody style={styles.linkRow}>
        First time visiting the wizard? <Link href="/register">Create an account</Link>
-      </Text>
+      </WizardBody>
+      </Card>
     </View>
   );
 }
