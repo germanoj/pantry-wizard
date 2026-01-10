@@ -1,13 +1,19 @@
-import { Text, View, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { Link } from "expo-router";
+import { useTheme } from '@/src/theme/usetheme';
+import { WizardBody, WizardTitle } from '@/src/components/WizardText';
+import { Card } from '@/src/components/Card';
 
 export default function HomeScreen() {
+  const theme = useTheme();
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome to Pantry Wizard 🧙‍♂️</Text>
-      <Text><Link style={styles.link} href="/(auth)/login">Login</Link> to see past recipes and ask the wize wizard for more food inspo</Text>
-      <Text><Link style={styles.link} href="/(auth)/register">Register</Link> a new account</Text>
-      <Text> Or visit the <Link style={styles.link} href="/(tabs)/chatBot">wizard</Link> as a guest</Text>
+    <View style={[styles.container, {backgroundColor: theme.background}]}>
+      <Card>
+        <WizardTitle>Welcome to Pantry Wizard 🧙‍♂️</WizardTitle>
+        <WizardBody><Link style={styles.link} href="/(auth)/login">Login</Link> to see past recipes and ask the wize wizard for more food inspo</WizardBody>
+        <WizardBody><Link style={styles.link} href="/(auth)/register">Register</Link> a new account</WizardBody>
+        <WizardBody> Or visit the <Link style={styles.link} href="/(tabs)/chatBot">wizard</Link> as a guest</WizardBody>
+      </Card>
     </View>
   );
 }
