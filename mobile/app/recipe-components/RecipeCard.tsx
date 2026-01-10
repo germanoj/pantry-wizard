@@ -27,15 +27,9 @@ import {
 export interface RecipeCardProps {
   title: string;
   time: string;
-<  image: any; // require(...) or { uri: ... }
+  image: any; // require(...) or { uri: ... }
   onPress?: () => void;
-  style?: ViewStyle;
 
-  /** Not Interested */
-  isNotInterested?: boolean;
-  onToggleNotInterested?: () => void;
-
-  /** Action buttons */
   onSave?: () => void;
   onDismiss?: () => void;
   onMagic?: () => void;
@@ -99,59 +93,61 @@ export default function RecipeCard({
           <Text style={styles.time}>{time}</Text>
         </View>
 
-{/* Actions */}
-<View style={styles.actions} pointerEvents="box-none">
-  <Pressable
-    onPress={(e) => {
-      stop(e);
-      onMagic?.();
-    }}
-    disabled={!onMagic}
-    hitSlop={10}
-    style={({ pressed }) => [
-      styles.actionBtn,
-      pressed && styles.pressed,
-      !onMagic && styles.disabledBtn,
-    ]}
-    accessibilityRole="button"
-    accessibilityLabel="Magic"
-  >
-    <Text style={styles.action}>🧙‍♂️</Text>
-  </Pressable>
+        {/* Actions */}
+        <View style={styles.actions} pointerEvents="box-none">
+          <Pressable
+            onPress={(e) => {
+              stop(e);
+              onMagic?.();
+            }}
+            disabled={!onMagic}
+            hitSlop={10}
+            style={({ pressed }) => [
+              styles.actionBtn,
+              pressed && styles.pressed,
+              !onMagic && styles.disabledBtn,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Magic"
+          >
+            <Text style={styles.action}>🧙‍♂️</Text>
+          </Pressable>
 
-  <Pressable
-    onPress={(e) => {
-      stop(e);
-      onSave?.();
-    }}
-    disabled={!onSave}
-    hitSlop={10}
-    style={({ pressed }) => [
-      styles.actionBtn,
-      pressed && styles.pressed,
-      !onSave && styles.disabledBtn,
-    ]}
-    accessibilityRole="button"
-    accessibilityLabel="Save recipe"
-  >
-    <Text style={styles.action}>💾</Text>
-  </Pressable>
+          <Pressable
+            onPress={(e) => {
+              stop(e);
+              onSave?.();
+            }}
+            disabled={!onSave}
+            hitSlop={10}
+            style={({ pressed }) => [
+              styles.actionBtn,
+              pressed && styles.pressed,
+              !onSave && styles.disabledBtn,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Save recipe"
+          >
+            <Text style={styles.action}>💾</Text>
+          </Pressable>
 
-  <Pressable
-    onPress={(e) => {
-      stop(e);
-      onToggleNotInterested?.(); // keep your shared context behavior
-      onDismiss?.();             // optional extra hook
-    }}
-    hitSlop={10}
-    style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed]}
-    accessibilityRole="button"
-    accessibilityLabel={isNotInterested ? "Yuck" : "Dislike"}
-  >
-    <Text style={styles.action}>👎</Text>
-  </Pressable>
-</View>
-
+          <Pressable
+            onPress={(e) => {
+              stop(e);
+              onToggleNotInterested?.(); // keep your shared context behavior
+              onDismiss?.(); // optional extra hook
+            }}
+            hitSlop={10}
+            style={({ pressed }) => [
+              styles.actionBtn,
+              pressed && styles.pressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={isNotInterested ? "Yuck" : "Dislike"}
+          >
+            <Text style={styles.action}>👎</Text>
+          </Pressable>
+        </View>
       </View>
     </Pressable>
   );
@@ -228,18 +224,17 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 10,
   },
-actionBtn: {
-  padding: 4,
-  borderRadius: 10,
-},
-pressed: {
-  opacity: 0.6,
-},
-disabledBtn: {
-  opacity: 0.3,
-},
-action: {
-  fontSize: 18,
-},
-
+  actionBtn: {
+    padding: 4,
+    borderRadius: 10,
+  },
+  pressed: {
+    opacity: 0.6,
+  },
+  disabledBtn: {
+    opacity: 0.3,
+  },
+  action: {
+    fontSize: 18,
+  },
 });
