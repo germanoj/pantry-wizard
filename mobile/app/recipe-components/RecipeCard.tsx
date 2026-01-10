@@ -27,7 +27,7 @@ import {
 export interface RecipeCardProps {
   title: string;
   time: string;
-  image: any; // require(...) db image
+<  image: any; // require(...) or { uri: ... }
   onPress?: () => void;
   style?: ViewStyle;
 
@@ -35,9 +35,15 @@ export interface RecipeCardProps {
   isNotInterested?: boolean;
   onToggleNotInterested?: () => void;
 
-  /** Optional: wire later */
-  onMakeNow?: () => void;
-  onSaveForLater?: () => void;
+  /** Action buttons */
+  onSave?: () => void;
+  onDismiss?: () => void;
+  onMagic?: () => void;
+}
+
+function stop(e: any) {
+  e?.stopPropagation?.();
+  e?.preventDefault?.();
 }
 
 export default function RecipeCard({
@@ -48,8 +54,9 @@ export default function RecipeCard({
   style,
   isNotInterested = false,
   onToggleNotInterested,
-  onMakeNow,
-  onSaveForLater,
+  onSave,
+  onDismiss,
+  onMagic,
 }: RecipeCardProps) {
   const stop = (e: GestureResponderEvent) => e.stopPropagation?.();
 
@@ -92,32 +99,59 @@ export default function RecipeCard({
           <Text style={styles.time}>{time}</Text>
         </View>
 
-        <View style={styles.actionsRow}>
-          <Pressable
-            onPress={handleMakeNow}
-            style={styles.actionBtn}
-            hitSlop={8}
-          >
-            <Text style={styles.actionIcon}>🧙‍♂️</Text>
-            <Text style={styles.actionLabel}>Make Now</Text>
-          </Pressable>
+{/* Actions */}
+<View style={styles.actions} pointerEvents="box-none">
+  <Pressable
+    onPress={(e) => {
+      stop(e);
+      onMagic?.();
+    }}
+    disabled={!onMagic}
+    hitSlop={10}
+    style={({ pressed }) => [
+      styles.actionBtn,
+      pressed && styles.pressed,
+      !onMagic && styles.disabledBtn,
+    ]}
+    accessibilityRole="button"
+    accessibilityLabel="Magic"
+  >
+    <Text style={styles.action}>🧙‍♂️</Text>
+  </Pressable>
 
-          <Pressable onPress={handleSave} style={styles.actionBtn} hitSlop={8}>
-            <Text style={styles.actionIcon}>💾</Text>
-            <Text style={styles.actionLabel}>Save for Later</Text>
-          </Pressable>
+  <Pressable
+    onPress={(e) => {
+      stop(e);
+      onSave?.();
+    }}
+    disabled={!onSave}
+    hitSlop={10}
+    style={({ pressed }) => [
+      styles.actionBtn,
+      pressed && styles.pressed,
+      !onSave && styles.disabledBtn,
+    ]}
+    accessibilityRole="button"
+    accessibilityLabel="Save recipe"
+  >
+    <Text style={styles.action}>💾</Text>
+  </Pressable>
 
-          <Pressable
-            onPress={handleToggleNotInterested}
-            style={styles.actionBtn}
-            hitSlop={8}
-          >
-            <Text style={styles.actionIcon}>👎</Text>
-            <Text style={styles.actionLabel}>
-              {isNotInterested ? "Yuck" : "Dislike"}
-            </Text>
-          </Pressable>
-        </View>
+  <Pressable
+    onPress={(e) => {
+      stop(e);
+      onToggleNotInterested?.(); // keep your shared context behavior
+      onDismiss?.();             // optional extra hook
+    }}
+    hitSlop={10}
+    style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed]}
+    accessibilityRole="button"
+    accessibilityLabel={isNotInterested ? "Yuck" : "Dislike"}
+  >
+    <Text style={styles.action}>👎</Text>
+  </Pressable>
+</View>
+
       </View>
     </Pressable>
   );
@@ -125,6 +159,33 @@ export default function RecipeCard({
 
 const styles = StyleSheet.create({
   card: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#eee",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  image: {
+    width: 70,
+    height: 70,
+    borderRadius: 10,
+    marginRight: 12,
+  },
+  placeholder: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f9f9f9",
+  },
+  placeholderText: {
+    fontSize: 10,
+    color: "#999",
+  },
+  content: {
     flex: 1,
     flexDirection: "row",
     backgroundColor: "#fff",
@@ -167,39 +228,18 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 10,
   },
+actionBtn: {
+  padding: 4,
+  borderRadius: 10,
+},
+pressed: {
+  opacity: 0.6,
+},
+disabledBtn: {
+  opacity: 0.3,
+},
+action: {
+  fontSize: 18,
+},
 
-  actionBtn: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 6,
-  },
-
-  actionIcon: {
-    fontSize: UI.actionSize,
-    marginBottom: 4,
-  },
-
-  actionLabel: {
-    fontSize: 10,
-    color: "#444",
-    textAlign: "center",
-  },
-
-  placeholder: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#f9f9f9",
-  },
-
-  placeholderText: {
-    fontSize: 10,
-    color: "#999",
-  },
-
-  notInterested: {
-    opacity: 0.75,
-  },
 });

@@ -1,15 +1,16 @@
-import { FlatList, View } from "react-native";
+import { FlatList, Alert, View } from "react-native";
 import { useRouter } from "expo-router";
 import RecipeCard from "./RecipeCard";
 import { useNotInterested } from "../../state/NotInterestedContext";
+import { saveRecipe } from "../../src/lib/savedRecipes";
 
 export interface Recipe {
   id: string;
   title: string;
-  time: string;
+  time: string; // e.g. "25 min" or "25"
   image: any;
   description?: string;
-  ingredients?: string[];
+  ingredients?: string[]; // (your UI field)
   steps?: string[];
 }
 
@@ -18,11 +19,39 @@ interface Props {
   cardHeight?: number;
 }
 
+function parseMinutes(time: string | number | undefined | null) {
+  if (typeof time === "number") return time;
+  if (!time) return 0;
+
+  // grabs first number from strings like "25 min", "30", "Ready in 15 minutes"
+  const match = String(time).match(/\d+/);
+  return match ? parseInt(match[0], 10) : 0;
+}
+
 export default function RecipeResults({ recipes, cardHeight }: Props) {
   const router = useRouter();
 
-  // ✅ Use shared state from context
+  // ✅ Use shared state from context (teammate)
   const { isNotInterested, toggleNotInterested } = useNotInterested();
+
+  // ✅ Save recipe (you)
+  async function handleSave(item: Recipe) {
+    try {
+      const timeMinutes = parseMinutes(item.time);
+
+      await saveRecipe({
+        title: item.title,
+        ingredientsUsed: item.ingredients ?? [],
+        missingIngredients: [],
+        steps: item.steps ?? [],
+        timeMinutes: Number.isFinite(timeMinutes) ? timeMinutes : 0,
+      });
+
+      Alert.alert("Saved!", `"${item.title}" was saved.`);
+    } catch (e: any) {
+      Alert.alert("Save failed", e?.message ?? "Could not save recipe.");
+    }
+  }
 
   return (
     <FlatList
@@ -47,6 +76,7 @@ export default function RecipeResults({ recipes, cardHeight }: Props) {
                 params: { id: item.id },
               })
             }
+            onSave={() => handleSave(item)}
           />
         </View>
       )}

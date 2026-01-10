@@ -1,7 +1,8 @@
 DROP TABLE IF EXISTS tried_recipes;
 DROP TABLE IF EXISTS favorites;
 DROP TABLE IF EXISTS recipes;
-DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS saved_recipes;
+DROP TABLE IF EXISTS users CASCADE;
 
 CREATE TABLE users (
     id UUID PRIMARY KEY,
@@ -11,12 +12,13 @@ CREATE TABLE users (
 );
 
 CREATE TABLE recipes (
-    id UUID PRIMARY KEY,
-    name TEXT NOT NULL,
-    generated_by_ai BOOLEAN NOT NULL DEFAULT TRUE,
-    prompt_used TEXT,
-    is_veggie BOOLEAN NOT NULL,
-    is_gf BOOLEAN NOT NULL
+  id UUID PRIMARY KEY,
+  name TEXT NOT NULL,
+  generated_by_ai BOOLEAN NOT NULL DEFAULT TRUE,
+  prompt_used TEXT,
+  is_veggie BOOLEAN NOT NULL,
+  is_gf BOOLEAN NOT NULL,
+  recipe_json JSONB
 );
 
 CREATE TABLE favorites (
