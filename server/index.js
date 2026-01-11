@@ -248,11 +248,8 @@ Return ONLY valid JSON in this exact shape:
   "recipes": [ ... ]
 }
 `;
-    function placeholderImageUrl(title) {
-      const text = encodeURIComponent(String(title || "Recipe").slice(0, 40));
-      return `https://placehold.co/1024x1024?text=${text}`;
-    }
 
+    // 1) Get recipes (text)
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -263,26 +260,41 @@ Return ONLY valid JSON in this exact shape:
     });
 
     const raw = completion.choices[0].message.content;
-
     const parsed = JSON.parse(raw);
-    // Generate an image for each recipe (simple capstone version)
-    // Attach an imageUrl to each recipe (capstone-simple approach)
+
+    // 2) Image helpers
+    function placeholderImageUrl(title) {
+      const text = encodeURIComponent(String(title || "Recipe").slice(0, 40));
+      return `https://placehold.co/1024x1024?text=${text}`;
+    }
+
+    async function generateImageUrlForRecipe(r) {
+      const imgPrompt = buildFoodImagePrompt(r);
+
+      const img = await openai.images.generate({
+        model: "gpt-image-1",
+        prompt: imgPrompt,
+        size: "1024x1024",
+      });
+
+      const imageUrl = img?.data?.[0]?.url;
+      if (!imageUrl) throw new Error("No image URL returned from OpenAI");
+
+      return imageUrl;
+    }
+
+    // 3) Attach imageUrl to each recipe (fallback to placeholder on any error)
     for (const r of parsed.recipes) {
       try {
-        const prompt = buildFoodImagePrompt(r);
-
-        const img = await openai.images.generate({
-          model: "gpt-image-1",
-          prompt,
-          size: "1024x1024",
-        });
-
-        r.imageUrl = img?.data?.[0]?.url ?? null;
+        r.imageUrl = await generateImageUrlForRecipe(r);
       } catch (e) {
-        console.error("generate-ai image failed:", r?.title, e);
+        console.error("generate-ai image failed:", r?.title, e?.message || e);
         r.imageUrl = placeholderImageUrl(r?.title);
       }
     }
+
+    // Optional temporary debug flag (remove later)
+    // parsed._debug_imageFallbackEnabled = true;
 
     return res.json(parsed);
   } catch (err) {
