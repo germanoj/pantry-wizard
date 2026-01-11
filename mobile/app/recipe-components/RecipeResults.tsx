@@ -5,6 +5,7 @@ import { useNotInterested } from "../../state/NotInterestedContext";
 import { saveRecipe } from "../../src/lib/savedRecipes";
 import { useTheme } from "@/src/theme/usetheme";
 import { ui } from "@/src/theme/theme";
+import { saveUiRecipe } from "../../src/lib/saveRecipeAction";
 
 export interface Recipe {
   id: string;
@@ -34,21 +35,12 @@ export default function RecipeResults({ recipes, cardHeight }: Props) {
   const theme = useTheme();
 
   async function handleSave(item: Recipe) {
-    try {
-      const timeMinutes = parseMinutes(item.time);
-
-      await saveRecipe({
-        title: item.title,
-        ingredientsUsed: item.ingredients ?? [],
-        missingIngredients: [],
-        steps: item.steps ?? [],
-        timeMinutes: Number.isFinite(timeMinutes) ? timeMinutes : 0,
-      });
-
-      Alert.alert("Saved!", `"${item.title}" was saved.`);
-    } catch (e: any) {
-      Alert.alert("Save failed", e?.message ?? "Could not save recipe.");
-    }
+    await saveUiRecipe({
+      title: item.title,
+      time: item.time,
+      ingredients: item.ingredients,
+      steps: item.steps,
+    });
   }
 
   return (

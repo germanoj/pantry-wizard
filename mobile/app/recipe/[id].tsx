@@ -3,6 +3,8 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import SingleRecipeCard from "@/app/recipe-components/SingleRecipeCard";
 import { MOCK_RECIPES } from "@/data/recipes";
 import { useNotInterested } from "@/state/NotInterestedContext";
+import { Alert } from "react-native";
+import { saveUiRecipe } from "@/src/lib/saveRecipeAction";
 
 export default function RecipeDetailScreen() {
   const router = useRouter();
@@ -29,6 +31,14 @@ export default function RecipeDetailScreen() {
           router.push({
             pathname: "/recipe/[id]/cook",
             params: { id: recipe.id },
+          })
+        }
+        onSaveForLater={() =>
+          saveUiRecipe({
+            title: recipe.title,
+            time: recipe.time,
+            ingredients: recipe.ingredients,
+            steps: recipe.steps,
           })
         }
         isNotInterested={isNotInterested(recipe.id)}

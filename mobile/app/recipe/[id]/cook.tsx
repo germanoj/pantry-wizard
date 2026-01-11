@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { Stack, useLocalSearchParams } from "expo-router";
 import SingleRecipeCard from "@/app/recipe-components/SingleRecipeCard";
 import { MOCK_RECIPES } from "@/data/recipes";
+import { saveUiRecipe } from "@/src/lib/saveRecipeAction";
 
 export default function CookRecipeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -28,10 +29,14 @@ export default function CookRecipeScreen() {
         steps={recipe.steps}
         showActions={false}
         bottomActionLabel="Save this Recipe"
-        onBottomAction={() => {
-          // TODO: wire to saved recipes store + auth later
-          console.log("Save recipe:", recipe.id);
-        }}
+        onBottomAction={() =>
+          saveUiRecipe({
+            title: recipe.title,
+            time: recipe.time,
+            ingredients: recipe.ingredients,
+            steps: recipe.steps,
+          })
+        }
       />
     </>
   );
