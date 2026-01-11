@@ -1,3 +1,4 @@
+//remove from tabs!!!
 /*if logged in do not need to see this page*/
 
 import { View, StyleSheet } from 'react-native';

@@ -33,7 +33,7 @@ export default function RegisterPage() {
     await mockRegister(email, password);
 
     Alert.alert("Poof!", "Your account has been created. Log in and let's get cookin'!.");
-    router.replace("/login");
+    router.replace("/(auth)/login");
   } catch(err:any) {
       Alert.alert("Error", err.message || "Registration failed :(");
   } finally {
@@ -79,7 +79,7 @@ export default function RegisterPage() {
             </Pressable>
 
             <WizardBody style={styles.linkRow}>
-              Already met the wizard? Log in <Link style={styles.link} href="/login">here!</Link>
+              Already met the wizard? Log in <Link style={styles.link} href="/(auth)/login">here!</Link>
             </WizardBody>
             </Card>
         </View>

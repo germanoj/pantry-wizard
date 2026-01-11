@@ -24,7 +24,7 @@ export default function LoginPage() {
       await mockLogin(email, password);
 
       Alert.alert("Welcome back!", "You're logged in. Let's get cookin'!");
-      router.replace("/profile");
+      router.replace("/(tabs)/profile"); //can switch just to (tabs) so it open the tab homescreen
     } catch (err: any) {
       Alert.alert("Error", err.message || "Hmm the magic isn't magic-ing... login failed. Try again?");    } finally {
       setLoading(false);
@@ -60,7 +60,7 @@ export default function LoginPage() {
       </Pressable>
 
       <WizardBody style={styles.linkRow}>
-       First time visiting the wizard? <Link href="/register">Create an account</Link>
+       First time visiting the wizard? <Link href="/(modals)/register-modal">Create an account</Link>
       </WizardBody>
       </Card>
     </View>

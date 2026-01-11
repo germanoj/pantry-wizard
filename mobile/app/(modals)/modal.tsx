@@ -1,3 +1,5 @@
+//this is just an example page! can delete!
+
 import { Link } from 'expo-router';
 import { StyleSheet } from 'react-native';
 
