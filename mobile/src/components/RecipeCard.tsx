@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, Image } from "react-native";
 import type { Recipe } from "../types/recipe";
 import { saveRecipe } from "../lib/savedRecipes";
 
@@ -10,6 +10,14 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
         <Text style={styles.badge}>{recipe.timeMinutes} min</Text>
       </View>
 
+      {recipe.imageUrl ? (
+        <Image source={{ uri: recipe.imageUrl }} style={styles.image} />
+      ) : (
+        <View style={styles.imagePlaceholder}>
+          <Text style={styles.imagePlaceholderText}>Generating image…</Text>
+        </View>
+      )}
+
       <Text style={styles.sectionLabel}>Using</Text>
       <Text style={styles.bodyText}>
         {recipe.ingredientsUsed.join(", ") || "—"}
@@ -17,7 +25,7 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
 
       <Text style={styles.sectionLabel}>Missing</Text>
       <Text style={styles.bodyText}>
-        {recipe.missingIngredients.length
+        {recipe.missingIngredients?.length
           ? recipe.missingIngredients.join(", ")
           : "Nothing 🎉"}
       </Text>
@@ -94,5 +102,26 @@ const styles = StyleSheet.create({
   },
   saveText: {
     fontWeight: "700",
+  },
+  image: {
+    width: "100%",
+    height: 180,
+    borderRadius: 14,
+    marginTop: 10,
+  },
+  imagePlaceholder: {
+    width: "100%",
+    height: 180,
+    borderRadius: 14,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: "#eee",
+    backgroundColor: "#f6f6f6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  imagePlaceholderText: {
+    color: "#777",
+    fontWeight: "600",
   },
 });

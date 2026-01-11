@@ -6,13 +6,14 @@ import OpenAI from "openai";
 import pg from "pg";
 const { Pool } = pg;
 
+const needsSSL =
+  process.env.PGSSLMODE === "require" ||
+  (process.env.DATABASE_URL?.includes("render.com") ?? false) ||
+  process.env.NODE_ENV === "production";
+
 const db = new Pool({
   connectionString: process.env.DATABASE_URL,
-  // Render requires SSL; local usually doesn't.
-  ssl:
-    process.env.NODE_ENV === "production"
-      ? { rejectUnauthorized: false }
-      : false,
+  ssl: needsSSL ? { rejectUnauthorized: false } : false,
 });
 
 const app = express();
@@ -41,6 +42,70 @@ function getUserId(req) {
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+// ================== Recipe Image Generation ==================
+
+function buildFoodImagePrompt(recipe) {
+  const title = String(recipe.title ?? "a homemade dish").trim();
+
+  const used = Array.isArray(recipe.ingredientsUsed)
+    ? recipe.ingredientsUsed
+    : [];
+  const missing = Array.isArray(recipe.missingIngredients)
+    ? recipe.missingIngredients
+    : [];
+
+  const ingredients = [...used, ...missing]
+    .filter(Boolean)
+    .slice(0, 12)
+    .join(", ");
+
+  return `
+A professional food photograph of ${title}.
+Key ingredients: ${ingredients || "simple pantry ingredients"}.
+Plated neatly on a ceramic plate or bowl.
+Soft natural window lighting, shallow depth of field.
+Realistic, appetizing, high detail, no text, no watermark.
+`;
+}
+
+async function generateAndAttachRecipeImage({ recipeId, recipeJson }) {
+  try {
+    // Mark as generating
+    await db.query(
+      `UPDATE recipes
+       SET image_status = 'generating'
+       WHERE id = $1 AND (image_status IS NULL OR image_status IN ('none', 'failed'))`,
+      [recipeId]
+    );
+
+    const prompt = buildFoodImagePrompt(recipeJson);
+
+    const img = await openai.images.generate({
+      model: "gpt-image-1",
+      prompt,
+      size: "1024x1024",
+    });
+
+    const imageUrl = img?.data?.[0]?.url;
+    if (!imageUrl) throw new Error("No image URL returned");
+
+    await db.query(
+      `UPDATE recipes
+       SET image_url = $2, image_status = 'ready'
+       WHERE id = $1`,
+      [recipeId, imageUrl]
+    );
+  } catch (err) {
+    console.error("image generation error:", err);
+    await db.query(
+      `UPDATE recipes
+       SET image_status = 'failed'
+       WHERE id = $1`,
+      [recipeId]
+    );
+  }
+}
 
 // ===== Health check =====
 app.get("/health", (req, res) => {
@@ -196,6 +261,24 @@ Return ONLY valid JSON in this exact shape:
     const raw = completion.choices[0].message.content;
 
     const parsed = JSON.parse(raw);
+    // Generate an image for each recipe (simple capstone version)
+    // Attach an imageUrl to each recipe (capstone-simple approach)
+    for (const r of parsed.recipes) {
+      try {
+        const prompt = buildFoodImagePrompt(r);
+
+        const img = await openai.images.generate({
+          model: "gpt-image-1",
+          prompt,
+          size: "1024x1024",
+        });
+
+        r.imageUrl = img?.data?.[0]?.url ?? null;
+      } catch (e) {
+        console.error("generate-ai image failed:", r?.title, e);
+        r.imageUrl = null;
+      }
+    }
 
     return res.json(parsed);
   } catch (err) {
@@ -225,7 +308,7 @@ app.post("/api/user-recipes", async (req, res) => {
     // If your project uses `pg` Pool as `db`, keep as-is. Otherwise tell me what your db variable is named.
 
     const existing = await db.query(
-      "SELECT id FROM recipes WHERE prompt_used = $1 LIMIT 1",
+      "SELECT id, image_url, image_status FROM recipes WHERE prompt_used = $1 LIMIT 1",
       [hash]
     );
 
@@ -254,6 +337,30 @@ app.post("/api/user-recipes", async (req, res) => {
       [DEV_USER_ID, recipeId]
     );
 
+    // Fire-and-forget image generation if needed
+    try {
+      const imgCheck = await db.query(
+        "SELECT image_url, image_status, recipe_json FROM recipes WHERE id = $1",
+        [recipeId]
+      );
+
+      const row = imgCheck.rows[0];
+      const needsImage =
+        !row?.image_url &&
+        (!row?.image_status ||
+          row.image_status === "none" ||
+          row.image_status === "failed");
+
+      if (needsImage) {
+        generateAndAttachRecipeImage({
+          recipeId,
+          recipeJson: row.recipe_json,
+        });
+      }
+    } catch (e) {
+      console.error("image kickoff failed:", e);
+    }
+
     return res.json({ ok: true, recipeId });
   } catch (err) {
     console.error("save recipe error:", err);
@@ -265,10 +372,12 @@ app.get("/api/user-recipes", async (req, res) => {
     const result = await db.query(
       `
       SELECT
-        r.id,
-        r.name,
-        r.recipe_json,
-        f.created_at
+      r.id,
+      r.name,
+      r.recipe_json,
+      r.image_url,
+      r.image_status,
+      f.created_at
       FROM favorites f
       JOIN recipes r ON r.id = f.recipe_id
       WHERE f.user_id = $1
@@ -280,7 +389,8 @@ app.get("/api/user-recipes", async (req, res) => {
     const recipes = result.rows.map((row) => ({
       id: row.id,
       savedAt: row.created_at,
-      // return the original AI recipe object (plus id)
+      imageUrl: row.image_url,
+      imageStatus: row.image_status,
       ...row.recipe_json,
     }));
 

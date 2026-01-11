@@ -24,7 +24,18 @@ export default function GenerateScreen() {
 
     try {
       const data = await generateRecipes(pantryText);
-      console.log("AI response:", data);
+      console.log("AI response keys:", Object.keys(data || {}));
+      console.log(
+        "First recipe imageUrl:",
+        data?.recipes?.[0]?.imageUrl,
+        "status:",
+        data?.recipes?.[0]?.imageUrl ? "HAS_URL" : "NO_URL"
+      );
+      console.log(
+        "Full first recipe:",
+        JSON.stringify(data?.recipes?.[0], null, 2)
+      );
+
       setRecipes(data.recipes);
     } catch (e) {
       console.log("AI error:", e);
