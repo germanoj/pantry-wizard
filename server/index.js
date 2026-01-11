@@ -242,26 +242,25 @@ async function generateImageUrlForRecipe(r) {
     openai.images.generate({
       model: "gpt-image-1",
       prompt: imgPrompt,
-      size: "512x512",
-      // ask for base64 explicitly if supported by your SDK version
-      response_format: "b64_json",
+      size: "512x512", // faster while debugging
     }),
-    60000, // bump timeout
+    90000,
     "images.generate"
   );
 
   const first = img?.data?.[0];
 
-  // If OpenAI gives you a URL
+  console.log("🧩 image response keys:", Object.keys(first || {}));
+
+  // If it returns a URL, great
   if (first?.url) return first.url;
 
-  // If OpenAI gives you base64
-  if (first?.b64_json) {
-    return `data:image/png;base64,${first.b64_json}`;
-  }
+  // If it returns base64, convert to data URL
+  if (first?.b64_json) return `data:image/png;base64,${first.b64_json}`;
 
+  // Some SDKs return "base64" under a different key — log and fail loudly
   throw new Error(
-    `No image url or b64_json returned. Keys: ${Object.keys(first || {})}`
+    `No usable image in response. keys=${Object.keys(first || {}).join(",")}`
   );
 }
 
