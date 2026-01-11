@@ -13,8 +13,10 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
+        headerTitleAlign: "center",
+        tabBarLabelPosition: "below-icon",
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
-        headerShown: false,
+        //headerShown: false,
         tabBarButton: HapticTab,
       }}
     >
@@ -22,26 +24,19 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
+          headerTitle: "Pantry Wizard",
           tabBarIcon: ({ color }) => (
             <Feather name="home" size={24} color={color} />
           ),
         }}
       />
 
-      <Tabs.Screen
-        name="loginReg"
-        options={{
-          title: "Login/Register",
-          tabBarIcon: ({ color }) => (
-            <Feather name="log-in" size={24} color={color} />
-          ),
-        }}
-      />
-
+    
       <Tabs.Screen
         name="chatBot"
         options={{
           title: "Wizard",
+          headerTitle: "Recipe Wizardry",
           tabBarIcon: ({ color }) => <WizardHatIcon size={24} color={color} />,
         }}
       />
@@ -49,6 +44,7 @@ export default function TabLayout() {
         name="recipes"
         options={{
           title: "Recipes",
+          headerTitle: "Recipes",
           tabBarIcon: ({ color }) => (
             <Feather name="book-open" size={24} color={color} />
           ),
@@ -68,11 +64,28 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: "My Page",
+          headerTitle: "My Page",
           tabBarIcon: ({ color }) => (
             <Feather size={24} name="user" color={color} />
           ),
         }}
       />
+
+      
+      {/* cant see the tab but page still exists*/}
+      <Tabs.Screen
+        name="loginReg"
+        options={{
+          href: null,
+          title: "Login/Register",
+          tabBarIcon: ({ color }) => (
+            <Feather name="log-in" size={24} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen name="explore" options={{ href: null }} />
+      
     </Tabs>
   );
 }
