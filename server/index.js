@@ -216,12 +216,48 @@ app.post("/api/generate", (req, res) => {
 // =======================================================
 // ===================== REAL AI ROUTE ====================
 // =======================================================
-console.log("🔥 HIT /api/generate-ai", new Date().toISOString());
+
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`${label} timed out after ${ms}ms`)),
+        ms
+      )
+    ),
+  ]);
+}
+
+function placeholderImageUrl(title) {
+  const text = encodeURIComponent(String(title || "Recipe").slice(0, 40));
+  // Force PNG for better compatibility
+  return `https://placehold.co/1024x1024/png?text=${text}`;
+}
+
+async function generateImageUrlForRecipe(r) {
+  const imgPrompt = buildFoodImagePrompt(r);
+
+  const img = await withTimeout(
+    openai.images.generate({
+      model: "gpt-image-1",
+      prompt: imgPrompt,
+      size: "1024x1024",
+    }),
+    30000,
+    "images.generate"
+  );
+
+  const imageUrl = img?.data?.[0]?.url;
+  if (!imageUrl) throw new Error("No image URL returned from OpenAI");
+  return imageUrl;
+}
 
 app.post("/api/generate-ai", async (req, res) => {
   try {
-    const { pantryText } = req.body ?? {};
+    console.log("🔥 HIT /api/generate-ai", new Date().toISOString());
 
+    const { pantryText } = req.body ?? {};
     if (typeof pantryText !== "string" || pantryText.trim().length === 0) {
       return res.status(400).json({ error: "pantryText is required" });
     }
@@ -256,54 +292,49 @@ Return ONLY valid JSON in this exact shape:
 }
 `;
 
-    // 1) Get recipes (text)
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: "You are a precise JSON-only API." },
-        { role: "user", content: prompt },
-      ],
-      temperature: 0.6,
-    });
+    console.log("🧾 calling chat.completions...");
 
-    const raw = completion.choices[0].message.content;
-    const parsed = JSON.parse(raw);
+    const completion = await withTimeout(
+      openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: "You are a precise JSON-only API." },
+          { role: "user", content: prompt },
+        ],
+        temperature: 0.6,
+      }),
+      20000,
+      "chat.completions"
+    );
+
+    console.log("🧾 chat.completions returned");
+
+    const raw = completion.choices[0].message.content ?? "";
+    console.log("🧾 raw length:", raw.length);
+
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      console.error("❌ JSON.parse failed. raw was:", raw);
+      return res.status(500).json({ error: "AI returned invalid JSON" });
+    }
+
     console.log("🧠 parsed recipes:", parsed.recipes?.length);
 
-    // 2) Image helpers
-    function placeholderImageUrl(title) {
-      const text = encodeURIComponent(String(title || "Recipe").slice(0, 40));
-      return `https://placehold.co/1024x1024?text=${text}`;
-    }
-
-    async function generateImageUrlForRecipe(r) {
-      const imgPrompt = buildFoodImagePrompt(r);
-
-      const img = await openai.images.generate({
-        model: "gpt-image-1",
-        prompt: imgPrompt,
-        size: "1024x1024",
-      });
-
-      const imageUrl = img?.data?.[0]?.url;
-      if (!imageUrl) throw new Error("No image URL returned from OpenAI");
-
-      return imageUrl;
-    }
-
-    // 3) Attach imageUrl to each recipe (fallback to placeholder on any error)
-    for (const r of parsed.recipes) {
+    // Attach imageUrl to each recipe (fallback to placeholder on any error)
+    for (const r of parsed.recipes ?? []) {
       try {
         console.log("🖼️ attempting image for:", r.title);
+
         r.imageUrl = await generateImageUrlForRecipe(r);
+
+        console.log("✅ image model succeeded for:", r.title);
       } catch (e) {
-        console.error("generate-ai image failed:", r?.title, e?.message || e);
+        console.error("❌ image gen failed for:", r?.title, e?.message || e);
         r.imageUrl = placeholderImageUrl(r?.title);
       }
     }
-
-    // Optional temporary debug flag (remove later)
-    // parsed._debug_imageFallbackEnabled = true;
 
     return res.json(parsed);
   } catch (err) {
@@ -312,86 +343,6 @@ Return ONLY valid JSON in this exact shape:
   }
 });
 
-app.post("/api/user-recipes", async (req, res) => {
-  try {
-    const { recipe } = req.body ?? {};
-
-    if (!recipe || typeof recipe !== "object") {
-      return res.status(400).json({ error: "recipe object is required" });
-    }
-
-    // Minimal validation (frontend sends the AI recipe object)
-    const title = String(recipe.title ?? "").trim();
-    if (!title)
-      return res.status(400).json({ error: "recipe.title is required" });
-
-    // create a deterministic id for recipe row (uuid NOT required if you prefer)
-    const hash = recipeHash(recipe);
-
-    // If you already have a db client helper, use that.
-    // This assumes you have `db` or `client` set up for pg queries.
-    // If your project uses `pg` Pool as `db`, keep as-is. Otherwise tell me what your db variable is named.
-
-    const existing = await db.query(
-      "SELECT id, image_url, image_status FROM recipes WHERE prompt_used = $1 LIMIT 1",
-      [hash]
-    );
-
-    let recipeId;
-    if (existing.rows.length > 0) {
-      recipeId = existing.rows[0].id;
-    } else {
-      // recipes.id is UUID in your schema; we can generate in SQL
-      const inserted = await db.query(
-        `
-        INSERT INTO recipes (id, name, generated_by_ai, prompt_used, is_veggie, is_gf, recipe_json)
-        VALUES (gen_random_uuid(), $1, TRUE, $2, FALSE, FALSE, $3)
-        RETURNING id
-        `,
-        [title, hash, recipe]
-      );
-      recipeId = inserted.rows[0].id;
-    }
-
-    await db.query(
-      `
-      INSERT INTO favorites (id, user_id, recipe_id)
-      VALUES (gen_random_uuid(), $1, $2)
-      ON CONFLICT (user_id, recipe_id) DO NOTHING
-      `,
-      [DEV_USER_ID, recipeId]
-    );
-
-    // Fire-and-forget image generation if needed
-    try {
-      const imgCheck = await db.query(
-        "SELECT image_url, image_status, recipe_json FROM recipes WHERE id = $1",
-        [recipeId]
-      );
-
-      const row = imgCheck.rows[0];
-      const needsImage =
-        !row?.image_url &&
-        (!row?.image_status ||
-          row.image_status === "none" ||
-          row.image_status === "failed");
-
-      if (needsImage) {
-        generateAndAttachRecipeImage({
-          recipeId,
-          recipeJson: row.recipe_json,
-        });
-      }
-    } catch (e) {
-      console.error("image kickoff failed:", e);
-    }
-
-    return res.json({ ok: true, recipeId });
-  } catch (err) {
-    console.error("save recipe error:", err);
-    return res.status(500).json({ error: "Failed to save recipe" });
-  }
-});
 app.get("/api/user-recipes", async (req, res) => {
   try {
     const result = await db.query(
