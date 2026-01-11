@@ -31,6 +31,9 @@ export interface SingleRecipeCardProps {
 
   bottomActionLabel?: string;
   onBottomAction?: () => void;
+
+  bottomSecondaryActionLabel?: string;
+  onBottomSecondaryAction?: () => void;
 }
 
 export default function SingleRecipeCard({
@@ -47,11 +50,17 @@ export default function SingleRecipeCard({
   showActions = true,
   bottomActionLabel,
   onBottomAction,
+  bottomSecondaryActionLabel,
+  onBottomSecondaryAction,
 }: SingleRecipeCardProps) {
   const theme = useTheme();
 
   // Only show footer if it has both label + handler
-  const hasBottomAction = !!bottomActionLabel && !!onBottomAction;
+  const hasPrimaryBottomAction = !!bottomActionLabel && !!onBottomAction;
+  const hasSecondaryBottomAction =
+    !!bottomSecondaryActionLabel && !!onBottomSecondaryAction;
+
+  const hasBottomBar = hasPrimaryBottomAction || hasSecondaryBottomAction;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
@@ -59,7 +68,7 @@ export default function SingleRecipeCard({
         contentContainerStyle={[
           styles.content,
           isNotInterested && styles.notInterested,
-          hasBottomAction && { paddingBottom: 120 }, // avoid overlapping footer
+          hasBottomBar && { paddingBottom: 120 }, // avoid overlapping footer
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -175,26 +184,56 @@ export default function SingleRecipeCard({
       </ScrollView>
 
       {/* Bottom action (cook mode) */}
-      {hasBottomAction && (
+      {hasBottomBar && (
         <View
           style={[
             styles.bottomBar,
             { borderTopColor: theme.border, backgroundColor: theme.surface },
           ]}
         >
-          <Pressable
-            onPress={onBottomAction}
-            style={({ pressed }) => [
-              styles.bottomBtn,
-              { backgroundColor: theme.primary },
-              pressed && styles.actionPressed,
-            ]}
-            hitSlop={8}
-          >
-            <Text style={[styles.bottomBtnText, { color: theme.primaryText }]}>
-              {bottomActionLabel}
-            </Text>
-          </Pressable>
+          <View style={styles.bottomRow}>
+            {hasSecondaryBottomAction && (
+              <Pressable
+                onPress={onBottomSecondaryAction}
+                style={({ pressed }) => [
+                  styles.bottomBtnSecondary,
+                  {
+                    backgroundColor: theme.surface2,
+                    borderColor: theme.border,
+                  },
+                  pressed && styles.actionPressed,
+                ]}
+                hitSlop={8}
+              >
+                <Text
+                  style={[styles.bottomBtnSecondaryText, { color: theme.text }]}
+                >
+                  {bottomSecondaryActionLabel}
+                </Text>
+              </Pressable>
+            )}
+
+            {hasPrimaryBottomAction && (
+              <Pressable
+                onPress={onBottomAction}
+                style={({ pressed }) => [
+                  styles.bottomBtnPrimary,
+                  { backgroundColor: theme.primary },
+                  pressed && styles.actionPressed,
+                ]}
+                hitSlop={8}
+              >
+                <Text
+                  style={[
+                    styles.bottomBtnPrimaryText,
+                    { color: theme.primaryText },
+                  ]}
+                >
+                  {bottomActionLabel}
+                </Text>
+              </Pressable>
+            )}
+          </View>
         </View>
       )}
     </SafeAreaView>
@@ -293,14 +332,35 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
 
-  bottomBtn: {
+  bottomRow: {
+    flexDirection: "row",
+    gap: ui.spacing.sm,
+  },
+
+  bottomBtnPrimary: {
+    flex: 1,
     paddingVertical: 14,
     borderRadius: ui.radius.md,
     alignItems: "center",
     justifyContent: "center",
   },
 
-  bottomBtnText: {
+  bottomBtnPrimaryText: {
+    fontSize: 15,
+    fontWeight: "700",
+    fontFamily: "NunitoSemiBold",
+  },
+
+  bottomBtnSecondary: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: ui.radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+  },
+
+  bottomBtnSecondaryText: {
     fontSize: 15,
     fontWeight: "700",
     fontFamily: "NunitoSemiBold",

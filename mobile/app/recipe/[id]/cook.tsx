@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import SingleRecipeCard from "@/app/recipe-components/SingleRecipeCard";
 import { MOCK_RECIPES } from "@/data/recipes";
 import { saveUiRecipe } from "@/src/lib/saveRecipeAction";
@@ -28,7 +28,7 @@ export default function CookRecipeScreen() {
         ingredients={recipe.ingredients}
         steps={recipe.steps}
         showActions={false}
-        bottomActionLabel="Save this Recipe"
+        bottomActionLabel="Save Recipe"
         onBottomAction={() =>
           saveUiRecipe({
             title: recipe.title,
@@ -37,6 +37,11 @@ export default function CookRecipeScreen() {
             steps: recipe.steps,
           })
         }
+        bottomSecondaryActionLabel="Cook Something New"
+        onBottomSecondaryAction={() => {
+          // simplest: go back to the list
+          router.replace("/(tabs)/chatBot");
+        }}
       />
     </>
   );
