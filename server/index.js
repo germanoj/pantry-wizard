@@ -90,7 +90,7 @@ async function generateAndAttachRecipeImage({ recipeId, recipeJson }) {
     const img = await openai.images.generate({
       model: "gpt-image-1",
       prompt,
-      size: "1024x1024",
+      size: "512x512",
     });
 
     const imageUrl = img?.data?.[0]?.url;
@@ -242,15 +242,27 @@ async function generateImageUrlForRecipe(r) {
     openai.images.generate({
       model: "gpt-image-1",
       prompt: imgPrompt,
-      size: "1024x1024",
+      size: "512x512",
+      // ask for base64 explicitly if supported by your SDK version
+      response_format: "b64_json",
     }),
-    30000,
+    60000, // bump timeout
     "images.generate"
   );
 
-  const imageUrl = img?.data?.[0]?.url;
-  if (!imageUrl) throw new Error("No image URL returned from OpenAI");
-  return imageUrl;
+  const first = img?.data?.[0];
+
+  // If OpenAI gives you a URL
+  if (first?.url) return first.url;
+
+  // If OpenAI gives you base64
+  if (first?.b64_json) {
+    return `data:image/png;base64,${first.b64_json}`;
+  }
+
+  throw new Error(
+    `No image url or b64_json returned. Keys: ${Object.keys(first || {})}`
+  );
 }
 
 app.post("/api/generate-ai", async (req, res) => {
@@ -303,7 +315,7 @@ Return ONLY valid JSON in this exact shape:
         ],
         temperature: 0.6,
       }),
-      20000,
+      60000,
       "chat.completions"
     );
 
