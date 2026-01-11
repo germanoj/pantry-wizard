@@ -42,8 +42,15 @@ function getUserId(req) {
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+console.log(
+  "OPENAI key loaded:",
+  process.env.OPENAI_API_KEY
+    ? `yes (len ${process.env.OPENAI_API_KEY.length})`
+    : "NO"
+);
 
 // ================== Recipe Image Generation ==================
+console.log("🧠 parsed recipes:", parsed.recipes?.length);
 
 function buildFoodImagePrompt(recipe) {
   const title = String(recipe.title ?? "a homemade dish").trim();
@@ -210,6 +217,7 @@ app.post("/api/generate", (req, res) => {
 // =======================================================
 // ===================== REAL AI ROUTE ====================
 // =======================================================
+console.log("🔥 HIT /api/generate-ai", new Date().toISOString());
 
 app.post("/api/generate-ai", async (req, res) => {
   try {
@@ -286,6 +294,7 @@ Return ONLY valid JSON in this exact shape:
     // 3) Attach imageUrl to each recipe (fallback to placeholder on any error)
     for (const r of parsed.recipes) {
       try {
+        console.log("🖼️ attempting image for:", r.title);
         r.imageUrl = await generateImageUrlForRecipe(r);
       } catch (e) {
         console.error("generate-ai image failed:", r?.title, e?.message || e);
