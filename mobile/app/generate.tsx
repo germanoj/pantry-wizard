@@ -1,1 +1,1 @@
-export { default } from "../src/screens/GenerateScreen.tsx";
+export { default } from "../src/screens/GenerateScreen";

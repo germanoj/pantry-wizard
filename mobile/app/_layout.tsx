@@ -11,6 +11,10 @@ import { NotInterestedProvider } from "../state/NotInterestedContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useFonts } from "expo-font";
 
+import { AuthProvider } from "../src/auth/AuthContext"; 
+import { AuthGate } from "../src/auth/AuthGate";
+
+
 export const unstable_settings = {
   anchor: "(tabs)",
 };
