@@ -248,6 +248,10 @@ Return ONLY valid JSON in this exact shape:
   "recipes": [ ... ]
 }
 `;
+    function placeholderImageUrl(title) {
+      const text = encodeURIComponent(String(title || "Recipe").slice(0, 40));
+      return `https://placehold.co/1024x1024?text=${text}`;
+    }
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -276,7 +280,7 @@ Return ONLY valid JSON in this exact shape:
         r.imageUrl = img?.data?.[0]?.url ?? null;
       } catch (e) {
         console.error("generate-ai image failed:", r?.title, e);
-        r.imageUrl = null;
+        r.imageUrl = placeholderImageUrl(r?.title);
       }
     }
 
