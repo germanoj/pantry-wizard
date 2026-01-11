@@ -50,7 +50,6 @@ console.log(
 );
 
 // ================== Recipe Image Generation ==================
-console.log("🧠 parsed recipes:", parsed.recipes?.length);
 
 function buildFoodImagePrompt(recipe) {
   const title = String(recipe.title ?? "a homemade dish").trim();
@@ -269,6 +268,7 @@ Return ONLY valid JSON in this exact shape:
 
     const raw = completion.choices[0].message.content;
     const parsed = JSON.parse(raw);
+    console.log("🧠 parsed recipes:", parsed.recipes?.length);
 
     // 2) Image helpers
     function placeholderImageUrl(title) {
