@@ -90,7 +90,7 @@ async function generateAndAttachRecipeImage({ recipeId, recipeJson }) {
     const img = await openai.images.generate({
       model: "gpt-image-1",
       prompt,
-      size: "512x512",
+      size: "1024x1024",
     });
 
     const imageUrl = img?.data?.[0]?.url;
@@ -242,7 +242,7 @@ async function generateImageUrlForRecipe(r) {
     openai.images.generate({
       model: "gpt-image-1",
       prompt: imgPrompt,
-      size: "512x512", // faster while debugging
+      size: "1024x1024", // faster while debugging
     }),
     90000,
     "images.generate"
