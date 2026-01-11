@@ -1,10 +1,11 @@
 import React, { useMemo } from "react";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import SingleRecipeCard from "@/app/recipe-components/SingleRecipeCard";
 import { MOCK_RECIPES } from "@/data/recipes";
 import { useNotInterested } from "@/state/NotInterestedContext";
 
 export default function RecipeDetailScreen() {
+  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const recipe = useMemo(() => MOCK_RECIPES.find((r) => r.id === id), [id]);
@@ -24,6 +25,12 @@ export default function RecipeDetailScreen() {
         description={recipe.description}
         ingredients={recipe.ingredients}
         steps={recipe.steps}
+        onMakeNow={() =>
+          router.push({
+            pathname: "/recipe/[id]/cook",
+            params: { id: recipe.id },
+          })
+        }
         isNotInterested={isNotInterested(recipe.id)}
         onToggleNotInterested={() => toggleNotInterested(recipe.id)}
       />
