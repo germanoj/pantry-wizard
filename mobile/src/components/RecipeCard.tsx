@@ -11,7 +11,13 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
       </View>
 
       {recipe.imageUrl ? (
-        <Image source={{ uri: recipe.imageUrl }} style={styles.image} />
+        <Image
+          source={{
+            uri:
+              recipe.imageUrl || "https://placehold.co/1024x1024?text=Recipe",
+          }}
+          style={styles.image}
+        />
       ) : (
         <View style={styles.imagePlaceholder}>
           <Text style={styles.imagePlaceholderText}>Generating image…</Text>
