@@ -60,7 +60,7 @@ export default function LoginPage() {
       </Pressable>
 
       <WizardBody style={styles.linkRow}>
-       First time visiting the wizard? <Link href="/(modals)/register-modal">Create an account</Link>
+       First time visiting the wizard? <Link href="/(modals)/register-modal" style={[styles.link, { color: theme.accent2 }]}>Create an account</Link>
       </WizardBody>
       </Card>
     </View>
@@ -85,4 +85,7 @@ const styles = StyleSheet.create({
   button: { width: "100%", backgroundColor: "#111", padding: 14, borderRadius: 12, alignItems: "center", marginTop: 12 },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
   linkRow: { marginTop: 12, fontSize: 14 },
+  link: {
+
+  },
 });

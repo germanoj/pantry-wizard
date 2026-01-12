@@ -10,9 +10,9 @@ export default function HomeScreen() {
     <View style={[styles.container, {backgroundColor: theme.background}]}>
       <Card>
         <WizardTitle>Welcome to Pantry Wizard 🧙‍♂️</WizardTitle>
-        <WizardBody><Link style={styles.link} href="/(auth)/login">Login</Link> to see past recipes and ask the wize wizard for more food inspo</WizardBody>
-        <WizardBody><Link style={styles.link} href="/(auth)/register">Register</Link> a new account</WizardBody>
-        <WizardBody> Or visit the <Link style={styles.link} href="/(tabs)/chatBot">wizard</Link> as a guest</WizardBody>
+        <WizardBody><Link href="/(auth)/login" style={[styles.link, { color: theme.accent2 }]}>Login</Link> to see past recipes and ask the wize wizard for more food inspo</WizardBody>
+        <WizardBody> <Link href="/(auth)/register" style={[styles.link, { color: theme.accent2 }]}>Register </Link> a new account </WizardBody>
+        <WizardBody> Or visit the <Link href="/(tabs)/chatBot" style={[styles.link, { color: theme.accent2 }]}>wizard</Link> as a guest</WizardBody>
       </Card>
     </View>
   );
@@ -42,5 +42,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-    link: {color: "blue"}
+  link: {color: "the" 
+  },
 });
