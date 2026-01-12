@@ -1,18 +1,3 @@
-const UI = {
-  borderWidth: 2,
-  borderRadius: 14,
-  padding: 14,
-
-  imageSize: 76,
-  imageRadius: 14,
-
-  titleFont: 16,
-  timeFont: 12,
-
-  actionSize: 24,
-  actionGap: 8,
-};
-
 import React from "react";
 import {
   Text,
@@ -24,20 +9,25 @@ import {
   GestureResponderEvent,
 } from "react-native";
 
+import { useTheme } from "@/src/theme/usetheme";
+import { ui } from "@/src/theme/theme";
+import { Card } from "@/src/components/Card";
+import { WizardTitle, WizardBody } from "@/src/components/WizardText";
+
 export interface RecipeCardProps {
   title: string;
   time: string;
   image: any; // require(...) or { uri: ... }
   onPress?: () => void;
+  style?: ViewStyle;
 
-  onSave?: () => void;
-  onDismiss?: () => void;
-  onMagic?: () => void;
-}
+  /** Not Interested */
+  isNotInterested?: boolean;
+  onToggleNotInterested?: () => void;
 
-function stop(e: any) {
-  e?.stopPropagation?.();
-  e?.preventDefault?.();
+  /** Actions */
+  onMakeNow?: () => void;
+  onSaveForLater?: () => void;
 }
 
 export default function RecipeCard({
@@ -48,10 +38,11 @@ export default function RecipeCard({
   style,
   isNotInterested = false,
   onToggleNotInterested,
-  onSave,
-  onDismiss,
-  onMagic,
+  onMakeNow,
+  onSaveForLater,
 }: RecipeCardProps) {
+  const theme = useTheme();
+
   const stop = (e: GestureResponderEvent) => e.stopPropagation?.();
 
   const handleMakeNow = (e: GestureResponderEvent) => {
@@ -72,130 +63,158 @@ export default function RecipeCard({
   return (
     <Pressable
       onPress={onPress}
-      style={[styles.card, style, isNotInterested && styles.notInterested]}
+      style={[style, isNotInterested && styles.notInterested]}
       accessibilityRole="button"
     >
-      {/* Left: Image */}
-      {image ? (
-        <Image style={styles.image} source={image} />
-      ) : (
-        <View style={[styles.image, styles.placeholder]}>
-          <Text style={styles.placeholderText}>No Image</Text>
-        </View>
-      )}
-
-      {/* Right: Title/Time + Actions row */}
-      <View style={styles.right}>
-        <View style={styles.content}>
-          <Text style={styles.title} numberOfLines={2}>
-            {title}
-          </Text>
-          <Text style={styles.time}>{time}</Text>
-        </View>
-
-        {/* Actions */}
-        <View style={styles.actions} pointerEvents="box-none">
-          <Pressable
-            onPress={(e) => {
-              stop(e);
-              onMagic?.();
-            }}
-            disabled={!onMagic}
-            hitSlop={10}
-            style={({ pressed }) => [
-              styles.actionBtn,
-              pressed && styles.pressed,
-              !onMagic && styles.disabledBtn,
+      <Card
+        style={[
+          styles.card,
+          { backgroundColor: theme.surface, borderColor: theme.border },
+        ]}
+      >
+        {/* Left: Image */}
+        {image ? (
+          <Image style={styles.image} source={image} />
+        ) : (
+          <View
+            style={[
+              styles.image,
+              styles.placeholder,
+              { borderColor: theme.border, backgroundColor: theme.surface2 },
             ]}
-            accessibilityRole="button"
-            accessibilityLabel="Magic"
           >
-            <Text style={styles.action}>🧙‍♂️</Text>
-          </Pressable>
+            <Text
+              style={{
+                color: theme.textMuted,
+                fontFamily: "Nunito",
+                fontSize: 11,
+              }}
+            >
+              No Image
+            </Text>
+          </View>
+        )}
 
-          <Pressable
-            onPress={(e) => {
-              stop(e);
-              onSave?.();
-            }}
-            disabled={!onSave}
-            hitSlop={10}
-            style={({ pressed }) => [
-              styles.actionBtn,
-              pressed && styles.pressed,
-              !onSave && styles.disabledBtn,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Save recipe"
-          >
-            <Text style={styles.action}>💾</Text>
-          </Pressable>
+        {/* Right: Title/Time + Actions row */}
+        <View style={styles.right}>
+          <View style={styles.content}>
+            <WizardTitle style={styles.title} numberOfLines={2}>
+              {title}
+            </WizardTitle>
 
-          <Pressable
-            onPress={(e) => {
-              stop(e);
-              onToggleNotInterested?.(); // keep your shared context behavior
-              onDismiss?.(); // optional extra hook
-            }}
-            hitSlop={10}
-            style={({ pressed }) => [
-              styles.actionBtn,
-              pressed && styles.pressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={isNotInterested ? "Yuck" : "Dislike"}
-          >
-            <Text style={styles.action}>👎</Text>
-          </Pressable>
+            <WizardBody
+              style={[styles.time, { color: theme.textMuted }]}
+              numberOfLines={1}
+            >
+              {time}
+            </WizardBody>
+          </View>
+
+          <View style={styles.actionsRow}>
+            <Pressable
+              onPress={handleMakeNow}
+              disabled={!onMakeNow}
+              style={({ pressed }) => [
+                styles.actionBtn,
+                { backgroundColor: theme.surface2, borderColor: theme.border },
+                pressed && styles.actionPressed,
+                !onMakeNow && styles.disabledBtn,
+              ]}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Make now"
+            >
+              <Text style={styles.actionIcon}>🧙‍♂️</Text>
+              <Text
+                style={[
+                  styles.actionLabel,
+                  { color: theme.textMuted, fontFamily: "Nunito" },
+                ]}
+              >
+                Make Now
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={handleSave}
+              disabled={!onSaveForLater}
+              style={({ pressed }) => [
+                styles.actionBtn,
+                { backgroundColor: theme.surface2, borderColor: theme.border },
+                pressed && styles.actionPressed,
+                !onSaveForLater && styles.disabledBtn,
+              ]}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Save for later"
+            >
+              <Text style={styles.actionIcon}>💾</Text>
+              <Text
+                style={[
+                  styles.actionLabel,
+                  { color: theme.textMuted, fontFamily: "Nunito" },
+                ]}
+              >
+                Save
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={handleToggleNotInterested}
+              disabled={!onToggleNotInterested}
+              style={({ pressed }) => [
+                styles.actionBtn,
+                { backgroundColor: theme.surface2, borderColor: theme.border },
+                pressed && styles.actionPressed,
+                !onToggleNotInterested && styles.disabledBtn,
+              ]}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={isNotInterested ? "Yuck" : "Dislike"}
+            >
+              <Text style={styles.actionIcon}>👎</Text>
+              <Text
+                style={[
+                  styles.actionLabel,
+                  { color: theme.textMuted, fontFamily: "Nunito" },
+                ]}
+              >
+                {isNotInterested ? "Yuck" : "Dislike"}
+              </Text>
+            </Pressable>
+          </View>
         </View>
-      </View>
+      </Card>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  // Compact list card override for shared Card component.
   card: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#eee",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-  },
-  image: {
-    width: 70,
-    height: 70,
-    borderRadius: 10,
-    marginRight: 12,
-  },
-  placeholder: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#f9f9f9",
-  },
-  placeholderText: {
-    fontSize: 10,
-    color: "#999",
-  },
-  content: {
+    maxWidth: undefined,
+    width: "100%",
     flex: 1,
+
+    // ✅ critical: keep image + content side-by-side
     flexDirection: "row",
-    backgroundColor: "#fff",
-    borderWidth: UI.borderWidth,
-    borderColor: "#eee",
-    borderRadius: UI.borderRadius,
-    padding: UI.padding,
+    alignItems: "center",
+
+    padding: ui.spacing.md,
+    borderRadius: ui.radius.lg,
   },
 
   image: {
-    width: UI.imageSize,
-    height: UI.imageSize,
-    borderRadius: UI.imageRadius,
-    marginRight: 14,
+    width: 84,
+    height: 84,
+    borderRadius: ui.radius.md,
+    marginRight: ui.spacing.md,
+  },
+
+  placeholder: {
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   right: {
@@ -208,33 +227,52 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: UI.titleFont,
-    fontWeight: "600",
+    fontSize: 18,
+    marginTop: 0,
   },
 
   time: {
-    marginTop: 6,
-    fontSize: UI.timeFont,
-    color: "#666",
+    marginTop: 4,
+    fontSize: 14,
+    lineHeight: 18,
   },
 
   actionsRow: {
-    marginTop: 10,
+    marginTop: ui.spacing.sm,
     flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 10,
+    gap: ui.spacing.sm,
   },
+
   actionBtn: {
-    padding: 4,
-    borderRadius: 10,
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    borderRadius: ui.radius.md,
+    borderWidth: 1,
   },
-  pressed: {
-    opacity: 0.6,
+
+  actionPressed: {
+    transform: [{ scale: 0.99 }],
+    opacity: 0.92,
   },
+
   disabledBtn: {
-    opacity: 0.3,
+    opacity: 0.45,
   },
-  action: {
+
+  actionIcon: {
     fontSize: 18,
+    marginBottom: 4,
+  },
+
+  actionLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+
+  notInterested: {
+    opacity: 0.75,
   },
 });

@@ -1,23 +1,23 @@
 import React, { useMemo } from "react";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import SingleRecipeCard from "@/app/recipe-components/SingleRecipeCard";
 import { MOCK_RECIPES } from "@/data/recipes";
-import { useNotInterested } from "@/state/NotInterestedContext";
-import { Alert } from "react-native";
 import { saveUiRecipe } from "@/src/lib/saveRecipeAction";
 
-export default function RecipeDetailScreen() {
-  const router = useRouter();
+export default function CookRecipeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const recipeId = Array.isArray(id) ? id[0] : id;
 
-  const recipe = useMemo(() => MOCK_RECIPES.find((r) => r.id === id), [id]);
-
-  const { isNotInterested, toggleNotInterested } = useNotInterested();
+  const recipe = useMemo(
+    () => MOCK_RECIPES.find((r) => r.id === recipeId),
+    [recipeId]
+  );
 
   if (!recipe) return null;
 
   return (
     <>
+      {/* Consider headerShown: true if you want an easy back button */}
       <Stack.Screen options={{ headerShown: false }} />
 
       <SingleRecipeCard
@@ -27,13 +27,9 @@ export default function RecipeDetailScreen() {
         description={recipe.description}
         ingredients={recipe.ingredients}
         steps={recipe.steps}
-        onMakeNow={() =>
-          router.push({
-            pathname: "/recipe/[id]/cook",
-            params: { id: recipe.id },
-          })
-        }
-        onSaveForLater={() =>
+        showActions={false}
+        bottomActionLabel="Save Recipe"
+        onBottomAction={() =>
           saveUiRecipe({
             title: recipe.title,
             time: recipe.time,
@@ -41,8 +37,11 @@ export default function RecipeDetailScreen() {
             steps: recipe.steps,
           })
         }
-        isNotInterested={isNotInterested(recipe.id)}
-        onToggleNotInterested={() => toggleNotInterested(recipe.id)}
+        bottomSecondaryActionLabel="Cook Something New"
+        onBottomSecondaryAction={() => {
+          // simplest: go back to the list
+          router.replace("/(tabs)/chatBot");
+        }}
       />
     </>
   );

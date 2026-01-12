@@ -3,6 +3,9 @@ import { useRouter } from "expo-router";
 import RecipeCard from "./RecipeCard";
 import { useNotInterested } from "../../state/NotInterestedContext";
 import { saveRecipe } from "../../src/lib/savedRecipes";
+import { useTheme } from "@/src/theme/usetheme";
+import { ui } from "@/src/theme/theme";
+import { saveUiRecipe } from "../../src/lib/saveRecipeAction";
 
 export interface Recipe {
   id: string;
@@ -10,7 +13,7 @@ export interface Recipe {
   time: string; // e.g. "25 min" or "25"
   image: any;
   description?: string;
-  ingredients?: string[]; // (your UI field)
+  ingredients?: string[];
   steps?: string[];
 }
 
@@ -22,43 +25,33 @@ interface Props {
 function parseMinutes(time: string | number | undefined | null) {
   if (typeof time === "number") return time;
   if (!time) return 0;
-
-  // grabs first number from strings like "25 min", "30", "Ready in 15 minutes"
   const match = String(time).match(/\d+/);
   return match ? parseInt(match[0], 10) : 0;
 }
 
 export default function RecipeResults({ recipes, cardHeight }: Props) {
   const router = useRouter();
-
-  // ✅ Use shared state from context (teammate)
   const { isNotInterested, toggleNotInterested } = useNotInterested();
+  const theme = useTheme();
 
-  // ✅ Save recipe (you)
   async function handleSave(item: Recipe) {
-    try {
-      const timeMinutes = parseMinutes(item.time);
-
-      await saveRecipe({
-        title: item.title,
-        ingredientsUsed: item.ingredients ?? [],
-        missingIngredients: [],
-        steps: item.steps ?? [],
-        timeMinutes: Number.isFinite(timeMinutes) ? timeMinutes : 0,
-      });
-
-      Alert.alert("Saved!", `"${item.title}" was saved.`);
-    } catch (e: any) {
-      Alert.alert("Save failed", e?.message ?? "Could not save recipe.");
-    }
+    await saveUiRecipe({
+      title: item.title,
+      time: item.time,
+      ingredients: item.ingredients,
+      steps: item.steps,
+    });
   }
 
   return (
     <FlatList
       data={recipes}
       keyExtractor={(item) => item.id}
-      contentContainerStyle={{ padding: 16, paddingBottom: 12 }}
-      style={{ flex: 1 }}
+      style={{ flex: 1, backgroundColor: theme.background }}
+      contentContainerStyle={{
+        padding: ui.spacing.md,
+        paddingBottom: ui.spacing.lg,
+      }}
       showsVerticalScrollIndicator={false}
       ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
       renderItem={({ item }) => (
@@ -70,13 +63,19 @@ export default function RecipeResults({ recipes, cardHeight }: Props) {
             style={{ flex: 1 }}
             isNotInterested={isNotInterested(item.id)}
             onToggleNotInterested={() => toggleNotInterested(item.id)}
+            onMakeNow={() =>
+              router.push({
+                pathname: "/recipe/[id]/cook",
+                params: { id: item.id },
+              })
+            }
             onPress={() =>
               router.push({
                 pathname: "/recipe/[id]",
                 params: { id: item.id },
               })
             }
-            onSave={() => handleSave(item)}
+            onSaveForLater={() => handleSave(item)}
           />
         </View>
       )}
