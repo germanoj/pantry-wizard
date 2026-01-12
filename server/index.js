@@ -132,6 +132,14 @@ app.get("/version", (req, res) => {
   });
 });
 
+app.get("/", (req, res) => {
+  res.status(200).send("OK - Pantry Wizard API");
+});
+
+app.get("/health", (req, res) => {
+  res.status(200).json({ ok: true });
+});
+
 // =======================================================
 // =============== STUB / FALLBACK GENERATOR ==============
 // =======================================================
