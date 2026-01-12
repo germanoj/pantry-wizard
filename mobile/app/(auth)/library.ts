@@ -5,7 +5,9 @@ if (!API) {
 }
 
 type AuthResponse = { token: string };
-
+////////////
+//login API
+////////////
 export async function apiLogin(email: string, password: string) {
   const res = await fetch(`${API}/auth/login`, {
     method: "POST",
@@ -22,6 +24,10 @@ export async function apiLogin(email: string, password: string) {
   return data as AuthResponse;
 }
 
+//////////
+//register api
+//////////
+
 export async function apiRegister(username: string, email: string, password: string) {
   const res = await fetch(`${API}/auth/register`, {
     method: "POST",
@@ -30,11 +36,15 @@ export async function apiRegister(username: string, email: string, password: str
   });
 
   const data = await res.json().catch(() => ({}));
+  console.log("register status", res.status);
+console.log("register data", data);
 
   if (!res.ok) {
     throw new Error(data?.message || "Registration failed");
   }
 
   return data as AuthResponse;
+  
 }
 console.log("API URL:", API);
+
