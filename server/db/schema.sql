@@ -5,14 +5,14 @@ DROP TABLE IF EXISTS saved_recipes;
 DROP TABLE IF EXISTS users CASCADE;
 
 CREATE TABLE users (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY gen_random_uuid(),
     username VARCHAR(100) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password TEXT NOT NULL
 );
 
 CREATE TABLE recipes (
-  id UUID PRIMARY KEY,
+  id UUID PRIMARY KEY gen_random_uuid(),
   name TEXT NOT NULL,
   generated_by_ai BOOLEAN NOT NULL DEFAULT TRUE,
   prompt_used TEXT,
@@ -22,7 +22,7 @@ CREATE TABLE recipes (
 );
 
 CREATE TABLE favorites (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     recipe_id UUID NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -30,7 +30,7 @@ CREATE TABLE favorites (
 );
     
 CREATE TABLE tried_recipes (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     recipe_id UUID NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -39,7 +39,7 @@ CREATE TABLE tried_recipes (
 );
 
 CREATE TABLE IF NOT EXISTS saved_recipes (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     ingredients_used TEXT[] NOT NULL DEFAULT '{}',
