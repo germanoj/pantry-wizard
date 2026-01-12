@@ -59,7 +59,8 @@ INSERT INTO users (id, username, email, password)
 VALUES (
   '00000000-0000-0000-0000-000000000001',
   'dev',
-  'dev@local.test',
-  'dev'
+  'dev@local.test'
 )
 ON CONFLICT (email) DO NOTHING;
+
+/*deleted dev for hashing passwords*/

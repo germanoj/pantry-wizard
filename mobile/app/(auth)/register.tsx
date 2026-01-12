@@ -79,7 +79,7 @@ export default function RegisterPage() {
             </Pressable>
 
             <WizardBody style={styles.linkRow}>
-              Already met the wizard? Log in <Link style={styles.link} href="/(auth)/login">here!</Link>
+              Already met the wizard? Log in <Link href="/(auth)/login" style={[styles.link, { color: theme.accent2 }]}>here!</Link>
             </WizardBody>
             </Card>
         </View>
