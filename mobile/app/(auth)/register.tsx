@@ -22,33 +22,36 @@ export default function RegisterPage() {
   // const { signIn } = useAuth();
 
   const onRegister = async () => {
-    if (!username || !email || !password) {
-      Alert.alert("Missing info", "Username, email, and password are required.");
-      return;
-    }
+  if (!username || !email || !password) {
+    Alert.alert("Missing info", "Username, email, and password are required.");
+    return;
+  }
 
-    if (password.length < 8) {
-      Alert.alert("Password too hackable friend!", "Pls use at least 8 characters of your choosing.");
-      return;
-    }
+  if (password.length < 8) {
+    Alert.alert(
+      "Password too hackable friend!",
+      "Pls use at least 8 characters of your choosing."
+    );
+    return;
+  }
 
-    try {
-  setLoading(true);
+  try {
+    setLoading(true);
 
-  console.log("Registering:", { username, email });
-  const data = await apiRegister(username, email, password);
-  console.log("Register success:", data);
+    console.log("Registering:", { username, email });
+    const data = await apiRegister(username, email, password);
+    console.log("Register success:", data);
 
-  Alert.alert("Poof!", "Your account has been created. Log in and let's get cookin'!");
-  router.replace("/(auth)/login");
-} catch (err: any) {
-  console.log("Register error:", err);
-  Alert.alert("Error", String(err?.message || err));
-} finally {
-  setLoading(false);
-}
-
-  };
+    Alert.alert("Poof!", "Your account has been created. Log in and let's get cookin'!", [
+      { text: "OK", onPress: () => router.back() }, // closes modal
+    ]);
+  } catch (err: any) {
+    console.log("Register error:", err);
+    Alert.alert("Error", err?.message || String(err));
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
