@@ -31,6 +31,8 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
+  <AuthProvider>
+    <AuthGate>
     <NotInterestedProvider>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <Stack>
@@ -50,5 +52,7 @@ export default function RootLayout() {
         <StatusBar style="auto" />
       </ThemeProvider>
     </NotInterestedProvider>
+    </AuthGate>
+  </AuthProvider>
   );
 }

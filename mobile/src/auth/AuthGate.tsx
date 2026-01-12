@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useRouter, useSegments } from "expo-router";
 import { useAuth } from "./AuthContext";
-import LoadingScreen from "../components/LoadingScreen";
+import LoadingScreen from "@/src/components/LoadingScreen";
 
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
@@ -12,42 +12,39 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isLoading) return;
 
-    const first = segments[0];   // e.g. "(tabs)", "(auth)", "recipe"
-    const second = segments[1];  // e.g. "chat", "saved", etc.
+    const first = segments[0];  // "(tabs)", "(auth)", undefined
+    const second = segments[1]; // "chatBot", "saved", etc.
 
     const isAuthGroup = first === "(auth)";
+    const isTabsGroup = first === "(tabs)";
 
-    // ✅ PUBLIC ROUTES (allowed even when logged out)
-    const isPublic =
-      // allow the generator tab (example: your wizard is in tabs/chat)
-      (first === "(tabs)" && (second === "chatBot" || second === "recipes" || second === "index"))
-      // allow recipe detail route (optional)
-      || first === "recipe";
+    // ✅ Public routes when logged out:
+    // - "/" (your app/index.tsx intro splash)
+    // - auth screens
+    // - wizard screen inside tabs: /(tabs)/chatBot
+    const isIntroRoot = !first; // root index screen
+    const isWizardGuest = isTabsGroup && second === "chatBot";
 
-    // 🚫 Not logged in
+    // 🚫 Logged out users:
     if (!token) {
-      // Auth screens are allowed
+      if (isIntroRoot) return;
       if (isAuthGroup) return;
+      if (isWizardGuest) return;
 
-      // Public screens are allowed
-      if (isPublic) return;
-
-      // Everything else requires login
-      router.replace("/(auth)/login");
+      // Block everything else (like saved/profile)
+      router.replace("/");
       return;
     }
 
-    // ✅ Logged in
-    // Keep them out of auth pages
+    // ✅ Logged in users:
+    // keep them out of auth pages
     if (token && isAuthGroup) {
       router.replace("/(tabs)");
       return;
     }
   }, [token, isLoading, segments]);
 
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
+if (isLoading) return <LoadingScreen />;
 
   return <>{children}</>;
 }

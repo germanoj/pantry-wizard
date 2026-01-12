@@ -164,7 +164,7 @@ export default function IntroSplash() {
         <Pressable
           disabled={!ready}
           style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}
-          onPress={() => router.push("/chatBot")}
+          onPress={() => router.push("/(tabs)/chatBot")}
         >
           <Text style={styles.btnText}>Visit the Wizard!</Text>
         </Pressable>
