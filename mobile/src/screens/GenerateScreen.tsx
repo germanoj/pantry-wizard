@@ -12,6 +12,11 @@ import { generateRecipes } from "../lib/apiClient";
 import type { Recipe } from "../types/recipe";
 import { RecipeCard } from "../components/RecipeCard";
 
+import { useTheme } from '@/src/theme/usetheme';
+import { WizardBody, WizardTitle } from '@/src/components/WizardText';
+import { Card } from '@/src/components/Card';
+
+
 export default function GenerateScreen() {
   const [pantryText, setPantryText] = useState("pasta, garlic, olive oil");
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -45,22 +50,23 @@ export default function GenerateScreen() {
     }
   }
 
+  const theme = useTheme();
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Generate Recipes</Text>
+    <ScrollView contentContainerStyle={[styles.container, {backgroundColor: theme.background}]}>
+      <WizardTitle>Summon a Recipe</WizardTitle>
 
       <TextInput
         value={pantryText}
         onChangeText={setPantryText}
-        placeholder="Enter pantry items..."
+        placeholder="Enter the pantry items you currently have:"
         style={styles.input}
         multiline
       />
 
       <Pressable style={styles.button} onPress={onGenerate} disabled={loading}>
-        <Text style={styles.buttonText}>
-          {loading ? "Generating..." : "Generate"}
-        </Text>
+        <WizardBody style={styles.buttonText}>
+          {loading ? "Brewing..." : "Summon!"}
+        </WizardBody>
       </Pressable>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -72,7 +78,7 @@ export default function GenerateScreen() {
       </View>
 
       {!loading && !error && recipes.length === 0 ? (
-        <Text style={styles.emptyText}>No recipes yet. Tap Generate.</Text>
+        <WizardBody style={styles.emptyText}>Hmm no recipes yet... Try tapping the summon button.</WizardBody>
       ) : null}
     </ScrollView>
   );

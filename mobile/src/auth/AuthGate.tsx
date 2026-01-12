@@ -24,12 +24,17 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     // - wizard screen inside tabs: /(tabs)/chatBot
     const isIntroRoot = !first; // root index screen
     const isWizardGuest = isTabsGroup && second === "chatBot";
+    const isGenerate = first === "generate";
+    const isRecipes = first === "recipes";
+
 
     // 🚫 Logged out users:
     if (!token) {
       if (isIntroRoot) return;
       if (isAuthGroup) return;
       if (isWizardGuest) return;
+      if (isGenerate) return;
+      if (isRecipes) return;
 
       // Block everything else (like saved/profile)
       router.replace("/");
