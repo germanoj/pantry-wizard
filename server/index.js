@@ -29,7 +29,7 @@ export default app;
 app.use(cors()); // dev-safe: allow all origins
 app.use(express.json());
 
-import crypto from "crypto";
+//import crypto from "crypto";
 
 //// hayley password token and logn/reg routes!!!!! NO TOUCHY
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -38,11 +38,13 @@ if (!JWT_SECRET) {
 }
 
 function signToken(userId) {
+  if (!JWT_SECRET) throw new Error("JWT_SECRET not set");
   return jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: "30d" });
 }
 
 function requireUser(req, res, next) {
-  try {
+    if (!JWT_SECRET) return res.status(500).json({ message: "Server auth not configured" });
+    try {
     const auth = req.headers.authorization || "";
     const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
     if (!token) return res.status(401).json({ message: "Missing token" });
@@ -474,7 +476,7 @@ Return ONLY valid JSON in this exact shape:
   }
 });
 
-app.get("/api/user-recipes", async (req, res) => {
+app.get("/api/user-recipes", requireUser, async (req, res) => {
   try {
     const result = await db.query(
       `
@@ -558,9 +560,24 @@ app.get("/_debug/routes", (req, res) => {
   res.json({ routes });
 });
 
-// ===== Start server =====
+app.get("/_debug/db", async (req, res) => {
+  const dbName = await db.query("select current_database() as db");
+  const schema = await db.query("select current_schema() as schema");
+  const idDefault = await db.query(`
+    SELECT table_schema, column_default
+    FROM information_schema.columns
+    WHERE table_name='users' AND column_name='id'
+    ORDER BY table_schema;
+  `);
 
-console.log("✅ about to call app.listen");
+  res.json({
+    current_database: dbName.rows[0].db,
+    current_schema: schema.rows[0].schema,
+    users_id_defaults: idDefault.rows,
+  });
+});
+
+// ===== Start server =====
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
