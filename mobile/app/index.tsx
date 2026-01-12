@@ -6,7 +6,7 @@
 //4 buttons fade in (login, register, chat)
 //(no redirect, user chooses)
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react"; //useeffect starts the wand, useref controls lottie
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import Animated, {
@@ -22,47 +22,47 @@ import LottieView from "lottie-react-native";
 
 
 export default function IntroSplash() {
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(false); //this state controls if you can click buttons
 
   // lottie refs
   const wandRef = useRef<LottieView>(null);
   const sparklesRef = useRef<LottieView>(null);
   const poofRef = useRef<LottieView>(null);
 
-  //lottie visibility
-  const [showSparkles, setShowSparkles] = useState(false);
-  const [showPoof, setShowPoof] = useState(false);
+  //lottie visibility 
+  const [showSparkles, setShowSparkles] = useState(false); //starts false, becomes true after wand finishes
+  const [showPoof, setShowPoof] = useState(false); // starts after sparkles
   const [showWand, setShowWand] = useState(true); //to unmount the wand (clear it when it finishes)
 
 // reanimated values
-  const logoOpacity = useSharedValue(0);
+  const logoOpacity = useSharedValue(0); //starts invisible, small and slightly lower (the y axis)
   const logoScale = useSharedValue(0.7);
   const logoY = useSharedValue(16);
 
-  const actionsOpacity = useSharedValue(0);
+  const actionsOpacity = useSharedValue(0); // buttons same as logo
   const actionsY = useSharedValue(12);
 
-  const wandOpacity = useSharedValue(1);
+  const wandOpacity = useSharedValue(1); //need to fade this out rather than quickly disappear !!
 
 
     // Timeline:
     const startLogoTimeline = () => {
-    logoOpacity.value = withTiming(1, { duration: 450 });
+    logoOpacity.value = withTiming(1, { duration: 450 }); //duration is ms
     logoScale.value = withSequence(
-        withTiming(1.05, { duration: 350, easing: Easing.out(Easing.cubic) }),
+        withTiming(1.05, { duration: 350, easing: Easing.out(Easing.cubic) }), //this increases it a little and then shrinks back
         withTiming(1, { duration: 220, easing: Easing.out(Easing.cubic) })
       );
     logoY.value = withTiming(0, { duration: 450 });
 
-    actionsOpacity.value = withDelay(450, withTiming(1, { duration: 350 }));
+    actionsOpacity.value = withDelay(450, withTiming(1, { duration: 350 })); //buttons fade in after the logo
     actionsY.value = withDelay(450, withTiming(0, { duration: 350 }));
 
-    setTimeout(() => setReady(true), 850);
+    setTimeout(() => setReady(true), 850); // ready becomes true after UI
   };
 
   useEffect(() => {
     // 1) start wand immediately
-    wandRef.current?.play();
+    wandRef.current?.play(); //the ? helps prevent crashing if the ref isnt ready
   }, []);
 
   const logoStyle = useAnimatedStyle(() => ({
@@ -70,6 +70,7 @@ export default function IntroSplash() {
     transform: [{ translateY: logoY.value }, { scale: logoScale.value }],
   }));
 
+  //buttons
   const actionsStyle = useAnimatedStyle(() => ({
     opacity: actionsOpacity.value,
     transform: [{ translateY: actionsY.value }],
@@ -80,8 +81,8 @@ export default function IntroSplash() {
   }));
 
   return (
-    <View style={styles.container}>
-    {showWand && (
+    <View style={styles.container}> 
+    {showWand && ( //renders the wand first here
         <Animated.View style ={[StyleSheet.absoluteFill, wandStyle]} pointerEvents={"none"}>
         <LottieView
         ref={wandRef}
@@ -90,12 +91,16 @@ export default function IntroSplash() {
         loop={false} // no loops
         style={styles.lottie}
         onAnimationFinish={() => {
+           // fade the wand out
+          wandOpacity.value = withTiming(0, { duration: 300 });
          //hide wand completely
-          setShowWand(false);
+          // after fade completes, unmount wand
+          setTimeout(() => {
+            setShowWand(false);
           // 2) Sparkles next
-          setShowSparkles(true);
-          // tiny delay helps feel like the wand “caused” it
-          setTimeout(() => sparklesRef.current?.play(), 80);
+            setShowSparkles(true);
+          // tiny delay helps feel like the wand makes it happen
+            setTimeout(() => sparklesRef.current?.play(), 80);
 
           // 3) Poof shortly after sparkles begin
           setShowPoof(true);
@@ -103,11 +108,12 @@ export default function IntroSplash() {
 
          // 4) UI appears shortly after poof begins
           setTimeout(() => startLogoTimeline(), 350);
+        }, 300);
         }}
       />
       </Animated.View>
     )}
-
+    
       {/* Sparkles */}
       {showSparkles && (
           <View pointerEvents="none" style={StyleSheet.absoluteFill}>
@@ -125,8 +131,8 @@ export default function IntroSplash() {
       
 
 {/* 3) Poof (plays once, then disappears) */}
-      {showPoof && (
-        <View pointerEvents="none" style={styles.poofWrap}>
+      {showPoof && ( 
+        <View pointerEvents="none" style={styles.poofWrap}> 
         <LottieView
           ref={poofRef}
           source={require("../assets/lottie/poof.json")}
@@ -172,6 +178,8 @@ export default function IntroSplash() {
     </View>
   );
 }
+
+//pointer events set to none so you can press the buttons (even when sparklesa re on top)
 
 const styles = StyleSheet.create({
   container: {
