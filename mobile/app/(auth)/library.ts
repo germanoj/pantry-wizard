@@ -37,3 +37,4 @@ export async function apiRegister(username: string, email: string, password: str
 
   return data as AuthResponse;
 }
+console.log("API URL:", API);

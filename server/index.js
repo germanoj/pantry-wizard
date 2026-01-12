@@ -333,9 +333,11 @@ app.post("/api/user-recipes", requireUser, async (req, res) => {
   try {
     const { recipe } = req.body ?? {};
 
-    if (!recipe || typeof recipe !== "object") {
-      return res.status(400).json({ error: "recipe object is required" });
-    let parsed;
+if (!recipe || typeof recipe !== "object") {
+  return res.status(400).json({ error: "recipe object is required" });
+}
+
+let parsed;
     try {
       parsed = JSON.parse(raw);
     } catch (e) {
@@ -359,17 +361,16 @@ app.post("/api/user-recipes", requireUser, async (req, res) => {
       }
     }
 
-    await db.query(
+        await db.query(
       `
       INSERT INTO favorites (id, user_id, recipe_id)
       VALUES (gen_random_uuid(), $1, $2)
       ON CONFLICT (user_id, recipe_id) DO NOTHING
       `,
-          [userId, recipeId]
+      [userId, recipeId]
     );
 
     return res.json({ ok: true, recipeId });
-    return res.json(parsed);
   } catch (err) {
     console.error("AI ERROR:", err);
     return res.status(500).json({ error: "AI generation failed" });
@@ -378,7 +379,6 @@ app.post("/api/user-recipes", requireUser, async (req, res) => {
 
 app.get("/api/user-recipes", requireUser, async (req, res) => {
   const userId = req.userId;
-app.get("/api/user-recipes", async (req, res) => {
   try {
     const result = await db.query(
       `
