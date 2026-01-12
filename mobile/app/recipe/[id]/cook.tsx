@@ -3,15 +3,18 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import SingleRecipeCard from "@/app/recipe-components/SingleRecipeCard";
 import { MOCK_RECIPES } from "@/data/recipes";
 import { saveUiRecipe } from "@/src/lib/saveRecipeAction";
+import { useGeneratedRecipes } from "@/state/GeneratedRecipesContext";
 
 export default function CookRecipeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const recipeId = Array.isArray(id) ? id[0] : id;
 
-  const recipe = useMemo(
-    () => MOCK_RECIPES.find((r) => r.id === recipeId),
-    [recipeId]
-  );
+  const { recipes: generatedRecipes } = useGeneratedRecipes();
+  const recipe = useMemo(() => {
+    const fromGenerated = generatedRecipes?.find((r) => r.id === recipeId);
+    if (fromGenerated) return fromGenerated;
+    return MOCK_RECIPES.find((r) => r.id === recipeId);
+  }, [generatedRecipes, recipeId]);
 
   if (!recipe) return null;
 

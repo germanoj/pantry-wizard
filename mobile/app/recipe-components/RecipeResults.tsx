@@ -11,7 +11,7 @@ export interface Recipe {
   id: string;
   title: string;
   time: string; // e.g. "25 min" or "25"
-  image: any;
+  image?: any;
   description?: string;
   ingredients?: string[];
   steps?: string[];
