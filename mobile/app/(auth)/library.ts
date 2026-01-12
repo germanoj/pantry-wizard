@@ -22,11 +22,11 @@ export async function apiLogin(email: string, password: string) {
   return data as AuthResponse;
 }
 
-export async function apiRegister(email: string, password: string) {
+export async function apiRegister(username: string, email: string, password: string) {
   const res = await fetch(`${API}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ username, email, password }),
   });
 
   const data = await res.json().catch(() => ({}));
@@ -37,3 +37,4 @@ export async function apiRegister(email: string, password: string) {
 
   return data as AuthResponse;
 }
+console.log("API URL:", API);
