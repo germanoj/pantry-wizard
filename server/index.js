@@ -3,6 +3,10 @@ import cors from "cors";
 import "dotenv/config";
 import OpenAI from "openai";
 
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+
+
 import pg from "pg";
 const { Pool } = pg;
 
@@ -204,7 +208,9 @@ Return ONLY valid JSON in this exact shape:
   }
 });
 
-app.post("/api/user-recipes", async (req, res) => {
+app.post("/api/user-recipes", requireUser, async (req, res) => {
+  const userId = req.userId;
+
   try {
     const { recipe } = req.body ?? {};
 
@@ -251,7 +257,7 @@ app.post("/api/user-recipes", async (req, res) => {
       VALUES (gen_random_uuid(), $1, $2)
       ON CONFLICT (user_id, recipe_id) DO NOTHING
       `,
-      [DEV_USER_ID, recipeId]
+          [userId, recipeId]
     );
 
     return res.json({ ok: true, recipeId });
@@ -260,7 +266,9 @@ app.post("/api/user-recipes", async (req, res) => {
     return res.status(500).json({ error: "Failed to save recipe" });
   }
 });
-app.get("/api/user-recipes", async (req, res) => {
+
+app.get("/api/user-recipes", requireUser, async (req, res) => {
+  const userId = req.userId;
   try {
     const result = await db.query(
       `
@@ -274,7 +282,7 @@ app.get("/api/user-recipes", async (req, res) => {
       WHERE f.user_id = $1
       ORDER BY f.created_at DESC
       `,
-      [DEV_USER_ID]
+      [userId]
     );
 
     const recipes = result.rows.map((row) => ({
@@ -303,6 +311,120 @@ app.get("/_debug/routes", (req, res) => {
   });
   res.json({ routes });
 });
+
+
+// =======================================================
+// ===================== LOGIN/REG API ====================
+// =======================================================
+
+//login middleware
+function requireUser(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Missing auth token" });
+  }
+
+  const token = authHeader.slice("Bearer ".length);
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    req.userId = payload.userId;
+    next();
+  } catch (e) {
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
+}
+
+//helper for token 
+function signToken(payload) {
+  if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET not set");
+  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "7d" });
+}
+
+//post autg register
+app.post("/auth/register", async (req, res) => {
+  try {
+    const { username, email, password } = req.body || {};
+
+    if (!username || !email || !password) {
+      return res
+        .status(400)
+        .json({ message: "username, email, and password are required." });
+    }
+
+    if (password.length < 8) {
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 8 characters." });
+    }
+
+    // Check for existing email/username
+    const existing = await db.query(
+      "SELECT id FROM users WHERE email=$1 OR username=$2 LIMIT 1",
+      [email, username]
+    );
+
+    if (existing.rows.length > 0) {
+      return res.status(409).json({ message: "Email or username already exists." });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 7);
+
+    const created = await db.query(
+      `
+      INSERT INTO users (username, email, password)
+      VALUES ($1, $2, $3)
+      RETURNING id, username, email
+      `,
+      [username, email, hashedPassword]
+    );
+
+    const user = created.rows[0];
+    const token = signToken({ userId: user.id });
+
+    return res.status(201).json({ token });
+  } catch (err) {
+    console.error("register error:", err);
+    return res.status(500).json({ message: "Registration failed" });
+  }
+});
+
+//post for login
+app.post("/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "email and password are required." });
+    }
+
+    const result = await db.query(
+      "SELECT id, email, password FROM users WHERE email=$1",
+      [email]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ message: "Invalid email or password." });
+    }
+
+    const user = result.rows[0];
+    const ok = await bcrypt.compare(password, user.password);
+
+    if (!ok) {
+      return res.status(401).json({ message: "Invalid email or password." });
+    }
+
+    const token = signToken({ userId: user.id });
+    return res.json({ token });
+  } catch (err) {
+    console.error("login error:", err);
+    return res.status(500).json({ message: "Login failed" });
+  }
+});
+
 
 // ===== Start server =====
 const PORT = process.env.PORT || 3000;
