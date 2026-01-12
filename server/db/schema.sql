@@ -1,3 +1,6 @@
+--created UUID gen possibility:
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 DROP TABLE IF EXISTS tried_recipes;
 DROP TABLE IF EXISTS favorites;
 DROP TABLE IF EXISTS recipes;
@@ -5,14 +8,14 @@ DROP TABLE IF EXISTS saved_recipes;
 DROP TABLE IF EXISTS users CASCADE;
 
 CREATE TABLE users (
-    id UUID PRIMARY KEY gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username VARCHAR(100) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    password TEXT NOT NULL
+    password TEXT NOT NULL --this will be hashed password
 );
 
 CREATE TABLE recipes (
-  id UUID PRIMARY KEY gen_random_uuid(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   generated_by_ai BOOLEAN NOT NULL DEFAULT TRUE,
   prompt_used TEXT,
@@ -22,7 +25,7 @@ CREATE TABLE recipes (
 );
 
 CREATE TABLE favorites (
-    id UUID PRIMARY KEY gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     recipe_id UUID NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -30,7 +33,7 @@ CREATE TABLE favorites (
 );
     
 CREATE TABLE tried_recipes (
-    id UUID PRIMARY KEY gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     recipe_id UUID NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -39,7 +42,7 @@ CREATE TABLE tried_recipes (
 );
 
 CREATE TABLE IF NOT EXISTS saved_recipes (
-    id UUID PRIMARY KEY gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     ingredients_used TEXT[] NOT NULL DEFAULT '{}',
@@ -55,12 +58,4 @@ CREATE INDEX IF NOT EXISTS saved_recipes_user_id_idx
 CREATE INDEX IF NOT EXISTS saved_recipes_created_at_idx
   ON saved_recipes(created_at DESC);
 
-INSERT INTO users (id, username, email, password)
-VALUES (
-  '00000000-0000-0000-0000-000000000001',
-  'dev',
-  'dev@local.test'
-)
-ON CONFLICT (email) DO NOTHING;
-
-/*deleted dev for hashing passwords*/
+/*deleted dev bc we dont need a dev user*/
