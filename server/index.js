@@ -246,6 +246,14 @@ app.get("/version", (req, res) => {
   });
 });
 
+app.get("/", (req, res) => {
+  res.status(200).send("OK - Pantry Wizard API");
+});
+
+app.get("/health", (req, res) => {
+  res.status(200).json({ ok: true });
+});
+
 // =======================================================
 // =============== STUB / FALLBACK GENERATOR ==============
 // =======================================================
@@ -572,6 +580,6 @@ app.get("/_debug/db", async (req, res) => {
 // ===== Start server =====
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server listening on http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server listening on port ${PORT}`);
 });
