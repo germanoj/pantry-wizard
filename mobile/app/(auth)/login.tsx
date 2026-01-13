@@ -8,7 +8,7 @@ import { WizardBody, WizardTitle } from '@/src/components/WizardText';
 import { Card } from '@/src/components/Card';
 
 import { useAuth } from "@/src/auth/AuthContext";
-import { apiLogin } from "./library";
+import { apiLogin } from "@/src/auth/library";
 
 
 export default function LoginPage() {
