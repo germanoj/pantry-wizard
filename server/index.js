@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import "dotenv/config";
 import OpenAI from "openai";
+import { v2 as cloudinary } from "cloudinary";
 
 import pg from "pg";
 const { Pool } = pg;
@@ -18,6 +19,34 @@ const db = new Pool({
 
 const app = express();
 export default app;
+
+// ===== Cloudinary (for durable image URLs) =====
+const hasCloudinary =
+  !!process.env.CLOUDINARY_CLOUD_NAME &&
+  !!process.env.CLOUDINARY_API_KEY &&
+  !!process.env.CLOUDINARY_API_SECRET;
+
+if (hasCloudinary) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+}
+
+async function uploadPngDataUrlToCloudinary(dataUrl, publicId) {
+  if (!hasCloudinary) throw new Error("Cloudinary env vars not set");
+
+  const result = await cloudinary.uploader.upload(dataUrl, {
+    folder: "pantry-wizard",
+    public_id: publicId,
+    overwrite: true,
+    resource_type: "image",
+    format: "png",
+  });
+
+  return result.secure_url;
+}
 
 // ===== Middleware =====
 app.use(cors()); // dev-safe: allow all origins
@@ -132,14 +161,6 @@ app.get("/version", (req, res) => {
   });
 });
 
-app.get("/", (req, res) => {
-  res.status(200).send("OK - Pantry Wizard API");
-});
-
-app.get("/health", (req, res) => {
-  res.status(200).json({ ok: true });
-});
-
 // =======================================================
 // =============== STUB / FALLBACK GENERATOR ==============
 // =======================================================
@@ -237,12 +258,6 @@ function withTimeout(promise, ms, label) {
   ]);
 }
 
-function placeholderImageUrl(title) {
-  const text = encodeURIComponent(String(title || "Recipe").slice(0, 40));
-  // Force PNG for better compatibility
-  return `https://placehold.co/1024x1024/png?text=${text}`;
-}
-
 async function generateImageUrlForRecipe(r) {
   const imgPrompt = buildFoodImagePrompt(r);
 
@@ -260,11 +275,28 @@ async function generateImageUrlForRecipe(r) {
 
   console.log("🧩 image response keys:", Object.keys(first || {}));
 
-  // If it returns a URL, great
+  // If it returns a URL directly, use it
   if (first?.url) return first.url;
 
-  // If it returns base64, convert to data URL
-  if (first?.b64_json) return `data:image/png;base64,${first.b64_json}`;
+  // If it returns base64, upload to Cloudinary and return a real HTTPS URL
+  if (first?.b64_json) {
+    if (!hasCloudinary) {
+      // If Cloudinary isn't configured, fall back to placeholder so responses stay sane
+      return placeholderImageUrl(r?.title);
+    }
+
+    const dataUrl = `data:image/png;base64,${first.b64_json}`;
+
+    const safeTitle = String(r?.title || "recipe")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
+      .slice(0, 60);
+
+    const publicId = `${safeTitle}-${Date.now()}`;
+
+    return await uploadPngDataUrlToCloudinary(dataUrl, publicId);
+  }
 
   // Some SDKs return "base64" under a different key — log and fail loudly
   throw new Error(
@@ -398,14 +430,33 @@ app.get("/api/user-recipes", async (req, res) => {
 
 app.get("/_debug/routes", (req, res) => {
   const routes = [];
-  app._router?.stack?.forEach((layer) => {
-    if (layer.route?.path) {
-      const methods = Object.keys(layer.route.methods)
-        .filter((m) => layer.route.methods[m])
-        .map((m) => m.toUpperCase());
-      routes.push({ path: layer.route.path, methods });
+
+  function walk(stack, prefix = "") {
+    for (const layer of stack || []) {
+      // Direct route
+      if (layer.route?.path) {
+        const methods = Object.keys(layer.route.methods)
+          .filter((m) => layer.route.methods[m])
+          .map((m) => m.toUpperCase());
+
+        routes.push({ path: prefix + layer.route.path, methods });
+      }
+
+      // Router (nested)
+      if (layer.name === "router" && layer.handle?.stack) {
+        // Try to derive the mount path from the layer regexp (best-effort)
+        let mount = "";
+        const match = layer.regexp
+          ?.toString?.()
+          .match(/^\/\^\\\/(.+?)\\\/\?\(\?=\\\/\|\$\)\/i$/);
+        if (match?.[1]) mount = "/" + match[1].replace(/\\\//g, "/");
+
+        walk(layer.handle.stack, prefix + mount);
+      }
     }
-  });
+  }
+
+  walk(app._router?.stack, "");
   res.json({ routes });
 });
 
