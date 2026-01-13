@@ -12,10 +12,9 @@ import jwt from "jsonwebtoken";
 import pg from "pg";
 const { Pool } = pg;
 
-const needsSSL =
-  process.env.PGSSLMODE === "require" ||
-  (process.env.DATABASE_URL?.includes("render.com") ?? false) ||
-  process.env.NODE_ENV === "production";
+const isRender =
+  !!process.env.RENDER || /render\.com/i.test(process.env.DATABASE_URL || "");
+const needsSSL = isRender || process.env.PGSSLMODE === "require";
 
 const db = new Pool({
   connectionString: process.env.DATABASE_URL,

@@ -1,3 +1,5 @@
+//this file decides where the users go when the state of auth changes
+
 import { useEffect } from "react";
 import { useRouter, useSegments } from "expo-router";
 import { useAuth } from "./AuthContext";
@@ -18,14 +20,16 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     const isAuthGroup = first === "(auth)";
     const isTabsGroup = first === "(tabs)";
 
-    // ✅ Public routes when logged out:
-    // - "/" (your app/index.tsx intro splash)
+    // routes when logged out:
+    // - "/" ( app/index.tsx intro splash)
     // - auth screens
     // - wizard screen inside tabs: /(tabs)/chatBot
     const isIntroRoot = !first; // root index screen
     const isWizardGuest = isTabsGroup && second === "chatBot";
-    const isGenerate = first === "generate";
-    const isRecipes = first === "recipes";
+    //const isGenerate = first === "generate";
+    //const isRecipes = first === "recipes";
+    const isRecipes = isTabsGroup && second === "recipes";
+
 
 
     // 🚫 Logged out users:
@@ -33,15 +37,15 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       if (isIntroRoot) return;
       if (isAuthGroup) return;
       if (isWizardGuest) return;
-      if (isGenerate) return;
+      //if (isGenerate) return;
       if (isRecipes) return;
 
       // Block everything else (like saved/profile)
-      router.replace("/");
+      router.replace("/(tabs)");
       return;
     }
 
-    // ✅ Logged in users:
+    // logged in users:
     // keep them out of auth pages
     if (token && isAuthGroup) {
       router.replace("/(tabs)");
