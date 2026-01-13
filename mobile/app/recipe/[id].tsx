@@ -3,14 +3,20 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import SingleRecipeCard from "@/app/recipe-components/SingleRecipeCard";
 import { MOCK_RECIPES } from "@/data/recipes";
 import { useNotInterested } from "@/state/NotInterestedContext";
-import { Alert } from "react-native";
+
 import { saveUiRecipe } from "@/src/lib/saveRecipeAction";
+import { useGeneratedRecipes } from "@/state/GeneratedRecipesContext";
 
 export default function RecipeDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const recipe = useMemo(() => MOCK_RECIPES.find((r) => r.id === id), [id]);
+  const { recipes: generatedRecipes } = useGeneratedRecipes();
+  const recipe = useMemo(() => {
+    const fromGenerated = generatedRecipes?.find((r) => r.id === id);
+    if (fromGenerated) return fromGenerated;
+    return MOCK_RECIPES.find((r) => r.id === id);
+  }, [generatedRecipes, id]);
 
   const { isNotInterested, toggleNotInterested } = useNotInterested();
 

@@ -63,7 +63,9 @@ app.use(express.json());
 //// hayley password token and logn/reg routes!!!!! NO TOUCHY
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
-  console.warn("⚠️ Missing JWT_SECRET in server .env (auth will fail until set).");
+  console.warn(
+    "⚠️ Missing JWT_SECRET in server .env (auth will fail until set)."
+  );
 }
 
 function signToken(userId) {
@@ -72,8 +74,9 @@ function signToken(userId) {
 }
 
 function requireUser(req, res, next) {
-    if (!JWT_SECRET) return res.status(500).json({ message: "Server auth not configured" });
-    try {
+  if (!JWT_SECRET)
+    return res.status(500).json({ message: "Server auth not configured" });
+  try {
     const auth = req.headers.authorization || "";
     const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
     if (!token) return res.status(401).json({ message: "Missing token" });
@@ -91,10 +94,14 @@ app.post("/auth/register", async (req, res) => {
     const { username, email, password } = req.body ?? {};
 
     if (!username || !email || !password) {
-      return res.status(400).json({ message: "username, email, password required" });
+      return res
+        .status(400)
+        .json({ message: "username, email, password required" });
     }
     if (String(password).length < 8) {
-      return res.status(400).json({ message: "password must be at least 8 characters" });
+      return res
+        .status(400)
+        .json({ message: "password must be at least 8 characters" });
     }
 
     const uname = String(username).trim();
@@ -106,7 +113,9 @@ app.post("/auth/register", async (req, res) => {
       [mail, uname]
     );
     if (existing.rowCount > 0) {
-      return res.status(409).json({ message: "Email or username already in use" });
+      return res
+        .status(409)
+        .json({ message: "Email or username already in use" });
     }
 
     const hash = await bcrypt.hash(String(password), 10);
@@ -155,7 +164,10 @@ app.post("/auth/login", async (req, res) => {
     }
 
     const token = signToken(user.id);
-    return res.json({ token, user: { id: user.id, username: user.username, email: user.email } });
+    return res.json({
+      token,
+      user: { id: user.id, username: user.username, email: user.email },
+    });
   } catch (err) {
     console.error("login error:", err);
     return res.status(500).json({ message: "Login failed" });
@@ -508,31 +520,97 @@ Return ONLY valid JSON in this exact shape:
   }
 });
 
-app.get("/api/user-recipes", requireUser, async (req, res) => {
+app.post("/api/user-recipes", async (req, res) => {
   try {
+    const { recipe } = req.body ?? {};
+    if (!recipe || typeof recipe !== "object") {
+      return res.status(400).send("Missing recipe in request body");
+    }
+
+    // Validate minimal shape expected from the mobile client
+    const title = String(recipe.title ?? "").trim();
+    const ingredientsUsed = Array.isArray(recipe.ingredientsUsed)
+      ? recipe.ingredientsUsed
+      : [];
+    const missingIngredients = Array.isArray(recipe.missingIngredients)
+      ? recipe.missingIngredients
+      : [];
+    const steps = Array.isArray(recipe.steps) ? recipe.steps : [];
+    const timeMinutes = Number(recipe.timeMinutes);
+
+    if (!title) return res.status(400).send("recipe.title is required");
+    if (!Number.isFinite(timeMinutes))
+      return res.status(400).send("recipe.timeMinutes must be a number");
+
+    const userId = getUserId(req);
+
+    // TODO: replace these with real logic later (or infer from ingredients)
+    const isVeggie = false;
+    const isGf = false;
+
+    // 1) Insert into recipes
+    const inserted = await db.query(
+      `INSERT INTO recipes (name, generated_by_ai, prompt_used, is_veggie, is_gf, recipe_json)
+       VALUES ($1, $2, $3, $4, $5, $6::jsonb)
+       RETURNING id`,
+      [
+        title,
+        true, // generated_by_ai
+        recipe.imagePrompt ?? null, // prompt_used (optional)
+        isVeggie,
+        isGf,
+        JSON.stringify({
+          title,
+          ingredientsUsed,
+          missingIngredients,
+          steps,
+          timeMinutes,
+          imageUrl: recipe.imageUrl ?? null,
+        }),
+      ]
+    );
+
+    const recipeId = inserted.rows[0].id;
+
+    // 2) Insert into favorites (assumes table exists)
+    await db.query(
+      `INSERT INTO favorites (user_id, recipe_id)
+       VALUES ($1, $2)
+       ON CONFLICT (user_id, recipe_id) DO NOTHING`,
+      [userId, recipeId]
+    );
+
+    return res.json({ ok: true, recipeId });
+  } catch (err) {
+    console.error("save recipe error:", err);
+    return res.status(500).send("Failed to save recipe");
+  }
+});
+
+app.get("/api/user-recipes", async (req, res) => {
+  try {
+    const userId = getUserId(req);
+
     const result = await db.query(
       `
       SELECT
-      r.id,
-      r.name,
-      r.recipe_json,
-      r.image_url,
-      r.image_status,
-      f.created_at
+        r.id,
+        r.name,
+        r.recipe_json,
+        f.created_at
       FROM favorites f
       JOIN recipes r ON r.id = f.recipe_id
       WHERE f.user_id = $1
       ORDER BY f.created_at DESC
       `,
-      [req.userId]
+      [userId]
     );
 
     const recipes = result.rows.map((row) => ({
       id: row.id,
       savedAt: row.created_at,
-      imageUrl: row.image_url,
-      imageStatus: row.image_status,
-      ...row.recipe_json,
+      name: row.name,
+      ...(row.recipe_json ?? {}),
     }));
 
     res.json({ recipes });
@@ -559,7 +637,6 @@ app.get("/_debug/router-shape", (req, res) => {
     app_keys: Object.keys(app).slice(0, 40),
   });
 });
-
 
 app.get("/_debug/routes", (req, res) => {
   const routes = [];
