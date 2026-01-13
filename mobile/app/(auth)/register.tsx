@@ -6,7 +6,7 @@ import { useTheme } from "@/src/theme/usetheme";
 import { WizardBody, WizardTitle } from "@/src/components/WizardText";
 import { Card } from "@/src/components/Card";
 
-import { apiRegister } from "./library"; // <-- same folder as login.tsx
+import { apiRegister } from "@/src/auth/library";
 // If you want auto-login after register, uncomment:
 // import { useAuth } from "@/src/auth/AuthContext";
 

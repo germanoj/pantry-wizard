@@ -1,18 +1,24 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { getToken, setToken as saveToken, clearToken } from "./tokenStorage";
 
-const AuthContext = createContext(null);
+type AuthContextValue = {
+  token: string | null;
+  isLoading: boolean;
+  signIn: (newToken: string) => Promise<void>;
+  signOut: () => Promise<void>;
+};
 
-export function AuthProvider({ children }) {
-  const [token, setTokenState] = useState(null);
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [token, setTokenState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadToken = async () => {
       try {
         const saved = await getToken();
-        if (saved) setTokenState(saved);
-        else setTokenState(null);
+        setTokenState(saved ?? null);
       } finally {
         setIsLoading(false);
       }
@@ -21,7 +27,7 @@ export function AuthProvider({ children }) {
     loadToken();
   }, []);
 
-  const signIn = async (newToken) => {
+  const signIn = async (newToken: string) => {
     setTokenState(newToken);
     await saveToken(newToken);
   };
