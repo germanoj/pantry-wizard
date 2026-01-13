@@ -7,13 +7,12 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 import { NotInterestedProvider } from "../state/NotInterestedContext";
-
+import { GeneratedRecipesProvider } from "../state/GeneratedRecipesContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useFonts } from "expo-font";
 
-import { AuthProvider } from "../src/auth/AuthContext"; 
+import { AuthProvider } from "../src/auth/AuthContext";
 import { AuthGate } from "../src/auth/AuthGate";
-
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -31,28 +30,32 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-  <AuthProvider>
-    <AuthGate>
-    <NotInterestedProvider>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        {/*<Stack.Screen name="generate" options={{ title: "Recipe Wizardry" }} /> */}          
-        {/*<Stack.Screen name="(auth)/login" options={{ title: "Login" }}/> */}
-        {/* <Stack.Screen name="(auth)/register" options={{ title: "Register" }} /> */}
-          <Stack.Screen name="recipe" options={{ headerShown: false }} />
-        {/* added recipe stack screen to layout!*/}
+    <GeneratedRecipesProvider>
+      <NotInterestedProvider>
+        <ThemeProvider
+          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+        >
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            {/*<Stack.Screen name="generate" options={{ title: "Recipe Wizardry" }} /> */}
+            {/*<Stack.Screen name="(auth)/login" options={{ title: "Login" }}/> */}
+            {/* <Stack.Screen name="(auth)/register" options={{ title: "Register" }} /> */}
+            <Stack.Screen name="recipe" options={{ headerShown: false }} />
+            {/* added recipe stack screen to layout!*/}
 
-          <Stack.Screen
-            name="(modals)/register-modal"
-            options={{ presentation: "modal", title: "Create Account", headerShown: false }}
-          />
-        </Stack>
-        <StatusBar style="auto" />
-      </ThemeProvider>
-    </NotInterestedProvider>
-    </AuthGate>
-  </AuthProvider>
+            <Stack.Screen
+              name="(modals)/register-modal"
+              options={{
+                presentation: "modal",
+                title: "Create Account",
+                headerShown: false,
+              }}
+            />
+          </Stack>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </NotInterestedProvider>
+    </GeneratedRecipesProvider>
   );
 }

@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import axios from "axios";
 
 const API = process.env.EXPO_PUBLIC_API_URL;
@@ -24,6 +25,11 @@ function getErrorMessage(err: unknown) {
   }
   return err instanceof Error ? err.message : String(err);
 }
+=======
+import { API_BASE_URL } from "@/src/config/api";
+
+const API = API_BASE_URL;
+>>>>>>> Stashed changes
 
 ////////////
 //login API
@@ -31,7 +37,10 @@ function getErrorMessage(err: unknown) {
 
 export async function apiLogin(email: string, password: string) {
   try {
-    const res = await client.post<AuthResponse>("/auth/login", { email, password });
+    const res = await client.post<AuthResponse>("/auth/login", {
+      email,
+      password,
+    });
     return res.data;
   } catch (err) {
     throw new Error(getErrorMessage(err));
@@ -42,8 +51,12 @@ export async function apiLogin(email: string, password: string) {
 //register api
 //////////
 
-
-export async function apiRegister(username: string, email: string, password: string) {
+export async function apiRegister(
+  username: string,
+  email: string,
+  password: string
+) {
+<<<<<<< Updated upstream
   try {
     const res = await client.post<AuthResponse>("/auth/register", {
       username,
@@ -55,3 +68,22 @@ export async function apiRegister(username: string, email: string, password: str
     throw new Error(getErrorMessage(err));
   }
 }
+=======
+  const res = await fetch(`${API}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, email, password }),
+  });
+
+  const data = await res.json().catch(() => ({}));
+  console.log("register status", res.status);
+  console.log("register data", data);
+
+  if (!res.ok) {
+    throw new Error(data?.message || "Registration failed");
+  }
+
+  return data as AuthResponse;
+}
+console.log("API URL:", API);
+>>>>>>> Stashed changes
