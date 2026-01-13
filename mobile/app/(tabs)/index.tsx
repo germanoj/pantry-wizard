@@ -42,6 +42,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  link: {color: "the" 
-  },
+  link: {}
 });
