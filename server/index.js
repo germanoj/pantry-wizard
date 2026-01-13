@@ -563,32 +563,34 @@ app.get("/_debug/router-shape", (req, res) => {
 
 app.get("/_debug/routes", (req, res) => {
   const routes = [];
-<  function walk(stack, prefix = "") {
+
+  function walk(stack, prefix = "") {
     for (const layer of stack || []) {
       // Direct route
       if (layer.route?.path) {
-        const methods = Object.keys(layer.route.methods)
+        const methods = Object.keys(layer.route.methods || {})
           .filter((m) => layer.route.methods[m])
           .map((m) => m.toUpperCase());
 
         routes.push({ path: prefix + layer.route.path, methods });
       }
 
-      // Router (nested)
+      // Mounted router (nested)
       if (layer.name === "router" && layer.handle?.stack) {
-        // Try to derive the mount path from the layer regexp (best-effort)
+        // Best-effort mount path extraction from regexp
         let mount = "";
-        const match = layer.regexp
-          ?.toString?.()
-          .match(/^\/\^\\\/(.+?)\\\/\?\(\?=\\\/\|\$\)\/i$/);
-        if (match?.[1]) mount = "/" + match[1].replace(/\\\//g, "/");
+        const s = layer.regexp?.toString?.() || "";
+        const m = s.match(/^\/\^\\\/(.+?)\\\/\?\(\?=\\\/\|\$\)\/i$/);
+        if (m?.[1]) mount = "/" + m[1].replace(/\\\//g, "/");
 
         walk(layer.handle.stack, prefix + mount);
       }
     }
   }
 
-  walk(app._router?.stack, "");
+  // Express 4 uses app._router.stack; Express 5 may use app.router.stack
+  const rootStack = app._router?.stack || app.router?.stack || [];
+  walk(rootStack, "");
 
   res.json({ routes });
 });
