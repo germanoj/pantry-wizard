@@ -2,10 +2,7 @@
   "dependencies": {
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
-<<<<<<< HEAD
     "cloudinary": "^2.8.0",
-=======
->>>>>>> 353bb20862e4574eb33e5fb10612f45915d51a84
     "expo": "^54.0.31",
     "jsonwebtoken": "^9.0.3",
     "react-native-safe-area-context": "^5.6.2"
