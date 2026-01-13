@@ -4,6 +4,11 @@ import "dotenv/config";
 import OpenAI from "openai";
 import { v2 as cloudinary } from "cloudinary";
 
+//for hayley for password hashing and tokens!!
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+//////////////////////////////
+
 import pg from "pg";
 const { Pool } = pg;
 
@@ -18,6 +23,7 @@ const db = new Pool({
 });
 
 const app = express();
+
 export default app;
 
 // ===== Cloudinary (for durable image URLs) =====
@@ -52,11 +58,118 @@ async function uploadPngDataUrlToCloudinary(dataUrl, publicId) {
 app.use(cors()); // dev-safe: allow all origins
 app.use(express.json());
 
-import crypto from "crypto";
+//import crypto from "crypto";
 
+//// hayley password token and logn/reg routes!!!!! NO TOUCHY
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.warn("⚠️ Missing JWT_SECRET in server .env (auth will fail until set).");
+}
+
+function signToken(userId) {
+  if (!JWT_SECRET) throw new Error("JWT_SECRET not set");
+  return jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: "30d" });
+}
+
+function requireUser(req, res, next) {
+    if (!JWT_SECRET) return res.status(500).json({ message: "Server auth not configured" });
+    try {
+    const auth = req.headers.authorization || "";
+    const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+    if (!token) return res.status(401).json({ message: "Missing token" });
+
+    const payload = jwt.verify(token, JWT_SECRET);
+    req.userId = payload.sub;
+    return next();
+  } catch {
+    return res.status(401).json({ message: "Invalid token" });
+  }
+}
+
+app.post("/auth/register", async (req, res) => {
+  try {
+    const { username, email, password } = req.body ?? {};
+
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: "username, email, password required" });
+    }
+    if (String(password).length < 8) {
+      return res.status(400).json({ message: "password must be at least 8 characters" });
+    }
+
+    const uname = String(username).trim();
+    const mail = String(email).trim().toLowerCase();
+
+    // check uniqueness
+    const existing = await db.query(
+      "SELECT id FROM users WHERE email = $1 OR username = $2",
+      [mail, uname]
+    );
+    if (existing.rowCount > 0) {
+      return res.status(409).json({ message: "Email or username already in use" });
+    }
+
+    const hash = await bcrypt.hash(String(password), 10);
+
+    const created = await db.query(
+      `INSERT INTO users (username, email, password)
+       VALUES ($1, $2, $3)
+       RETURNING id, username, email`,
+      [uname, mail, hash]
+    );
+
+    const user = created.rows[0];
+    const token = signToken(user.id);
+
+    return res.status(201).json({ token, user });
+  } catch (err) {
+    console.error("register error:", err);
+    return res.status(500).json({ message: String(err?.message || err) }); //"Registration failed"
+  }
+});
+
+app.post("/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body ?? {};
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "email and password required" });
+    }
+
+    const mail = String(email).trim().toLowerCase();
+
+    const found = await db.query(
+      "SELECT id, username, email, password FROM users WHERE email = $1",
+      [mail]
+    );
+
+    if (found.rowCount === 0) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const user = found.rows[0];
+    const ok = await bcrypt.compare(String(password), user.password);
+
+    if (!ok) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const token = signToken(user.id);
+    return res.json({ token, user: { id: user.id, username: user.username, email: user.email } });
+  } catch (err) {
+    console.error("login error:", err);
+    return res.status(500).json({ message: "Login failed" });
+  }
+});
+
+/////////////// NO TOUCHY //////////////////////
+
+//////////HAYLEY DELETED BELOW DEV USER BC DONT NEED NOW!!!! /////////
 // TEMP (Option A): hardcode dev user until auth is done
-const DEV_USER_ID = "00000000-0000-0000-0000-000000000001";
+//const DEV_USER_ID = "00000000-0000-0000-0000-000000000001";
 
+///ALSO DELETED BELOW BEFORE AI///
+/*
 function recipeHash(obj) {
   // stable-ish hash to dedupe recipes across saves
   const str = JSON.stringify(obj);
@@ -66,6 +179,7 @@ function recipeHash(obj) {
 function getUserId(req) {
   return DEV_USER_ID;
 }
+*/
 
 // ===== OpenAI client =====
 const openai = new OpenAI({
@@ -394,7 +508,7 @@ Return ONLY valid JSON in this exact shape:
   }
 });
 
-app.get("/api/user-recipes", async (req, res) => {
+app.get("/api/user-recipes", requireUser, async (req, res) => {
   try {
     const result = await db.query(
       `
@@ -410,7 +524,7 @@ app.get("/api/user-recipes", async (req, res) => {
       WHERE f.user_id = $1
       ORDER BY f.created_at DESC
       `,
-      [DEV_USER_ID]
+      [req.userId]
     );
 
     const recipes = result.rows.map((row) => ({
@@ -428,10 +542,28 @@ app.get("/api/user-recipes", async (req, res) => {
   }
 });
 
+app.get("/_debug/router-shape", (req, res) => {
+  const has_router = !!app._router;
+  const has_router_stack = !!app._router?.stack;
+  const has_router2 = !!app.router;
+  const has_router2_stack = !!app.router?.stack;
+
+  res.json({
+    has_router,
+    has_router_stack,
+    router_stack_len: app._router?.stack?.length ?? null,
+    has_app_router: has_router2,
+    has_app_router_stack: has_router2_stack,
+    app_router_stack_len: app.router?.stack?.length ?? null,
+    // show keys to see what Express put on the app object
+    app_keys: Object.keys(app).slice(0, 40),
+  });
+});
+
+
 app.get("/_debug/routes", (req, res) => {
   const routes = [];
-
-  function walk(stack, prefix = "") {
+<  function walk(stack, prefix = "") {
     for (const layer of stack || []) {
       // Direct route
       if (layer.route?.path) {
@@ -457,10 +589,29 @@ app.get("/_debug/routes", (req, res) => {
   }
 
   walk(app._router?.stack, "");
+
   res.json({ routes });
 });
 
+app.get("/_debug/db", async (req, res) => {
+  const dbName = await db.query("select current_database() as db");
+  const schema = await db.query("select current_schema() as schema");
+  const idDefault = await db.query(`
+    SELECT table_schema, column_default
+    FROM information_schema.columns
+    WHERE table_name='users' AND column_name='id'
+    ORDER BY table_schema;
+  `);
+
+  res.json({
+    current_database: dbName.rows[0].db,
+    current_schema: schema.rows[0].schema,
+    users_id_defaults: idDefault.rows,
+  });
+});
+
 // ===== Start server =====
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server listening on port ${PORT}`);
