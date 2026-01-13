@@ -672,6 +672,8 @@ app.get("/_debug/routes", (req, res) => {
   res.json({ routes });
 });
 
+// Auto-deploy trigger: verified user-recipes POST route
+
 app.get("/_debug/db", async (req, res) => {
   const dbName = await db.query("select current_database() as db");
   const schema = await db.query("select current_schema() as schema");
