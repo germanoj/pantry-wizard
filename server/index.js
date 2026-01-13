@@ -34,7 +34,9 @@ app.use(express.json());
 //// hayley password token and logn/reg routes!!!!! NO TOUCHY
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
-  console.warn("⚠️ Missing JWT_SECRET in server .env (auth will fail until set).");
+  console.warn(
+    "⚠️ Missing JWT_SECRET in server .env (auth will fail until set)."
+  );
 }
 
 function signToken(userId) {
@@ -43,8 +45,9 @@ function signToken(userId) {
 }
 
 function requireUser(req, res, next) {
-    if (!JWT_SECRET) return res.status(500).json({ message: "Server auth not configured" });
-    try {
+  if (!JWT_SECRET)
+    return res.status(500).json({ message: "Server auth not configured" });
+  try {
     const auth = req.headers.authorization || "";
     const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
     if (!token) return res.status(401).json({ message: "Missing token" });
@@ -62,10 +65,14 @@ app.post("/auth/register", async (req, res) => {
     const { username, email, password } = req.body ?? {};
 
     if (!username || !email || !password) {
-      return res.status(400).json({ message: "username, email, password required" });
+      return res
+        .status(400)
+        .json({ message: "username, email, password required" });
     }
     if (String(password).length < 8) {
-      return res.status(400).json({ message: "password must be at least 8 characters" });
+      return res
+        .status(400)
+        .json({ message: "password must be at least 8 characters" });
     }
 
     const uname = String(username).trim();
@@ -77,7 +84,9 @@ app.post("/auth/register", async (req, res) => {
       [mail, uname]
     );
     if (existing.rowCount > 0) {
-      return res.status(409).json({ message: "Email or username already in use" });
+      return res
+        .status(409)
+        .json({ message: "Email or username already in use" });
     }
 
     const hash = await bcrypt.hash(String(password), 10);
@@ -126,7 +135,10 @@ app.post("/auth/login", async (req, res) => {
     }
 
     const token = signToken(user.id);
-    return res.json({ token, user: { id: user.id, username: user.username, email: user.email } });
+    return res.json({
+      token,
+      user: { id: user.id, username: user.username, email: user.email },
+    });
   } catch (err) {
     console.error("login error:", err);
     return res.status(500).json({ message: "Login failed" });
@@ -528,13 +540,12 @@ app.get("/_debug/router-shape", (req, res) => {
   });
 });
 
-
 app.get("/_debug/routes", (req, res) => {
   const routes = [];
   const stack = app._router?.stack || app.router?.stack || [];
   // Express 4: app._router.stack
   // Express 5: app.router.stack
-   for (const layer of stack) {
+  for (const layer of stack) {
     // Direct routes
     if (layer.route?.path) {
       const methods = Object.keys(layer.route.methods || {})
