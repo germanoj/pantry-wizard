@@ -582,7 +582,7 @@ app.post("/api/user-recipes", async (req, res) => {
     return res.json({ ok: true, recipeId });
   } catch (err) {
     console.error("save recipe error:", err);
-    return res.status(500).send("Failed to save recipe");
+    return res.status(500).json({ error: String(err?.message || err) });
   }
 });
 
