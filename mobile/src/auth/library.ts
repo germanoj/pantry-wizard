@@ -1,11 +1,12 @@
 import axios from "axios";
+import { API_BASE_URL } from "@/src/config/api";
 
-const API = process.env.EXPO_PUBLIC_API_URL;
+const API = API_BASE_URL;
 console.log("API baseURL:", API);
 
-if (!API) throw new Error("Missing EXPO_PUBLIC_API_URL");
+if (!API) throw new Error("Missing EXPO_PUBLIC_API_BASE_URL");
 
-type AuthResponse = { token: string; user?: any }; //guard, optional for a user to exist
+type AuthResponse = { token: string; user?: any };
 
 const client = axios.create({
   baseURL: API,
@@ -15,7 +16,6 @@ const client = axios.create({
 
 function getErrorMessage(err: unknown) {
   if (axios.isAxiosError(err)) {
-    // server responded with JSON like { message: "..." }
     const msg =
       (err.response?.data as any)?.message ||
       (err.response?.data as any)?.error ||
@@ -25,10 +25,7 @@ function getErrorMessage(err: unknown) {
   return err instanceof Error ? err.message : String(err);
 }
 
-////////////
-//login API
-////////////
-
+// ===== login =====
 export async function apiLogin(email: string, password: string) {
   try {
     const res = await client.post<AuthResponse>("/auth/login", {
@@ -41,10 +38,7 @@ export async function apiLogin(email: string, password: string) {
   }
 }
 
-//////////
-//register api
-//////////
-
+// ===== register =====
 export async function apiRegister(
   username: string,
   email: string,
