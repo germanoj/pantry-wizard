@@ -192,6 +192,12 @@ function getUserId(req) {
 }
 */
 
+const DEV_USER_ID = "00000000-0000-0000-0000-000000000001";
+
+function getUserId(req) {
+  // If auth is enabled and a user is present, use it; otherwise dev fallback
+  return req.userId || DEV_USER_ID;
+}
 // ===== OpenAI client =====
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -519,7 +525,7 @@ Return ONLY valid JSON in this exact shape:
   }
 });
 
-app.post("/api/user-recipes", async (req, res) => {
+app.post("/api/user-recipes", requireUser, async (req, res) => {
   try {
     const { recipe } = req.body ?? {};
     if (!recipe || typeof recipe !== "object") {
@@ -586,7 +592,7 @@ app.post("/api/user-recipes", async (req, res) => {
   }
 });
 
-app.get("/api/user-recipes", async (req, res) => {
+app.get("/api/user-recipes", requireUser, async (req, res) => {
   try {
     const userId = getUserId(req);
 
