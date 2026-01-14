@@ -14,6 +14,8 @@ import { useFonts } from "expo-font";
 import { AuthProvider } from "../src/auth/AuthContext";
 import { AuthGate } from "../src/auth/AuthGate";
 
+import { ThemePreferenceProvider } from "@/src/theme/ThemePreferenceProvider";
+
 export const unstable_settings = {
   anchor: "(tabs)",
 };
@@ -32,6 +34,7 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <AuthGate>
+        <ThemePreferenceProvider>
         <GeneratedRecipesProvider>
           <NotInterestedProvider>
             <ThemeProvider
@@ -61,6 +64,7 @@ export default function RootLayout() {
             </ThemeProvider>
           </NotInterestedProvider>
         </GeneratedRecipesProvider>
+        </ThemePreferenceProvider>
       </AuthGate>
     </AuthProvider>
   );

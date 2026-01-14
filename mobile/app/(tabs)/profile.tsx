@@ -1,21 +1,24 @@
-import { Modal, Pressable, StyleSheet, View } from "react-native";
+import { Modal, Pressable, StyleSheet, View, Text } from "react-native";
 
 import { router } from "expo-router";
 import { useState } from "react";
 
 import { useAuth } from "@/src/auth/AuthContext";
 import { useTheme } from '@/src/theme/usetheme';
+import { useThemePreference } from "@/src/theme/ThemePreferenceProvider";
 import { WizardBody, WizardTitle } from '@/src/components/WizardText';
 import { Card } from '@/src/components/Card';
 //import { use } from "react";
 
 export default function ProfilePage() {
   const theme = useTheme();
+  const {preference, setPreference, toggleDarkMode, isHydrated} = useThemePreference();
   const {token} = useAuth();
   const { signOut } = useAuth();
   const [showLogout, setShowLogout] = useState(false);
 
-
+  if(!isHydrated) return null; //prevents that weird flash when loading
+  const isDark = theme.mode === "dark";
   //changed to a modal set up instead so works on both web and mobile
    const confirmLogout = async () => {
     try {
@@ -55,9 +58,48 @@ export default function ProfilePage() {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Card>
+      
         <WizardTitle>Welcome back, user!</WizardTitle> 
-        <WizardBody>Here are the recipes you&apos;ve tried in the past:</WizardBody> 
+        <WizardBody>Here you can find all the settings to personalize your wizarding experience✨</WizardBody>
+        {/*<WizardBody>Here are the recipes you&apos;ve tried in the past:</WizardBody> */}
         {/* keep this on profile page? only do settings etc? */}
+        <View style={[styles.settingCard, { borderColor: theme.border, backgroundColor: theme.surface2 }]}>
+          <WizardBody style={{ color: theme.textMuted, marginBottom: 10 }}>
+            Theme:          
+          </WizardBody>
+
+          <View style={[styles.segmentWrap, { borderColor: theme.border, backgroundColor: theme.surface }]}>
+            {(["system", "light", "dark"] as const).map((opt) => {
+              const selected = preference === opt;
+
+              return (
+                <Pressable
+                  key={opt}
+                  onPress={() => setPreference(opt)}
+                  style={({ pressed }) => [
+                    styles.segmentBtn,
+                    selected && { backgroundColor: theme.primary },
+                    pressed && { opacity: 0.85 },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.segmentText,
+                      { color: selected ? theme.primaryText : theme.textOnSurface },
+                    ]}
+                  >
+                    {opt === "system" ? "System" : opt === "light" ? "Light" : "Dark"}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/*<WizardBody style={{ marginTop: 10, color: theme.textMuted }}>
+            Current: {preference === "system" ? `System (${theme.mode})` : preference}
+          </WizardBody>*/}
+        </View>
+
         <Pressable
           style={({ pressed }) => [
             styles.logoutButton,
@@ -182,4 +224,34 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
   },
+  settingCard: {
+  width: "100%",
+  marginTop: 12,
+  padding: 14,
+  borderRadius: 16,
+  borderWidth: 1,
+},
+
+segmentWrap: {
+  width: "100%",
+  flexDirection: "row",
+  borderRadius: 999,
+  borderWidth: 1,
+  padding: 4,
+  gap: 6,
+},
+
+segmentBtn: {
+  flex: 1,
+  paddingVertical: 10,
+  borderRadius: 999,
+  alignItems: "center",
+  justifyContent: "center",
+},
+
+segmentText: {
+  fontSize: 14,
+  fontWeight: "600",
+},
+
 });
