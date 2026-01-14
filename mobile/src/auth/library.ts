@@ -5,9 +5,19 @@ import * as SecureStore from "expo-secure-store";
 const API = API_BASE_URL;
 console.log("API baseURL:", API);
 
+// Expo public env var guard
 if (!API) throw new Error("Missing EXPO_PUBLIC_API_BASE_URL");
 
-type AuthResponse = { token: string; user?: any };
+export type User = {
+  id: string;
+  username: string;
+  email: string;
+};
+
+type AuthResponse = {
+  token: string;
+  user?: User;
+};
 
 const client = axios.create({
   baseURL: API,
