@@ -13,7 +13,6 @@ import { useTheme } from "@/src/theme/usetheme";
 
 export default function TabLayout() {
   const { token, isLoading } = useAuth();
-
   const theme = useTheme();
 
   if (isLoading) return null; //create fun splash?
@@ -31,17 +30,25 @@ export default function TabLayout() {
         screenOptions={{
           headerTitleAlign: "center",
           tabBarLabelPosition: "below-icon",
-          tabBarActiveTintColor: theme.textMuted,
           //headerShown: false,
+          //tab colors
           tabBarButton: HapticTab,
+          tabBarActiveTintColor: theme.primary, //when you click on the tab it highlights 
+          //gold "accent" ot "primary"?????
           tabBarInactiveTintColor: theme.textMuted,
           tabBarStyle: {
-              backgroundColor: theme.surface,
+              backgroundColor: theme.surface2,
               borderTopColor: theme.border,
+              borderTopWidth: 1,
             },
+          tabBarItemStyle: {
+              paddingTop: 6,
+              paddingBottom: 6,
+            },
+          //header colors
           headerStyle: { backgroundColor: theme.surface },
           headerTitleStyle: { color: theme.text },
-          headerTintColor: theme.text, // back button / icons
+          headerTintColor: theme.accent, // back button / icons
         }}
       >
       <Tabs.Screen
@@ -89,11 +96,7 @@ export default function TabLayout() {
       />
 
       {/* hidden routes that still exist */}
-      <Tabs.Screen
-        name="recipes"
-        options={{href: null}}
-      />
-
+      <Tabs.Screen name="recipes" options={{href: null}}/>
       <Tabs.Screen
         name="loginReg"
         options={{
@@ -104,7 +107,6 @@ export default function TabLayout() {
           ),
         }}
       />
-
       <Tabs.Screen name="explore" options={{ href: null }} />
       
     </Tabs>
