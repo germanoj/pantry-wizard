@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { Text, View, StyleSheet, Alert, TextInput, Pressable } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
 import { Link, router } from "expo-router";
 
 import { useTheme } from "@/src/theme/usetheme";
-import { WizardBody, WizardTitle } from "@/src/components/WizardText";
+import { WizardBody, WizardTitle, WizardInput, WizardButton } from "@/src/components/WizardText";
 import { Card } from "@/src/components/Card";
 
 import { apiRegister } from "@/src/auth/library";
 // If you want auto-login after register, uncomment:
-// import { useAuth } from "@/src/auth/AuthContext";
+import { useAuth } from "@/src/auth/AuthContext";
 
 export default function RegisterPage() {
   const theme = useTheme();
@@ -19,7 +19,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
 
   // If you want auto-login after register, uncomment:
-  // const { signIn } = useAuth();
+  const { signIn } = useAuth();
 
   const onRegister = async () => {
   if (!username || !email || !password) {
@@ -38,15 +38,16 @@ export default function RegisterPage() {
   try {
     setLoading(true);
 
-    console.log("Registering:", { username, email });
+    //console.log("Registering:", { username, email });
     const data = await apiRegister(username, email, password);
-    console.log("Register success:", data);
-
-    Alert.alert("Poof!", "Your account has been created. Log in and let's get cookin'!", [
-      { text: "OK", onPress: () => router.back() }, // closes modal
-    ]);
+    //console.log("Register success:", data);
+    await signIn(data.token);
+        Alert.alert("Poof!", "Your account has been created. Let's get cookin'!", [
+          { text: "OK", onPress: () => router.replace("/(tabs)")},
+        ]);
+  
   } catch (err: any) {
-    console.log("Register error:", err);
+    //console.log("Register error:", err);
     Alert.alert("Error", err?.message || String(err));
   } finally {
     setLoading(false);
@@ -57,9 +58,9 @@ export default function RegisterPage() {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Card>
         <WizardTitle>Welcome muggle!</WizardTitle>
-        <WizardTitle>Create your account:</WizardTitle>
+        <WizardBody>Create your account:</WizardBody>
 
-        <TextInput
+        <WizardInput
           value={username}
           onChangeText={setUsername}
           placeholder="username"
@@ -67,7 +68,7 @@ export default function RegisterPage() {
           style={styles.input}
         />
 
-        <TextInput
+        <WizardInput
           value={email}
           onChangeText={setEmail}
           placeholder="email"
@@ -76,7 +77,7 @@ export default function RegisterPage() {
           style={styles.input}
         />
 
-        <TextInput
+        <WizardInput
           value={password}
           onChangeText={setPassword}
           placeholder="password"
@@ -84,9 +85,9 @@ export default function RegisterPage() {
           style={styles.input}
         />
 
-        <Pressable style={styles.button} onPress={onRegister} disabled={loading}>
-          <Text style={styles.buttonText}>{loading ? "1...2...3..." : "Poof!"}</Text>
-        </Pressable>
+        <WizardButton style={styles.button} onPress={onRegister} disabled={loading}>
+          <WizardBody style={[styles.buttonText, {color:theme.primaryText}]}>{loading ? "1...2...3..." : "Poof!"}</WizardBody>
+        </WizardButton>
 
         <WizardBody style={styles.linkRow}>
           Already met the wizard? Log in{" "}
@@ -109,22 +110,13 @@ const styles = StyleSheet.create({
   },
   input: {
     width: "100%",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 12,
-    padding: 12,
-    fontSize: 16,
     marginTop: 10,
   },
   button: {
     width: "100%",
-    backgroundColor: "#111",
-    padding: 14,
-    borderRadius: 12,
-    alignItems: "center",
     marginTop: 12,
   },
-  buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  buttonText: { fontSize: 16, fontWeight: "600" },
   linkRow: { marginTop: 8, fontSize: 14 },
-  link: { color: "blue" },
+  link: {},
 });

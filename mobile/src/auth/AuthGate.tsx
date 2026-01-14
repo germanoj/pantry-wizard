@@ -51,13 +51,13 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
     // logged in users:
     // keep them out of auth pages
-    if (token && isAuthGroup) {
+    if (isAuthGroup) {
       router.replace("/(tabs)");
       return;
     }
   }, [token, isLoading, segments, router]);
 
-if (isLoading) return <LoadingScreen />;
+if (isLoading) return <LoadingScreen />; //add loading screen!
 
   return <>{children}</>;
 }
