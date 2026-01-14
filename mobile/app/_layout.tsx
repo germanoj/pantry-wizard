@@ -34,41 +34,34 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <SplashProvider>
-        <AuthGate>
-          <ThemePreferenceProvider>
-          <GeneratedRecipesProvider>
-            <NotInterestedProvider>
-              <ThemeProvider
-                value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-                >
-                <Stack screenOptions={{ headerShown: false }} >
+      <AuthGate>
+        <GeneratedRecipesProvider>
+          <NotInterestedProvider>
+            <ThemeProvider
+              value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+            >
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                {/*<Stack.Screen name="generate" options={{ title: "Recipe Wizardry" }} /> */}
+                {/*<Stack.Screen name="(auth)/login" options={{ title: "Login" }}/> */}
+                {/* <Stack.Screen name="(auth)/register" options={{ title: "Register" }} /> */}
+                {/* added recipe stack screen to layout!*/}
 
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                  <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                  {/*<Stack.Screen name="generate" options={{ title: "Recipe Wizardry" }} /> */}
-                  {/*<Stack.Screen name="(auth)/login" options={{ title: "Login" }}/> */}
-                  {/* <Stack.Screen name="(auth)/register" options={{ title: "Register" }} /> */}
-                  <Stack.Screen name="recipe" options={{ headerShown: false }} />
-                  {/* added recipe stack screen to layout!*/}
-
-                  <Stack.Screen
-                    name="(modals)/register-modal"
-                    options={{
-                      presentation: "modal",
-                      title: "Create Account",
-                      headerShown: false,
-                    }}
-                  />
-
-                </Stack>
-                <StatusBar style="auto" />
-              </ThemeProvider>
-            </NotInterestedProvider>
-          </GeneratedRecipesProvider>
-          </ThemePreferenceProvider>
-        </AuthGate>
-      </SplashProvider>
+                <Stack.Screen
+                  name="(modals)/register-modal"
+                  options={{
+                    presentation: "modal",
+                    title: "Create Account",
+                    headerShown: false,
+                  }}
+                />
+              </Stack>
+              <StatusBar style="auto" />
+            </ThemeProvider>
+          </NotInterestedProvider>
+        </GeneratedRecipesProvider>
+      </AuthGate>
     </AuthProvider>
   );
 }
