@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import SingleRecipeCard from "@/app/recipe-components/SingleRecipeCard";
+import SingleRecipeCard from "@/src/components/recipe-components/SingleRecipeCard";
 import { MOCK_RECIPES } from "@/data/recipes";
 import { useNotInterested } from "@/state/NotInterestedContext";
 

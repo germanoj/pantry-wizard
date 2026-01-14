@@ -10,31 +10,67 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  label: string
+): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`${label} timed out after ${ms}ms`)),
+        ms
+      )
+    ),
+  ]);
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setTokenState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadToken = async () => {
-      try {
-        const saved = await getToken();
-        setTokenState(saved ?? null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    let mounted = true;
 
-    loadToken();
+    (async () => {
+      try {
+        // If storage hangs, we still proceed after timeout.
+        const saved = await withTimeout(getToken(), 1500, "getToken()");
+        if (mounted) setTokenState(saved ?? null);
+        console.log("Auth: token loaded", !!saved);
+      } catch (err) {
+        console.error(
+          "Auth: token load failed (or timed out). Continuing without token.",
+          err
+        );
+        if (mounted) setTokenState(null);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const signIn = async (newToken: string) => {
     setTokenState(newToken);
-    await saveToken(newToken);
+    try {
+      await withTimeout(saveToken(newToken), 1500, "saveToken()");
+    } catch (err) {
+      console.error("Auth: saveToken failed (or timed out)", err);
+    }
   };
 
   const signOut = async () => {
     setTokenState(null);
-    await clearToken();
+    try {
+      await withTimeout(clearToken(), 1500, "clearToken()");
+    } catch (err) {
+      console.error("Auth: clearToken failed (or timed out)", err);
+    }
   };
 
   return (

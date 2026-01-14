@@ -6,7 +6,7 @@ import {
 } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 
-import RecipeResults from "../recipe-components/RecipeResults";
+import RecipeResults from "@/src/components/recipe-components/RecipeResults";
 import { MOCK_RECIPES } from "@/data/recipes";
 
 const FOOTER_HEIGHT = 72;
