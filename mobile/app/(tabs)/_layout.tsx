@@ -5,13 +5,16 @@ import { useAuth } from "@/src/auth/AuthContext";
 import { HapticTab } from "@/components/haptic-tab";
 import Feather from "react-native-vector-icons/Feather";
 import WizardHatIcon from "../wizardHat";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+
+//import { Theme } from "@/src/theme/theme";
+import { useTheme } from "@/src/theme/usetheme";
+//import { Colors } from "@/constants/theme";
+//import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function TabLayout() {
   const { token, isLoading } = useAuth();
 
-  const colorScheme = useColorScheme();
+  const theme = useTheme();
 
   if (isLoading) return null; //create fun splash?
   
@@ -23,15 +26,22 @@ export default function TabLayout() {
 
   //if logged in have seeing eye - nothing hidden except that which is hidden for all
 
-  if (!isAuthed) {
     return (
       <Tabs
         screenOptions={{
           headerTitleAlign: "center",
           tabBarLabelPosition: "below-icon",
-          tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
+          tabBarActiveTintColor: theme.textMuted,
           //headerShown: false,
           tabBarButton: HapticTab,
+          tabBarInactiveTintColor: theme.textMuted,
+          tabBarStyle: {
+              backgroundColor: theme.surface,
+              borderTopColor: theme.border,
+            },
+          headerStyle: { backgroundColor: theme.surface },
+          headerTitleStyle: { color: theme.text },
+          headerTintColor: theme.text, // back button / icons
         }}
       >
       <Tabs.Screen
@@ -54,6 +64,19 @@ export default function TabLayout() {
         }}
       />
 
+      {/* only show when logged in */}
+      <Tabs.Screen
+        name="saved"
+        options={{
+          href: isAuthed ? undefined : null,
+          title: "Saved Recipes",
+          tabBarIcon: ({ color }) => (
+            <Feather size={24} name="heart" color={color} />
+          ),
+        }}
+      />
+
+      {/* keep visible always (content changes inside ProfilePage) */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -64,15 +87,13 @@ export default function TabLayout() {
           ),
         }}
       />
+
+      {/* hidden routes that still exist */}
       <Tabs.Screen
         name="recipes"
         options={{href: null}}
       />
 
-      <Tabs.Screen
-        name="saved"
-        options={{ href: null}}
-      />
       <Tabs.Screen
         name="loginReg"
         options={{
@@ -89,82 +110,3 @@ export default function TabLayout() {
     </Tabs>
     )
   }
-  return (
-    <Tabs
-      screenOptions={{
-        headerTitleAlign: "center",
-        tabBarLabelPosition: "below-icon",
-        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
-        //headerShown: false,
-        tabBarButton: HapticTab,
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          headerTitle: "Pantry Wizard",
-          tabBarIcon: ({ color }) => (
-            <Feather name="home" size={24} color={color} />
-          ),
-        }}
-      />
-
-    
-      <Tabs.Screen
-        name="chatBot"
-        options={{
-          title: "Wizard",
-          headerTitle: "Recipe Wizardry",
-          tabBarIcon: ({ color }) => <WizardHatIcon size={24} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="recipes"
-        options={{
-          title: "Recipes",
-          headerTitle: "Recipes",
-          tabBarIcon: ({ color }) => (
-            <Feather name="book-open" size={24} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="saved"
-        options={{
-          title: "Saved Recipes",
-          tabBarIcon: ({ color }) => (
-            <Feather size={24} name="heart" color={color} />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "My Page",
-          headerTitle: "My Page",
-          tabBarIcon: ({ color }) => (
-            <Feather size={24} name="user" color={color} />
-          ),
-        }}
-      />
-
-      
-      {/* cant see the tab but page still exists*/}
-      <Tabs.Screen
-        name="loginReg"
-        options={{
-          href: null,
-          title: "Login/Register",
-          tabBarIcon: ({ color }) => (
-            <Feather name="log-in" size={24} color={color} />
-          ),
-        }}
-      />
-
-      <Tabs.Screen name="explore" options={{ href: null }} />
-      
-    </Tabs>
-  );
-}
