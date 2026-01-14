@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { View, StyleSheet, Alert, TextInput, Pressable } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
 import { Link, router } from "expo-router";
 
-//import { mockLogin } from "../../library/auth";
 import { useTheme } from '@/src/theme/usetheme';
-import { WizardBody, WizardTitle } from '@/src/components/WizardText';
+import { WizardBody, WizardTitle, WizardInput, WizardButton } from '@/src/components/WizardText';
 import { Card } from '@/src/components/Card';
 
 import { useAuth } from "@/src/auth/AuthContext";
@@ -28,7 +27,7 @@ export default function LoginPage() {
       setLoading(true);
 
       const data = await apiLogin(email, password);
-      await signIn(data.token);           // ✅ THIS is what updates auth state
+      await signIn(data.token);           // this updates auth state
       Alert.alert("Welcome back!", "You're logged in. Let's get cookin'!");
       router.replace("/(tabs)/profile"); //can switch just to (tabs) so it open the tab homescreen
     } catch (err: any) {
@@ -44,7 +43,7 @@ export default function LoginPage() {
       <Card>
       <WizardTitle>Log in</WizardTitle>
 
-      <TextInput
+      <WizardInput
         value={email}
         onChangeText={setEmail}
         placeholder="email"
@@ -53,7 +52,7 @@ export default function LoginPage() {
         style={styles.input}
       />
 
-      <TextInput
+      <WizardInput
         value={password}
         onChangeText={setPassword}
         placeholder="password"
@@ -61,12 +60,13 @@ export default function LoginPage() {
         style={styles.input}
       />
 
-      <Pressable style={styles.button} onPress={onLogin} disabled={loading}>
-        <WizardBody style={styles.buttonText}>{loading ? "Casting spell..." : "Accio"}</WizardBody>
-      </Pressable>
+      <WizardButton style={styles.button} onPress={onLogin} disabled={loading}>
+        <WizardBody style={[styles.buttonText, { color: theme.primaryText }]}>
+            {loading ? "Casting spell..." : "Accio"}</WizardBody>
+      </WizardButton>
 
       <WizardBody style={styles.linkRow}>
-       First time visiting the wizard? <Link href="/(modals)/register-modal" style={[styles.link, { color: theme.accent2 }]}>Create an account</Link>
+       First time visiting the wizard? <Link href="/register" style={[styles.link, { color: theme.accent2 }]}>Create an account</Link>
       </WizardBody>
       </Card>
     </View>
@@ -88,8 +88,8 @@ const styles = StyleSheet.create({
     fontFamily: "YuseiMagic",
 },
   input: { width: "100%", borderWidth: 1, borderColor: "#ddd", borderRadius: 12, padding: 12, fontSize: 16, marginTop: 10 },
-  button: { width: "100%", backgroundColor: "#111", padding: 14, borderRadius: 12, alignItems: "center", marginTop: 12 },
-  buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  button: { width: "100%" },
+  buttonText: { fontSize: 16, fontWeight: "600" },
   linkRow: { marginTop: 12, fontSize: 14 },
   link: {
 

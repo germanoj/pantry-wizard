@@ -56,8 +56,8 @@ export default function ProfilePage() {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Card>
         <WizardTitle>Welcome back, user!</WizardTitle> 
-        <WizardBody>Here are the recipes you&apos;ve tried in the past:</WizardBody>
-
+        <WizardBody>Here are the recipes you&apos;ve tried in the past:</WizardBody> 
+        {/* keep this on profile page? only do settings etc? */}
         <Pressable
           style={({ pressed }) => [
             styles.logoutButton,
@@ -100,7 +100,7 @@ export default function ProfilePage() {
           >
             <WizardTitle>Log out?</WizardTitle>
             <WizardBody style={{ marginTop: 8, color: theme.textMuted }}>
-              You’ll be returned to the home screen.
+              You’ll be returned to the muggle world.
             </WizardBody>
 
             <View style={styles.modalButtons}>
