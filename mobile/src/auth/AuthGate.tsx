@@ -26,7 +26,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     // - wizard screen inside tabs: /(tabs)/chatBot
     const isIntroRoot = !first; // root index screen
     //const isWizardGuest = isTabsGroup && second === "chatBot";
-    //const isGenerate = first === "generate";
+    const isGenerate = first === "generate";
     //const isRecipes = first === "recipes";
     //const isRecipes = isTabsGroup && second === "recipes";
     //const isProfileGuest = isTabsGroup && second === "profile";
@@ -40,7 +40,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       if (isAuthGroup) return;
       if (isGuestAllowedTab) return;
       //if (isWizardGuest) return;
-      //if (isGenerate) return;
+      if (isGenerate) return;
       //if (isRecipes) return;
       //if (isProfileGuest) return;
 

@@ -1,0 +1,35 @@
+[1mdiff --git a/server/index.js b/server/index.js[m
+[1mindex 064c5c9..56c522c 100644[m
+[1m--- a/server/index.js[m
+[1m+++ b/server/index.js[m
+[36m@@ -192,6 +192,12 @@[m [mfunction getUserId(req) {[m
+ }[m
+ */[m
+ [m
+[32m+[m[32mconst DEV_USER_ID = "00000000-0000-0000-0000-000000000001";[m
+[32m+[m
+[32m+[m[32mfunction getUserId(req) {[m
+[32m+[m[32m  // If auth is enabled and a user is present, use it; otherwise dev fallback[m
+[32m+[m[32m  return req.userId || DEV_USER_ID;[m
+[32m+[m[32m}[m
+ // ===== OpenAI client =====[m
+ const openai = new OpenAI({[m
+   apiKey: process.env.OPENAI_API_KEY,[m
+[36m@@ -519,7 +525,7 @@[m [mReturn ONLY valid JSON in this exact shape:[m
+   }[m
+ });[m
+ [m
+[31m-app.post("/api/user-recipes", async (req, res) => {[m
+[32m+[m[32mapp.post("/api/user-recipes", requireUser, async (req, res) => {[m
+   try {[m
+     const { recipe } = req.body ?? {};[m
+     if (!recipe || typeof recipe !== "object") {[m
+[36m@@ -586,7 +592,7 @@[m [mapp.post("/api/user-recipes", async (req, res) => {[m
+   }[m
+ });[m
+ [m
+[31m-app.get("/api/user-recipes", async (req, res) => {[m
+[32m+[m[32mapp.get("/api/user-recipes", requireUser, async (req, res) => {[m
+   try {[m
+     const userId = getUserId(req);[m
+ [m
