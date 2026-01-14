@@ -192,7 +192,7 @@ function getUserId(req) {
 }
 */
 
-//const DEV_USER_ID = "00000000-0000-0000-0000-000000000001";
+const DEV_USER_ID = "00000000-0000-0000-0000-000000000001";
 
 function getUserId(req) {
   // If auth is enabled and a user is present, use it; otherwise dev fallback
