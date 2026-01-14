@@ -33,22 +33,44 @@ export default function TabLayout() {
           //headerShown: false,
           //tab colors
           tabBarButton: HapticTab,
-          tabBarActiveTintColor: theme.primary, //when you click on the tab it highlights 
+          tabBarActiveTintColor: theme.accent, //when you click on the tab it highlights 
           //gold "accent" ot "primary"?????
           tabBarInactiveTintColor: theme.textMuted,
           tabBarStyle: {
+              position: "absolute",
+              left: 18,
+              right: 18,
+              bottom: 18,
+
+              height: 72,
+              paddingTop: 10,
+              paddingBottom: 10,
               backgroundColor: theme.surface2,
               borderTopColor: theme.border,
               borderTopWidth: 1,
+
+              borderRadius: 999, // pill style
+              // iOS shadow
+              shadowColor: "#000",
+              shadowOpacity: 0.18,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 8 },
+              // Android shadow
+              elevation: 12,
+
             },
           tabBarItemStyle: {
-              paddingTop: 6,
-              paddingBottom: 6,
+              paddingVertical: 1,
             },
+          tabBarLabelStyle: {
+              fontSize: 11,
+              marginTop: 2,
+            },
+
           //header colors
           headerStyle: { backgroundColor: theme.surface },
           headerTitleStyle: { color: theme.text },
-          headerTintColor: theme.accent, // back button / icons
+          headerTintColor: theme.text, // back button / icons
         }}
       >
       <Tabs.Screen
