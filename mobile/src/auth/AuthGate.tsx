@@ -25,35 +25,39 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     // - auth screens
     // - wizard screen inside tabs: /(tabs)/chatBot
     const isIntroRoot = !first; // root index screen
-    const isWizardGuest = isTabsGroup && second === "chatBot";
+    //const isWizardGuest = isTabsGroup && second === "chatBot";
     //const isGenerate = first === "generate";
     //const isRecipes = first === "recipes";
-    const isRecipes = isTabsGroup && second === "recipes";
-
+    //const isRecipes = isTabsGroup && second === "recipes";
+    //const isProfileGuest = isTabsGroup && second === "profile";
+    const guestAllowedTabs = new Set(["index", "chatBot", "profile", "saved"])
+    const isGuestAllowedTab = isTabsGroup && guestAllowedTabs.has(String(second));
 
 
     // 🚫 Logged out users:
     if (!token) {
       if (isIntroRoot) return;
       if (isAuthGroup) return;
-      if (isWizardGuest) return;
+      if (isGuestAllowedTab) return;
+      //if (isWizardGuest) return;
       //if (isGenerate) return;
-      if (isRecipes) return;
+      //if (isRecipes) return;
+      //if (isProfileGuest) return;
 
-      // Block everything else (like saved/profile)
+      // Block everything else (currently just saved?)
       router.replace("/(tabs)");
       return;
     }
 
     // logged in users:
     // keep them out of auth pages
-    if (token && isAuthGroup) {
+    if (isAuthGroup) {
       router.replace("/(tabs)");
       return;
     }
-  }, [token, isLoading, segments]);
+  }, [token, isLoading, segments, router]);
 
-if (isLoading) return <LoadingScreen />;
+if (isLoading) return <LoadingScreen />; //add loading screen!
 
   return <>{children}</>;
 }

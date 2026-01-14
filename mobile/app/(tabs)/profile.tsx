@@ -11,6 +11,7 @@ import { Card } from '@/src/components/Card';
 
 export default function ProfilePage() {
   const theme = useTheme();
+  const {token} = useAuth();
   const { signOut } = useAuth();
   const [showLogout, setShowLogout] = useState(false);
 
@@ -40,12 +41,23 @@ export default function ProfilePage() {
           },
         ]);
       };*/
- return (
+  if (!token) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <Card>
+          <WizardTitle>Hey there stranger!👋</WizardTitle> 
+          <WizardBody>Make an account and start saving your recipes✨</WizardBody>
+        </Card>
+      </View>
+
+    );
+  }
+  return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Card>
-        <WizardTitle>Welcome back, user!</WizardTitle>
-        <WizardBody>Here are the recipes you&apos;ve tried in the past:</WizardBody>
-
+        <WizardTitle>Welcome back, user!</WizardTitle> 
+        <WizardBody>Here are the recipes you&apos;ve tried in the past:</WizardBody> 
+        {/* keep this on profile page? only do settings etc? */}
         <Pressable
           style={({ pressed }) => [
             styles.logoutButton,
@@ -63,7 +75,7 @@ export default function ProfilePage() {
         </Pressable>
       </Card>
 
-      {/* ✅ Permanent cross-platform modal */}
+      {/*  permanent modal for both ios and web (no alerts) */}
       <Modal
         visible={showLogout}
         transparent
@@ -88,7 +100,7 @@ export default function ProfilePage() {
           >
             <WizardTitle>Log out?</WizardTitle>
             <WizardBody style={{ marginTop: 8, color: theme.textMuted }}>
-              You’ll be returned to the home screen.
+              You’ll be returned to the muggle world.
             </WizardBody>
 
             <View style={styles.modalButtons}>
