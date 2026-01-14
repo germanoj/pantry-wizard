@@ -68,7 +68,7 @@ export default function TabLayout() {
             },
 
           //header colors
-          headerStyle: { backgroundColor: theme.surface },
+          headerStyle: { backgroundColor: theme.surface2},
           headerTitleStyle: { color: theme.text },
           headerTintColor: theme.text, // back button / icons
         }}
