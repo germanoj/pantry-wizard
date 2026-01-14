@@ -1,5 +1,6 @@
 import { Tabs } from "expo-router";
 //import {React} from "react";
+import { useAuth } from "@/src/auth/AuthContext";
 
 import { HapticTab } from "@/components/haptic-tab";
 import Feather from "react-native-vector-icons/Feather";
@@ -8,8 +9,86 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function TabLayout() {
+  const { token, isLoading } = useAuth();
+
   const colorScheme = useColorScheme();
 
+  if (isLoading) return null; //create fun splash?
+  
+  const isAuthed = !!token;
+  
+  //if not loggeed in, can see home, wizard, my profile
+    //will change profile to look diff when logged in and not
+  //other tabs are hidden
+
+  //if logged in have seeing eye - nothing hidden except that which is hidden for all
+
+  if (!isAuthed) {
+    return (
+      <Tabs
+        screenOptions={{
+          headerTitleAlign: "center",
+          tabBarLabelPosition: "below-icon",
+          tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
+          //headerShown: false,
+          tabBarButton: HapticTab,
+        }}
+      >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Home",
+          headerTitle: "Pantry Wizard",
+          tabBarIcon: ({ color }) => (
+            <Feather name="home" size={24} color={color} />
+          ),
+        }}
+      />
+    
+      <Tabs.Screen
+        name="chatBot"
+        options={{
+          title: "Wizard",
+          headerTitle: "Recipe Wizardry",
+          tabBarIcon: ({ color }) => <WizardHatIcon size={24} color={color} />,
+        }}
+      />
+
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "My Page",
+          headerTitle: "My Page",
+          tabBarIcon: ({ color }) => (
+            <Feather size={24} name="user" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="recipes"
+        options={{href: null}}
+      />
+
+      <Tabs.Screen
+        name="saved"
+        options={{ href: null}}
+      />
+      <Tabs.Screen
+        name="loginReg"
+        options={{
+          href: null,
+          title: "Login/Register",
+          tabBarIcon: ({ color }) => (
+            <Feather name="log-in" size={24} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen name="explore" options={{ href: null }} />
+      
+    </Tabs>
+    )
+  }
   return (
     <Tabs
       screenOptions={{
