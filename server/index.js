@@ -582,7 +582,7 @@ app.post("/api/user-recipes", async (req, res) => {
     return res.json({ ok: true, recipeId });
   } catch (err) {
     console.error("save recipe error:", err);
-    return res.status(500).send("Failed to save recipe");
+    return res.status(500).json({ error: String(err?.message || err) });
   }
 });
 
@@ -670,6 +670,8 @@ app.get("/_debug/routes", (req, res) => {
 
   res.json({ routes });
 });
+
+// Auto-deploy trigger: verified user-recipes POST route
 
 app.get("/_debug/db", async (req, res) => {
   const dbName = await db.query("select current_database() as db");
