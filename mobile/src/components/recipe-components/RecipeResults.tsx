@@ -1,11 +1,11 @@
 import { FlatList, Alert, View } from "react-native";
 import { useRouter } from "expo-router";
 import RecipeCard from "./RecipeCard";
-import { useNotInterested } from "../../state/NotInterestedContext";
-import { saveRecipe } from "../../src/lib/savedRecipes";
+import { NotInterestedProvider } from "@/src/state/NotInterestedContext";
+import { saveRecipe } from "@/src/lib/savedRecipes";
 import { useTheme } from "@/src/theme/usetheme";
 import { ui } from "@/src/theme/theme";
-import { saveUiRecipe } from "../../src/lib/saveRecipeAction";
+import { saveUiRecipe } from "@/src/lib/saveRecipeAction";
 
 export interface Recipe {
   id: string;
