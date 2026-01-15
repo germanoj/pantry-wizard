@@ -57,6 +57,11 @@ async function uploadPngDataUrlToCloudinary(dataUrl, publicId) {
 app.use(cors()); // dev-safe: allow all origins
 app.use(express.json());
 
+app.use((req, res, next) => {
+  console.log(`[REQ] ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 //import crypto from "crypto";
 
 //// hayley password token and logn/reg routes!!!!! NO TOUCHY
