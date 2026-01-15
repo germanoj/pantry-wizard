@@ -1,33 +1,18 @@
 import { Tabs } from "expo-router";
-import { ActivityIndicator, View } from "react-native";
-//import {React} from "react";
+
 import { useAuth } from "@/src/auth/AuthContext";
 
 import { HapticTab } from "@/components/haptic-tab";
 import Feather from "react-native-vector-icons/Feather";
 import WizardHatIcon from "../wizardHat";
 
-//import { Theme } from "@/src/theme/theme";
 import { useTheme } from "@/src/theme/usetheme";
-//import { Colors } from "@/constants/theme";
-//import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function TabLayout() {
-  const { token, isLoading } = useAuth();
+  const { token } = useAuth();
   const theme = useTheme();
-  if (isLoading) {
-    return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator />
-      </View>
-    );
-  }
 
   const isAuthed = !!token;
-
-  //if not loggeed in, can see home, wizard, my profile
-  //will change profile to look diff when logged in and not
-  //other tabs are hidden
 
   return (
     <Tabs
@@ -42,19 +27,20 @@ export default function TabLayout() {
           left: 18,
           right: 18,
           bottom: 18,
+
           height: 72,
           paddingTop: 10,
           paddingBottom: 10,
           backgroundColor: theme.surface2,
           borderTopColor: theme.border,
           borderTopWidth: 1,
-          borderRadius: 999, // pill style
-          // iOS shadow
+
+          borderRadius: 999,
           shadowColor: "#000",
           shadowOpacity: 0.18,
           shadowRadius: 12,
           shadowOffset: { width: 0, height: 8 },
-          // Android shadow
+
           elevation: 12,
         },
         tabBarItemStyle: {
@@ -64,10 +50,9 @@ export default function TabLayout() {
           fontSize: 11,
           marginTop: 2,
         },
-        //header colors
         headerStyle: { backgroundColor: theme.surface2 },
         headerTitleStyle: { color: theme.text },
-        headerTintColor: theme.text, // back button / icons
+        headerTintColor: theme.text,
       }}
     >
       <Tabs.Screen
@@ -90,7 +75,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* only show when logged in */}
       <Tabs.Screen
         name="saved"
         options={{
@@ -102,7 +86,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* keep visible always (content changes inside ProfilePage) */}
       <Tabs.Screen
         name="profile"
         options={{

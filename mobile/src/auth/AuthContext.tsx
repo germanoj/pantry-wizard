@@ -36,10 +36,8 @@ type AuthContextValue = {
 
   signIn: (newToken: string, newUser?: User | null) => Promise<void>;
   signOut: () => Promise<void>;
-  //this refreshes after udpates
   refreshMe: () => Promise<void>;
 
-  //profile update user after PATCH /users/me
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
 };
 
@@ -50,16 +48,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setTokenState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+
   //if null token then not logged in
   //if user null then not logged in
-
   //this loads the token once
+
   useEffect(() => {
     let mounted = true;
 
     const loadToken = async () => {
       try {
-        const saved = await getToken();
+        // ✅ Failsafe: if secure storage hangs, unblock UI anyway
+        const timeout = new Promise<null>((resolve) =>
+          setTimeout(() => resolve(null), 4000)
+        );
+
+        const saved = await Promise.race([
+          getToken() as Promise<string | null | undefined>,
+          timeout,
+        ]);
 
         // getToken() may return:
         // - string (valid token)
@@ -68,8 +75,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!mounted) return;
 
         setTokenState(saved ?? null);
+      } catch (e) {
+        if (!mounted) return;
+        setTokenState(null);
       } finally {
-        if (mounted) setIsLoading(false);
+        if (!mounted) return;
+        setIsLoading(false);
       }
     };
 
@@ -83,19 +94,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshMe = useCallback(async () => {
     // NULL CHECK #2
     // No token = no authenticated user
-
     if (!token) return;
+
     try {
       const me = await apiMe(token);
       setUser(me);
     } catch (e) {
-      console.log("refreshMe failed:", e);
-      // optional: if token is invalid, force logout
-      // await signOut();
+      // if apiMe fails, don't crash; leave user as-is or null
     }
   }, [token]);
 
-  // whenever token changes, fetch user (or clear it)
   useEffect(() => {
     // Token was removed (logout or expired)
     if (!token) {
@@ -127,7 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const me = await apiMe(newToken);
       setUser(me);
     } catch (e) {
-      console.log("signIn -> apiMe failed:", e);
+      // ignore; user stays null until refresh succeeds
     }
   };
 
@@ -153,8 +161,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  // NULL CHECK #5
-  // Prevents using auth outside provider
   if (!context) throw new Error("useAuth must be used inside an AuthProvider");
   return context;
 }

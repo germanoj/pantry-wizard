@@ -1,4 +1,10 @@
-//this index is for the introsplash - animation and buttons to navigate
+// this index is for the introsplash - animation and buttons to navigate
+//
+// 1 app opens to index page
+// 2 sparkle, poof animation
+// 3 pantry wizard logo appears
+// 4 buttons fade in (login, register, chat)
+// (no redirect, user chooses)
 
 //1 app opens to index page
 //2 sparkle, poof annimation
@@ -6,7 +12,8 @@
 //4 buttons fade in (login, register, chat)
 //(no redirect, user chooses)
 
-import { useEffect, useState, useRef } from "react"; //useeffect starts the wand, useref controls lottie
+import { useEffect, useState, useRef } from "react";
+
 import { View, Text, Pressable, StyleSheet, Platform } from "react-native";
 import { router } from "expo-router";
 import Animated, {
@@ -20,6 +27,7 @@ import Animated, {
 import LottieView from "lottie-react-native";
 import { useSplash } from "@/src/auth/SplashContext";
 import { useAuth } from "@/src/auth/AuthContext";
+
 export default function IntroSplash() {
   const isWeb = Platform.OS === "web";
 
@@ -40,10 +48,10 @@ export default function IntroSplash() {
   const logoScale = useSharedValue(0.2); //was .7, trying smaller start
   const logoY = useSharedValue(24); //was 16, trying to start lower
 
-  const actionsOpacity = useSharedValue(0); // buttons same as logo
+  const actionsOpacity = useSharedValue(0);
   const actionsY = useSharedValue(12);
 
-  const wandOpacity = useSharedValue(1); //need to fade this out rather than quickly disappear !!
+  const wandOpacity = useSharedValue(1);
 
   // for redirecting away from splash screen
   const { setSplashDone } = useSplash();
@@ -56,10 +64,10 @@ export default function IntroSplash() {
 
   // Timeline:
   const startLogoTimeline = () => {
-    logoOpacity.value = withDelay(40, withTiming(1, { duration: 220 })); // was 450
+    logoOpacity.value = withDelay(40, withTiming(1, { duration: 220 }));
 
     logoScale.value = withSequence(
-      withTiming(1.28, { duration: 420, easing: Easing.out(Easing.back(2.2)) }), // was 1.6
+      withTiming(1.28, { duration: 420, easing: Easing.out(Easing.back(2.2)) }),
       withTiming(1, { duration: 240, easing: Easing.out(Easing.cubic) })
     );
 
@@ -98,6 +106,7 @@ export default function IntroSplash() {
       logoScale.value = 1;
       logoY.value = 0;
 
+      // Only show actions if logged out
       actionsOpacity.value = token ? 0 : 1;
       actionsY.value = token ? 20 : 0;
 
@@ -106,18 +115,31 @@ export default function IntroSplash() {
       return;
     }
 
-    // ✅ NATIVE: start wand immediately
+    // ✅ NATIVE: start wand immediately (timeline will run after wand finishes)
     wandRef.current?.play();
   }, [isWeb, isLoading, token, setSplashDone]);
 
-  // If you have another effect that calls startLogoTimeline(), keep it as-is.
+  // Failsafe: if lottie callback never fires, still proceed.
+  useEffect(() => {
+    if (isWeb) return;
+
+    const t = setTimeout(() => {
+      setReady((prev) => {
+        if (prev) return prev;
+        startLogoTimeline();
+        return true;
+      });
+      setSplashDone(true);
+    }, 2500);
+
+    return () => clearTimeout(t);
+  }, [isWeb, setSplashDone]);
 
   const logoStyle = useAnimatedStyle(() => ({
     opacity: logoOpacity.value,
     transform: [{ translateY: logoY.value }, { scale: logoScale.value }],
   }));
 
-  //buttons
   const actionsStyle = useAnimatedStyle(() => ({
     opacity: actionsOpacity.value,
     transform: [{ translateY: actionsY.value }],
@@ -129,10 +151,11 @@ export default function IntroSplash() {
 
   return (
     <View style={styles.container}>
-      {showWand && ( //renders the wand first here
+      {/* Wand (native only) */}
+      {showWand && Platform.OS !== "web" && (
         <Animated.View
           style={[StyleSheet.absoluteFill, wandStyle]}
-          pointerEvents={"none"}
+          pointerEvents="none"
         >
           <LottieView
             ref={wandRef}
@@ -143,10 +166,11 @@ export default function IntroSplash() {
             onAnimationFinish={() => {
               // fade the wand out
               wandOpacity.value = withTiming(0, { duration: 300 });
-              //hide wand completely
+
               // after fade completes, unmount wand
               setTimeout(() => {
                 setShowWand(false);
+
                 // 2) Sparkles next
                 setShowSparkles(true);
                 // tiny delay helps feel like the wand makes it happen
@@ -164,8 +188,8 @@ export default function IntroSplash() {
         </Animated.View>
       )}
 
-      {/* Sparkles */}
-      {showSparkles && (
+      {/* Sparkles (native only) */}
+      {showSparkles && Platform.OS !== "web" && (
         <View pointerEvents="none" style={StyleSheet.absoluteFill}>
           <LottieView
             ref={sparklesRef}
@@ -178,8 +202,8 @@ export default function IntroSplash() {
         </View>
       )}
 
-      {/* 3) Poof (plays once, then disappears) */}
-      {showPoof && (
+      {/* 3) Poof (native only; plays once, then disappears) */}
+      {showPoof && Platform.OS !== "web" && (
         <View pointerEvents="none" style={styles.poofWrap}>
           <LottieView
             ref={poofRef}
@@ -192,7 +216,7 @@ export default function IntroSplash() {
         </View>
       )}
 
-      {/* logo */}
+      {/* Logo */}
       <Animated.View style={[styles.logoWrap, logoStyle]}>
         <Text style={styles.logoText}>🧙 Pantry Wizard</Text>
       </Animated.View>
@@ -228,8 +252,6 @@ export default function IntroSplash() {
   );
 }
 
-//pointer events set to none so you can press the buttons (even when sparklesa re on top)
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -249,7 +271,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   logoText: {
-    fontSize: 36, //46-56 will give that big pop feel
+    fontSize: 34,
     fontWeight: "800",
     color: "white",
   },
@@ -263,6 +285,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
   },
   btnPressed: {
     transform: [{ scale: 0.98 }],
@@ -286,6 +309,7 @@ const styles = StyleSheet.create({
   },
   poofLottie: {
     //here controls size
+
     width: "100%",
     height: "100%",
   },
