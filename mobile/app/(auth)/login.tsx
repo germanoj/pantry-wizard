@@ -27,7 +27,15 @@ export default function LoginPage() {
       setLoading(true);
 
       const data = await apiLogin(email, password);
-      await signIn(data.token);           // this updates auth state
+      // EXPLICIT NULL CHECK
+      // data.user may be undefined if backend changes or fails
+            // this updates auth state
+    if (data.user !== null && data.user !== undefined) {
+      await signIn(data.token, data.user);
+    } else {
+      await signIn(data.token, null);
+    }
+
       Alert.alert("Welcome back!", "You're logged in. Let's get cookin'!");
       router.replace("/(tabs)/profile"); //can switch just to (tabs) so it open the tab homescreen
     } catch (err: any) {

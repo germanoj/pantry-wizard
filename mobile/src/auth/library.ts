@@ -90,7 +90,7 @@ export async function apiMe(token: string) {
   }
 }
 
-////update username ////
+////update username so users can change their name in the system!! ////
 
 export async function apiUpdateUsername(token: string, username: string) {
   try {
