@@ -13,22 +13,28 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   const router = useRouter();
   const segments = useSegments();
+  
+  const first = segments[0];
+  const second = segments[1];
+  const isAuthGroup = first === "(auth)";
+  const isTabsGroup = first === "(tabs)";
+  const atRoot = !first; //this is the app/ index splash screen 
 
   useEffect(() => {
+     //only splash when loading, no loading
     if (isLoading) return;
-
-    const first = segments[0];  // "(tabs)", "(auth)", undefined
-    const second = segments[1]; // "chatBot", "saved", etc.
-
-    const isAuthGroup = first === "(auth)";
-    const isTabsGroup = first === "(tabs)";
-    const atRoot = !first; //this is the app/ index splash screen 
+    //{
+  // Let the splash show while auth initializes
+    //if (atRoot) return <>{children}</>;
+  // Anywhere else, you can show your loading animation
+    //return <LoadingScreen />;
+  //}
 
     // routes when logged out:
     // - "/" ( app/index.tsx intro splash)
     // - auth screens
     // - wizard screen inside tabs: /(tabs)/chatBot
-    const isIntroRoot = !first; // root index screen
+    //const isIntroRoot = !first; // root index screen
     //const isWizardGuest = isTabsGroup && second === "chatBot";
     const isGenerate = first === "generate";
     //const isRecipes = first === "recipes";
@@ -64,9 +70,13 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       router.replace("/(tabs)");
       return;
     }
-  },  [token, isLoading, splashDone, segments, router]);
+  },  [token, isLoading, splashDone, first, second, atRoot, isAuthGroup, isTabsGroup, router]);
 
-if (isLoading) return <LoadingScreen />; //add loading screen!
+   //only splash when loading, no loading
+  if (isLoading && !atRoot) {
+  // Anywhere else can see loading screen
+    return <LoadingScreen />;
+  }
 
   return <>{children}</>;
 }

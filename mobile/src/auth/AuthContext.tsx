@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { getToken, setToken as saveToken, clearToken } from "./tokenStorage";
 import { apiMe, User } from "./library";
 
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadToken();
   }, []);
 
-  const refreshMe = async () => {
+  const refreshMe = useCallback(async () => {
     // NULL CHECK #2
     // No token = no authenticated user
 
@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // optional: if token is invalid, force logout
       // await signOut();
     }
-  };
+  }, [token]);
 
   // whenever token changes, fetch user (or clear it)
   useEffect(() => {
@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   refreshMe(); // token exists → load user
-}, [token]);
+}, [token, refreshMe]);
 
 
 
