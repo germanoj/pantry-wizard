@@ -23,6 +23,36 @@ const db = new Pool({
 
 const app = express();
 
+/** ✅ Middleware (order matters) */
+app.use(express.json());
+
+// ✅ CORS for Expo Web + localhost dev
+const allowedOrigins = new Set([
+  "http://localhost:8081", // expo web (common)
+  "http://localhost:19006", // expo web (older/common)
+  "http://localhost:3000", // sometimes used
+]);
+
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      // Allow non-browser requests with no Origin header (native apps, curl)
+      if (!origin) return cb(null, true);
+
+      if (allowedOrigins.has(origin)) return cb(null, true);
+
+      return cb(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
+
+// Helpful for preflight requests
+app.options("*", cors());
+
+export { app, db };
 export default app;
 
 // ===== Cloudinary (for durable image URLs) =====

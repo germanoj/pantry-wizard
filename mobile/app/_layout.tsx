@@ -12,10 +12,8 @@ import { useFonts } from "expo-font";
 
 import { NotInterestedProvider } from "../src/state/NotInterestedContext";
 import { AuthProvider } from "../src/auth/AuthContext";
-import { SplashProvider } from "@/src/auth/SplashContext";
 import { AuthGate } from "../src/auth/AuthGate";
 import { GeneratedRecipesProvider } from "../src/state/GeneratedRecipesContext";
-
 import { ThemePreferenceProvider } from "@/src/theme/ThemePreferenceProvider";
 
 export const unstable_settings = {
@@ -36,24 +34,22 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <SplashProvider>
-        <AuthGate>
-          <ThemePreferenceProvider>
+      <AuthGate>
+        <ThemePreferenceProvider>
           <GeneratedRecipesProvider>
             <NotInterestedProvider>
               <ThemeProvider
                 value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-                >
-                <Stack screenOptions={{ headerShown: false }} >
-
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                  <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                  {/*<Stack.Screen name="generate" options={{ title: "Recipe Wizardry" }} /> */}
-                  {/*<Stack.Screen name="(auth)/login" options={{ title: "Login" }}/> */}
-                  {/* <Stack.Screen name="(auth)/register" options={{ title: "Register" }} /> */}
-                  <Stack.Screen name="recipe" options={{ headerShown: false }} />
-                  {/* added recipe stack screen to layout!*/}
-
+              >
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen
+                    name="(tabs)"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="(auth)"
+                    options={{ headerShown: false }}
+                  />
                   <Stack.Screen
                     name="(modals)/register-modal"
                     options={{
@@ -62,15 +58,14 @@ export default function RootLayout() {
                       headerShown: false,
                     }}
                   />
-
                 </Stack>
+
                 <StatusBar style="auto" />
               </ThemeProvider>
             </NotInterestedProvider>
           </GeneratedRecipesProvider>
-          </ThemePreferenceProvider>
-        </AuthGate>
-      </SplashProvider>
+        </ThemePreferenceProvider>
+      </AuthGate>
     </AuthProvider>
   );
 }
