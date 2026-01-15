@@ -1,7 +1,12 @@
-// this index is for the introsplash - animation and buttons to navigate
-// web-safe: on web, skip lottie timeline and show UI immediately (prevents "stuck" splash)
+//this index is for the introsplash - animation and buttons to navigate
 
-import React, { useEffect, useRef, useState } from "react";
+//1 app opens to index page
+//2 sparkle, poof annimation
+//3 pantry wizard logo appears
+//4 buttons fade in (login, register, chat)
+//(no redirect, user chooses)
+
+import { useEffect, useState, useRef } from "react"; //useeffect starts the wand, useref controls lottie
 import { View, Text, Pressable, StyleSheet, Platform } from "react-native";
 import { router } from "expo-router";
 import Animated, {
@@ -13,6 +18,8 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import LottieView from "lottie-react-native";
+import { useSplash } from "@/src/auth/SplashContext";
+import { useAuth } from "@/src/auth/AuthContext";
 export default function IntroSplash() {
   const isWeb = Platform.OS === "web";
 
@@ -23,21 +30,21 @@ export default function IntroSplash() {
   const sparklesRef = useRef<LottieView>(null);
   const poofRef = useRef<LottieView>(null);
 
-  // lottie visibility
-  const [showSparkles, setShowSparkles] = useState(false);
-  const [showPoof, setShowPoof] = useState(false);
-  const [showWand, setShowWand] = useState(true);
+  //lottie visibility
+  const [showSparkles, setShowSparkles] = useState(false); //starts false, becomes true after wand finishes
+  const [showPoof, setShowPoof] = useState(false); // starts after sparkles
+  const [showWand, setShowWand] = useState(true); //to unmount the wand (clear it when it finishes)
 
   // reanimated values
-  const logoOpacity = useSharedValue(0);
+  const logoOpacity = useSharedValue(0); //starts invisible, small and slightly lower (the y axis)
   const logoScale = useSharedValue(0.7);
 
   const logoY = useSharedValue(16);
 
-  const actionsOpacity = useSharedValue(0);
+  const actionsOpacity = useSharedValue(0); // buttons same as logo
   const actionsY = useSharedValue(12);
 
-  const wandOpacity = useSharedValue(1);
+  const wandOpacity = useSharedValue(1); //need to fade this out rather than quickly disappear !!
 
   // for redirecting away from splash screen
   const { setSplashDone } = useSplash();
@@ -106,6 +113,7 @@ export default function IntroSplash() {
     transform: [{ translateY: logoY.value }, { scale: logoScale.value }],
   }));
 
+  //buttons
   const actionsStyle = useAnimatedStyle(() => ({
     opacity: actionsOpacity.value,
     transform: [{ translateY: actionsY.value }],
@@ -117,31 +125,30 @@ export default function IntroSplash() {
 
   return (
     <View style={styles.container}>
-      {/* 1) Wand (native only) */}
-      {!isWeb && showWand && (
+      {showWand && ( //renders the wand first here
         <Animated.View
           style={[StyleSheet.absoluteFill, wandStyle]}
-          pointerEvents="none"
+          pointerEvents={"none"}
         >
           <LottieView
             ref={wandRef}
             source={require("../assets/lottie/magicWand.json")}
             autoPlay={false}
-            loop={false}
+            loop={false} // no loops
             style={styles.lottie}
             onAnimationFinish={() => {
               // fade the wand out
               wandOpacity.value = withTiming(0, { duration: 300 });
-
-              // after fade completes, unmount wand and start next steps
+              //hide wand completely
+              // after fade completes, unmount wand
               setTimeout(() => {
                 setShowWand(false);
-
-                // 2) sparkles
+                // 2) Sparkles next
                 setShowSparkles(true);
+                // tiny delay helps feel like the wand makes it happen
                 setTimeout(() => sparklesRef.current?.play(), 80);
 
-                // 3) poof shortly after sparkles begin
+                // 3) Poof shortly after sparkles begin
                 setShowPoof(true);
                 setTimeout(() => poofRef.current?.play(), 240);
 
@@ -153,29 +160,28 @@ export default function IntroSplash() {
         </Animated.View>
       )}
 
-      {/* 2) Sparkles (native only) */}
-      {!isWeb && showSparkles && (
+      {/* Sparkles */}
+      {showSparkles && (
         <View pointerEvents="none" style={StyleSheet.absoluteFill}>
           <LottieView
             ref={sparklesRef}
             source={require("../assets/lottie/sparkles.json")}
             autoPlay={false}
-            loop
+            loop={true} // yes loop, its cute
             style={styles.lottie}
-            // NOTE: loop=true means onAnimationFinish won't fire on web/native reliably; we hide via state elsewhere
             onAnimationFinish={() => setShowSparkles(false)}
           />
         </View>
       )}
 
-      {/* 3) Poof (native only) */}
-      {!isWeb && showPoof && (
+      {/* 3) Poof (plays once, then disappears) */}
+      {showPoof && (
         <View pointerEvents="none" style={styles.poofWrap}>
           <LottieView
             ref={poofRef}
             source={require("../assets/lottie/poof.json")}
             autoPlay={false}
-            loop={false}
+            loop={false} // no loop
             style={styles.poofLottie}
             onAnimationFinish={() => setShowPoof(false)}
           />
@@ -218,7 +224,7 @@ export default function IntroSplash() {
   );
 }
 
-// pointer events set to none so you can press the buttons (even when sparkles are on top)
+//pointer events set to none so you can press the buttons (even when sparklesa re on top)
 
 const styles = StyleSheet.create({
   container: {
@@ -269,9 +275,13 @@ const styles = StyleSheet.create({
     left: "50%",
     width: 260,
     height: 260,
-    transform: [{ translateX: -100 }, { translateY: -200 }],
+    transform: [
+      { translateX: -100 }, // left to right, lower number is left
+      { translateY: -200 }, // this bit moves it up and down
+    ],
   },
   poofLottie: {
+    //here controls size
     width: "100%",
     height: "100%",
   },

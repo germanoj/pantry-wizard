@@ -2,6 +2,25 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { getToken, setToken as saveToken, clearToken } from "./tokenStorage";
 import { apiMe, User } from "./library";
 
+async function withTimeout<T>(
+  p: Promise<T>,
+  ms: number,
+  label: string
+): Promise<T> {
+  let t: any;
+  const timeout = new Promise<never>((_, reject) => {
+    t = setTimeout(
+      () => reject(new Error(`${label} timed out after ${ms}ms`)),
+      ms
+    );
+  });
+  try {
+    return await Promise.race([p, timeout]);
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 type AuthContextValue = {
   token: string | null; // null = logged out OR not loaded yet
   user: User | null; // null = logged out OR user not fetched yet
@@ -20,22 +39,6 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 //undefined wraps components in authprovider, prevents silent buggies
-
-function withTimeout<T>(
-  promise: Promise<T>,
-  ms: number,
-  label: string
-): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(
-        () => reject(new Error(`${label} timed out after ${ms}ms`)),
-        ms
-      )
-    ),
-  ]);
-}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setTokenState] = useState<string | null>(null);
@@ -58,32 +61,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // - undefined (storage error or empty)
         if (!mounted) return;
 
-        if (saved !== null && saved !== undefined) {
-          setTokenState(saved); // user might be logged in
-        } else {
-          setTokenState(null); // definitely logged out
-        }
+        setTokenState(saved ?? null);
       } finally {
         if (mounted) setIsLoading(false);
       }
     };
 
-    (async () => {
-      try {
-        // If storage hangs, we still proceed after timeout.
-        const saved = await withTimeout(getToken(), 1500, "getToken()");
-        if (mounted) setTokenState(saved ?? null);
-        console.log("Auth: token loaded", !!saved);
-      } catch (err) {
-        console.error(
-          "Auth: token load failed (or timed out). Continuing without token.",
-          err
-        );
-        if (mounted) setTokenState(null);
-      } finally {
-        if (mounted) setIsLoading(false);
-      }
-    })();
+    loadToken();
 
     return () => {
       mounted = false;

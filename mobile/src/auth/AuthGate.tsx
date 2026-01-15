@@ -1,4 +1,4 @@
-// This file decides where users go when auth state changes
+//this file decides where the users go when the state of auth changes
 
 import { useEffect } from "react";
 import { useRouter, useSegments } from "expo-router";
@@ -14,10 +14,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const segments = useSegments();
 
   useEffect(() => {
-    // 🚨 Do NOT redirect while loading — just wait
     if (isLoading) return;
 
-    const first = segments[0]; // "(tabs)", "(auth)", "generate", undefined
+    const first = segments[0]; // "(tabs)", "(auth)", undefined
     const second = segments[1]; // "chatBot", "saved", etc.
 
     const isAuthGroup = first === "(auth)";
@@ -25,20 +24,26 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     const isIntroRoot = !first; // app/index.tsx intro splash
 
     const isGenerate = first === "generate";
-
-    const guestAllowedTabs = new Set(["index", "chatBot", "profile", "saved"]);
+    //const isRecipes = first === "recipes";
+    //const isRecipes = isTabsGroup && second === "recipes";
+    //const isProfileGuest = isTabsGroup && second === "profile";
+    const guestAllowedTabs = new Set(["index", "chatBot", "profile"]);
 
     const isGuestAllowedTab =
       isTabsGroup && guestAllowedTabs.has(String(second));
 
-    // 🚫 LOGGED OUT USERS
+    // 🚫 Logged out users:
     if (!token) {
-      if (atRoot) return; //splash allowed
+      if (isIntroRoot) return; // splash allowed
+      //splash allowed
       if (isAuthGroup) return; //login/reg allowed
       if (isGuestAllowedTab) return;
+      //if (isWizardGuest) return;
       if (isGenerate) return;
+      //if (isRecipes) return;
+      //if (isProfileGuest) return;
 
-      // Anything else → send to tabs home
+      // Block everything else (currently just saved?)
       router.replace("/(tabs)");
       return;
     }
@@ -50,21 +55,16 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // logged in users:
+    // keep them out of auth pages
+
     if (isAuthGroup) {
       router.replace("/(tabs)");
       return;
     }
   }, [token, isLoading, splashDone, segments, router]);
 
-  /**
-   * 🔑 CRITICAL CHANGE
-   *
-   * Never block rendering forever.
-   * While loading, render children so web can hydrate.
-   */
-  if (isLoading) {
-    return <>{children}</>;
-  }
+  if (isLoading) return <LoadingScreen />; //add loading screen!
 
   return <>{children}</>;
 }

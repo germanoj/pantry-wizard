@@ -1,12 +1,16 @@
 import { Tabs } from "expo-router";
-import { View, ActivityIndicator } from "react-native";
-
+import { ActivityIndicator, View } from "react-native";
+//import {React} from "react";
 import { useAuth } from "@/src/auth/AuthContext";
-import { useTheme } from "@/src/theme/usetheme";
 
 import { HapticTab } from "@/components/haptic-tab";
 import Feather from "react-native-vector-icons/Feather";
 import WizardHatIcon from "../wizardHat";
+
+//import { Theme } from "@/src/theme/theme";
+import { useTheme } from "@/src/theme/usetheme";
+//import { Colors } from "@/constants/theme";
+//import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function TabLayout() {
   const { token, isLoading } = useAuth();
@@ -20,6 +24,10 @@ export default function TabLayout() {
   }
 
   const isAuthed = !!token;
+
+  //if not loggeed in, can see home, wizard, my profile
+  //will change profile to look diff when logged in and not
+  //other tabs are hidden
 
   return (
     <Tabs
@@ -42,13 +50,11 @@ export default function TabLayout() {
           borderTopWidth: 1,
           borderRadius: 999, // pill style
           // iOS shadow
-
           shadowColor: "#000",
           shadowOpacity: 0.18,
           shadowRadius: 12,
           shadowOffset: { width: 0, height: 8 },
           // Android shadow
-
           elevation: 12,
         },
         tabBarItemStyle: {
@@ -84,24 +90,26 @@ export default function TabLayout() {
         }}
       />
 
+      {/* only show when logged in */}
       <Tabs.Screen
         name="saved"
         options={{
           href: isAuthed ? undefined : null,
           title: "Saved Recipes",
           tabBarIcon: ({ color }) => (
-            <Feather name="heart" size={24} color={color} />
+            <Feather size={24} name="heart" color={color} />
           ),
         }}
       />
 
+      {/* keep visible always (content changes inside ProfilePage) */}
       <Tabs.Screen
         name="profile"
         options={{
           title: "My Page",
           headerTitle: "My Page",
           tabBarIcon: ({ color }) => (
-            <Feather name="user" size={24} color={color} />
+            <Feather size={24} name="user" color={color} />
           ),
         }}
       />
@@ -109,6 +117,7 @@ export default function TabLayout() {
       {/* hidden routes */}
       <Tabs.Screen name="recipes" options={{ href: null }} />
       <Tabs.Screen name="saved/(details)/[id]" options={{ href: null }} />
+
       <Tabs.Screen
         name="loginReg"
         options={{
