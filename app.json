@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "1d4a22f6-1b41-4802-bdf7-3714ad46273e"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.germanoj.pantrywizard",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
+  }
+}
