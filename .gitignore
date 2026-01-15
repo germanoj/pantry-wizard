@@ -16,5 +16,4 @@ pnpm-debug.log*
 .DS_Store
 .vscode/
 *.swp
-eas.json
-mobile/eas.json
+
