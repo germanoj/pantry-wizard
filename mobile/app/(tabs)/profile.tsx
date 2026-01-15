@@ -1,6 +1,6 @@
 import { Modal, Pressable, StyleSheet, View, Text } from "react-native";
 
-import { router } from "expo-router";
+import { router, Link } from "expo-router";
 import { useState } from "react";
 
 import { useAuth } from "@/src/auth/AuthContext";
@@ -49,7 +49,10 @@ export default function ProfilePage() {
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <Card>
           <WizardTitle>Hey there stranger!👋</WizardTitle> 
-          <WizardBody>Make an account and start saving your recipes✨</WizardBody>
+          <WizardBody>Make an 
+            <Link href="/(auth)/register" style={[ { color: theme.accent2 }]} > account </Link> 
+            and start saving your recipes✨
+          </WizardBody>
         </Card>
       </View>
 
