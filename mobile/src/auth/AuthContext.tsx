@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import { getToken, setToken as saveToken, clearToken } from "./tokenStorage";
 import { apiMe, User } from "./library";
 
@@ -74,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const refreshMe = async () => {
+  const refreshMe = useCallback(async () => {
     // NULL CHECK #2
     // No token = no authenticated user
 
@@ -87,24 +93,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // optional: if token is invalid, force logout
       // await signOut();
     }
-  };
+  }, [token]);
 
   // whenever token changes, fetch user (or clear it)
   useEffect(() => {
-    //  NULL CHECK #3
     // Token was removed (logout or expired)
-
     if (!token) {
       setUser(null); // clear stale user data
-
       return;
     }
 
     refreshMe(); // token exists → load user
-  }, [token]);
+  }, [token, refreshMe]);
 
   const signIn = async (newToken: string, newUser?: User | null) => {
     setTokenState(newToken);
+
     // Save token (guard against hanging storage)
     try {
       await withTimeout(saveToken(newToken), 1500, "saveToken()");
@@ -113,9 +117,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Login/register sometimes already returns the user.
-    // If login/register returned user, set it immediately.
     if (newUser) {
-      setUser(newUser); // instant UI update
+      setUser(newUser);
       return;
     }
 

@@ -12,8 +12,15 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   const router = useRouter();
   const segments = useSegments();
+  const isIntroRoot = !segments?.[0];
+  const first = segments[0];
+  const second = segments[1];
+  const isAuthGroup = first === "(auth)";
+  const isTabsGroup = first === "(tabs)";
+  const atRoot = !first; //this is the app/ index splash screen
 
   useEffect(() => {
+    //only splash when loading, no loading
     if (isLoading) return;
 
     const first = segments[0]; // "(tabs)", "(auth)", undefined
@@ -64,7 +71,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     }
   }, [token, isLoading, splashDone, segments, router]);
 
-  if (isLoading) return <LoadingScreen />; //add loading screen!
+  // While auth initializes, let the intro splash render (no loading overlay).
+  if (isLoading && !isIntroRoot) return <LoadingScreen />;
 
   return <>{children}</>;
 }
