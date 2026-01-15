@@ -39,8 +39,8 @@ export default function IntroSplash() {
 
 // reanimated values
   const logoOpacity = useSharedValue(0); //starts invisible, small and slightly lower (the y axis)
-  const logoScale = useSharedValue(0.4); //was .7, trying smaller start
-  const logoY = useSharedValue(16);
+  const logoScale = useSharedValue(0.2); //was .7, trying smaller start
+  const logoY = useSharedValue(24); //was 16, trying to start lower
 
   const actionsOpacity = useSharedValue(0); // buttons same as logo
   const actionsY = useSharedValue(12);
@@ -58,12 +58,14 @@ export default function IntroSplash() {
 
     // Timeline:
     const startLogoTimeline = () => {
-    logoOpacity.value = withTiming(1, { duration: 450 }); //duration is ms
+    logoOpacity.value = withDelay(40, withTiming(1, { duration: 220 })); //duration is ms, was 450
+    
     logoScale.value = withSequence(
-        withTiming(1.18, { duration: 420, easing: Easing.out(Easing.back(1.6)) }), //this increases it a little and then shrinks back
-        withTiming(1, { duration: 220, easing: Easing.out(Easing.cubic) })
+        withTiming(1.28, { duration: 420, easing: Easing.out(Easing.back(2.2)) }), //this increases it a little and then shrinks back, was 1.6
+        withTiming(1, { duration: 240, easing: Easing.out(Easing.cubic) })
       );
-    logoY.value = withTiming(0, { duration: 450 });
+    
+      logoY.value = withTiming(0, { duration: 420, easing: Easing.out(Easing.cubic) });
 
     if (!token) {actionsOpacity.value = withDelay(450, withTiming(1, { duration: 350 })); //buttons fade in after the logo
     actionsY.value = withDelay(450, withTiming(0, { duration: 350 }));}
@@ -217,7 +219,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   logoText: {
-    fontSize: 34,
+    fontSize: 36, //46-56 will give that big pop feel
     fontWeight: "800",
     color: "white"
   },
