@@ -3,7 +3,7 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import SingleRecipeCard from "@/src/components/recipe-components/SingleRecipeCard";
 import { MOCK_RECIPES } from "@/data/recipes";
 import { saveUiRecipe } from "@/src/lib/saveRecipeAction";
-import { useGeneratedRecipes } from "@/state/GeneratedRecipesContext";
+import { useGeneratedRecipes } from "@/src/state/GeneratedRecipesContext";
 
 export default function CookRecipeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

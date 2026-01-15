@@ -1,55 +1,105 @@
-import React, { useMemo } from "react";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import SingleRecipeCard from "@/src/components/recipe-components/SingleRecipeCard";
-import { MOCK_RECIPES } from "@/data/recipes";
-import { useNotInterested } from "@/state/NotInterestedContext";
+import { View, StyleSheet, Image, ScrollView } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 
-import { saveUiRecipe } from "@/src/lib/saveRecipeAction";
-import { useGeneratedRecipes } from "@/state/GeneratedRecipesContext";
+import { useTheme } from "@/src/theme/usetheme";
+import { WizardTitle, WizardBody } from "@/src/components/WizardText";
+import { useGeneratedRecipes } from "../../src/state/GeneratedRecipesContext";
 
-export default function RecipeDetailScreen() {
-  const router = useRouter();
+export default function RecipeDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const theme = useTheme();
+  const { getById } = useGeneratedRecipes();
 
-  const { recipes: generatedRecipes } = useGeneratedRecipes();
-  const recipe = useMemo(() => {
-    const fromGenerated = generatedRecipes?.find((r) => r.id === id);
-    if (fromGenerated) return fromGenerated;
-    return MOCK_RECIPES.find((r) => r.id === id);
-  }, [generatedRecipes, id]);
+  // Optional debug (remove later)
+  // console.log("RecipeDetails id:", id);
 
-  const { isNotInterested, toggleNotInterested } = useNotInterested();
+  const recipe = getById(String(id));
 
-  if (!recipe) return null;
+  if (!recipe) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <WizardTitle>Recipe not found</WizardTitle>
+        <WizardBody style={{ color: theme.textMuted }}>
+          Generate recipes again and tap one.
+        </WizardBody>
+      </View>
+    );
+  }
+
+  const img = recipe.imageUrl ? { uri: recipe.imageUrl } : null;
+
+  const ingredientsUsed = Array.isArray(recipe.ingredientsUsed)
+    ? recipe.ingredientsUsed
+    : [];
+  const missingIngredients = Array.isArray(recipe.missingIngredients)
+    ? recipe.missingIngredients
+    : [];
+  const steps = Array.isArray(recipe.steps) ? recipe.steps : [];
 
   return (
-    <>
-      <Stack.Screen options={{ headerShown: false }} />
+    <ScrollView
+      style={{ backgroundColor: theme.background }}
+      contentContainerStyle={styles.container}
+    >
+      <WizardTitle>{recipe.title}</WizardTitle>
 
-      <SingleRecipeCard
-        title={recipe.title}
-        time={recipe.time}
-        image={recipe.image}
-        description={recipe.description}
-        ingredients={recipe.ingredients}
-        steps={recipe.steps}
-        onMakeNow={() =>
-          router.push({
-            pathname: "/recipe/[id]/cook",
-            params: { id: recipe.id },
-          })
-        }
-        onSaveForLater={() =>
-          saveUiRecipe({
-            title: recipe.title,
-            time: recipe.time,
-            ingredients: recipe.ingredients,
-            steps: recipe.steps,
-          })
-        }
-        isNotInterested={isNotInterested(recipe.id)}
-        onToggleNotInterested={() => toggleNotInterested(recipe.id)}
-      />
-    </>
+      {!!img && <Image source={img} style={styles.hero} />}
+
+      <WizardBody style={{ color: theme.textMuted }}>
+        {recipe.timeMinutes} min
+      </WizardBody>
+
+      <WizardTitle style={styles.sectionTitle}>Ingredients</WizardTitle>
+
+      {ingredientsUsed.map((x, i) => (
+        <WizardBody key={`used-${i}`} style={styles.bullet}>
+          • {x}
+        </WizardBody>
+      ))}
+
+      {missingIngredients.length > 0 && (
+        <>
+          <WizardTitle style={styles.sectionTitle}>Missing</WizardTitle>
+          {missingIngredients.map((x, i) => (
+            <WizardBody key={`miss-${i}`} style={styles.bullet}>
+              • {x}
+            </WizardBody>
+          ))}
+        </>
+      )}
+
+      <WizardTitle style={styles.sectionTitle}>Steps</WizardTitle>
+
+      {steps.map((x, i) => (
+        <WizardBody key={`step-${i}`} style={styles.step}>
+          {i + 1}. {x}
+        </WizardBody>
+      ))}
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 16,
+    gap: 10,
+  },
+  hero: {
+    width: "100%",
+    height: 220,
+    borderRadius: 14,
+  },
+  sectionTitle: {
+    marginTop: 8,
+    fontSize: 18,
+  },
+  bullet: {
+    fontSize: 14,
+    lineHeight: 18,
+  },
+  step: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 6,
+  },
+});

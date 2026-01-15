@@ -1,7 +1,7 @@
 import { FlatList, Alert, View } from "react-native";
 import { useRouter } from "expo-router";
 import RecipeCard from "./RecipeCard";
-import { NotInterestedProvider } from "@/state/NotInterestedContext";
+import { NotInterestedProvider } from "@/src/state/NotInterestedContext";
 import { saveRecipe } from "@/src/lib/savedRecipes";
 import { useTheme } from "@/src/theme/usetheme";
 import { ui } from "@/src/theme/theme";
