@@ -149,12 +149,13 @@ export default function IntroSplash() {
         <Text style={styles.logoText}>🧙 Pantry Wizard</Text>
       </Animated.View>
 
-      {/* actionss */}
+      {/* actionss
+          replace instead of router.push prevents swiping back to the splash screen */}
       <Animated.View style={[styles.actions, actionsStyle]}>
         <Pressable
           disabled={!ready}
           style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}
-          onPress={() => router.push("/(auth)/login")}
+          onPress={() => router.replace("/(auth)/login")}
         >
           <Text style={styles.btnText}>Login</Text>
         </Pressable>
@@ -162,7 +163,7 @@ export default function IntroSplash() {
         <Pressable
           disabled={!ready}
           style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}
-          onPress={() => router.push("/(auth)/register")}
+          onPress={() => router.replace("/(auth)/register")}
         >
           <Text style={styles.btnText}>Register</Text>
         </Pressable>
@@ -170,7 +171,7 @@ export default function IntroSplash() {
         <Pressable
           disabled={!ready}
           style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}
-          onPress={() => router.push("/(tabs)/chatBot")}
+          onPress={() => router.replace("/(tabs)/chatBot")}
         >
           <Text style={styles.btnText}>Visit the Wizard!</Text>
         </Pressable>
