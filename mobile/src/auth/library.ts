@@ -14,6 +14,10 @@ const client = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+function authHeaders(token: string) {
+  return { Authorization: `Bearer ${token}` };
+}
+
 function getErrorMessage(err: unknown) {
   if (axios.isAxiosError(err)) {
     const msg =
@@ -50,6 +54,35 @@ export async function apiRegister(
       email,
       password,
     });
+    return res.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err));
+  }
+}
+
+///get user from token ////
+
+export async function apiMe(token: string) {
+  try {
+    // try one route first (fallback added below)
+    const res = await client.get<User>("/auth/me", {
+      headers: authHeaders(token),
+    });
+    return res.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err));
+  }
+}
+
+////update username so users can change their name in the system!! ////
+
+export async function apiUpdateUsername(token: string, username: string) {
+  try {
+    const res = await client.patch<User>(
+      "/users/me",
+      { username },
+      { headers: authHeaders(token) }
+    );
     return res.data;
   } catch (err) {
     throw new Error(getErrorMessage(err));
