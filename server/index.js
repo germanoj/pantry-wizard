@@ -12,6 +12,11 @@ import jwt from "jsonwebtoken";
 import pg from "pg";
 const { Pool } = pg;
 
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
+
 const isRender =
   !!process.env.RENDER || /render\.com/i.test(process.env.DATABASE_URL || "");
 const needsSSL = isRender || process.env.PGSSLMODE === "require";
@@ -458,6 +463,11 @@ function withTimeout(promise, ms, label) {
   ]);
 }
 
+function placeholderImageUrl(title = "Recipe") {
+  const text = encodeURIComponent(String(title).slice(0, 40));
+  return `https://via.placeholder.com/512?text=${text}`;
+}
+
 async function generateImageUrlForRecipe(r) {
   const imgPrompt = buildFoodImagePrompt(r);
 
@@ -477,15 +487,15 @@ async function generateImageUrlForRecipe(r) {
 
   // If it returns a URL directly, use it
   if (first?.url) return first.url;
-
   // If it returns base64, upload to Cloudinary and return a real HTTPS URL
   if (first?.b64_json) {
-    if (!hasCloudinary) {
-      // If Cloudinary isn't configured, fall back to placeholder so responses stay sane
-      return placeholderImageUrl(r?.title);
-    }
-
     const dataUrl = `data:image/png;base64,${first.b64_json}`;
+
+    // ✅ Local/dev fallback: return a data URL so the phone can render it
+    // (React Native <Image source={{ uri }} /> supports this)
+    if (!hasCloudinary) {
+      return dataUrl;
+    }
 
     const safeTitle = String(r?.title || "recipe")
       .toLowerCase()
@@ -589,8 +599,14 @@ Return ONLY valid JSON in this exact shape:
 
     return res.json(parsed);
   } catch (err) {
-    console.error("AI ERROR:", err);
-    return res.status(500).json({ error: "AI generation failed" });
+    // Log the richest version of the error
+    console.error("AI ERROR:", err?.response?.data || err);
+
+    // Return details temporarily so your phone can show the real reason
+    return res.status(500).json({
+      error: "AI generation failed",
+      details: err?.response?.data || err?.message || String(err),
+    });
   }
 });
 
