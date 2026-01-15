@@ -13,8 +13,7 @@ import { Card } from '@/src/components/Card';
 export default function ProfilePage() {
   const theme = useTheme();
   const {preference, setPreference, toggleDarkMode, isHydrated} = useThemePreference();
-  const {token} = useAuth();
-  const { signOut } = useAuth();
+  const {token, signOut} = useAuth();
   const [showLogout, setShowLogout] = useState(false);
 
   if(!isHydrated) return null; //prevents that weird flash when loading
