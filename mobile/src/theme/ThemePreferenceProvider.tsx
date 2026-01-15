@@ -8,7 +8,7 @@ export type ThemePreference = "system" | "light" | "dark";
 type ThemePrefContextValue = {
   preference: ThemePreference;
   setPreference: (p: ThemePreference) => void;
-  toggleDarkMode: () => void; // handy for a simple switch
+  toggleDarkMode: () => void; //simple switch
   theme: Theme;
   isHydrated: boolean;
 };
@@ -46,7 +46,7 @@ export function ThemePreferenceProvider({ children }: { children: React.ReactNod
   const theme = effectiveMode === "dark" ? darkTheme : lightTheme;
 
   const toggleDarkMode = () => {
-    // if currently dark, switch to light; otherwise switch to dark
+    // if dark, switch to light; otherwise switch to dark
     void setPreference(effectiveMode === "dark" ? "light" : "dark");
   };
 

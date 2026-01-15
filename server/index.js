@@ -175,6 +175,70 @@ app.post("/auth/login", async (req, res) => {
 
 /////////////// NO TOUCHY //////////////////////
 
+//////getting user info!!!!! ////
+app.get("/auth/me", requireUser, async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const result = await db.query(
+      `SELECT id, username, email
+       FROM users
+       WHERE id = $1`,
+      [userId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.json(result.rows[0]);
+  } catch (err) {
+    console.error("auth/me error:", err);
+    return res.status(500).json({ message: "Failed to load user" });
+  }
+});
+
+/////creating a users addition! //////////
+
+app.patch("/users/me", requireUser, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { username } = req.body ?? {};
+
+    if (!username || !String(username).trim()) {
+      return res.status(400).json({ message: "username required" });
+    }
+
+    const uname = String(username).trim();
+
+    // optional: prevent duplicates
+    const existing = await db.query(
+      `SELECT id FROM users WHERE username = $1 AND id <> $2`,
+      [uname, userId]
+    );
+    if (existing.rowCount > 0) {
+      return res.status(409).json({ message: "Username already in use" });
+    }
+
+    const updated = await db.query(
+      `UPDATE users
+       SET username = $1
+       WHERE id = $2
+       RETURNING id, username, email`,
+      [uname, userId]
+    );
+
+    if (updated.rowCount === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.json(updated.rows[0]);
+  } catch (err) {
+    console.error("users/me patch error:", err);
+    return res.status(500).json({ message: "Failed to update username" });
+  }
+});
+
 //////////HAYLEY DELETED BELOW DEV USER BC DONT NEED NOW!!!! /////////
 // TEMP (Option A): hardcode dev user until auth is done
 //const DEV_USER_ID = "00000000-0000-0000-0000-000000000001";
