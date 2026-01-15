@@ -567,6 +567,7 @@ async function generateImageUrlForRecipe(r) {
 
   // If it returns a URL directly, use it
   if (first?.url) return first.url;
+
   // If it returns base64, upload to Cloudinary and return a real HTTPS URL
   if (first?.b64_json) {
     const dataUrl = `data:image/png;base64,${first.b64_json}`;
