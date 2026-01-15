@@ -41,14 +41,22 @@ export default function RegisterPage() {
     //console.log("Registering:", { username, email });
     const data = await apiRegister(username, email, password);
     //console.log("Register success:", data);
-    await signIn(data.token);
+      if (data.user !== null && data.user !== undefined) {
+        await signIn(data.token, data.user);
+      } else {
+        await signIn(data.token, null);
+      }
         Alert.alert("Poof!", "Your account has been created. Let's get cookin'!", [
           { text: "OK", onPress: () => router.replace("/(tabs)")},
         ]);
   
   } catch (err: any) {
     //console.log("Register error:", err);
-    Alert.alert("Error", err?.message || String(err));
+    if (err && err.message) {
+      Alert.alert("Error", err.message);
+    } else {
+      Alert.alert("Error", String(err));
+    }
   } finally {
     setLoading(false);
   }
