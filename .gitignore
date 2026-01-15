@@ -17,3 +17,6 @@ pnpm-debug.log*
 .vscode/
 *.swp
 .expo/
+eas.json
+mobile/eas.json
+
