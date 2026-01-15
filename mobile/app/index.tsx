@@ -20,10 +20,13 @@ import Animated, {
 import LottieView from "lottie-react-native";
 //import { AnimatedView } from "react-native-reanimated/lib/typescript/component/View";
 
+import { useSplash } from "@/src/auth/SplashContext";
+import { useAuth } from "@/src/auth/AuthContext";
+
 
 export default function IntroSplash() {
   const [ready, setReady] = useState(false); //this state controls if you can click buttons
-
+  
   // lottie refs
   const wandRef = useRef<LottieView>(null);
   const sparklesRef = useRef<LottieView>(null);
@@ -36,7 +39,7 @@ export default function IntroSplash() {
 
 // reanimated values
   const logoOpacity = useSharedValue(0); //starts invisible, small and slightly lower (the y axis)
-  const logoScale = useSharedValue(0.7);
+  const logoScale = useSharedValue(0.4); //was .7, trying smaller start
   const logoY = useSharedValue(16);
 
   const actionsOpacity = useSharedValue(0); // buttons same as logo
@@ -44,26 +47,39 @@ export default function IntroSplash() {
 
   const wandOpacity = useSharedValue(1); //need to fade this out rather than quickly disappear !!
 
+  //for redirecting away from splash screen
+  const { setSplashDone } = useSplash();
+  const { token, isLoading } = useAuth();
+
+  useEffect(() => {
+    setSplashDone(false); // prevents authgate thinking splash mount is done each time 
+    setReady(false); // optional: also reset buttons
+  }, [setSplashDone]);
 
     // Timeline:
     const startLogoTimeline = () => {
     logoOpacity.value = withTiming(1, { duration: 450 }); //duration is ms
     logoScale.value = withSequence(
-        withTiming(1.05, { duration: 350, easing: Easing.out(Easing.cubic) }), //this increases it a little and then shrinks back
+        withTiming(1.18, { duration: 420, easing: Easing.out(Easing.back(1.6)) }), //this increases it a little and then shrinks back
         withTiming(1, { duration: 220, easing: Easing.out(Easing.cubic) })
       );
     logoY.value = withTiming(0, { duration: 450 });
 
-    actionsOpacity.value = withDelay(450, withTiming(1, { duration: 350 })); //buttons fade in after the logo
-    actionsY.value = withDelay(450, withTiming(0, { duration: 350 }));
+    if (!token) {actionsOpacity.value = withDelay(450, withTiming(1, { duration: 350 })); //buttons fade in after the logo
+    actionsY.value = withDelay(450, withTiming(0, { duration: 350 }));}
 
-    setTimeout(() => setReady(true), 850); // ready becomes true after UI
+    setTimeout(() => {
+      setSplashDone(true); //when splash and logo are done
+      if (!token) setReady(true); //only show button options if lohhed out
+     }, token ? 700 : 850); // ready becomes true after UI, if token the movement is quicker 
   };
 
   useEffect(() => {
+    //always play splash even if logged in 
+    if (isLoading) return;
     // 1) start wand immediately
     wandRef.current?.play(); //the ? helps prevent crashing if the ref isnt ready
-  }, []);
+  }, [isLoading]);
 
   const logoStyle = useAnimatedStyle(() => ({
     opacity: logoOpacity.value,

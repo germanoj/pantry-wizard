@@ -3,11 +3,14 @@
 import { useEffect } from "react";
 import { useRouter, useSegments } from "expo-router";
 import { useAuth } from "./AuthContext";
+import { useSplash } from "./SplashContext";
 import LoadingScreen from "@/src/components/LoadingScreen";
 
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { token, isLoading } = useAuth();
+  const {splashDone} = useSplash();
+
   const router = useRouter();
   const segments = useSegments();
 
@@ -19,6 +22,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
     const isAuthGroup = first === "(auth)";
     const isTabsGroup = first === "(tabs)";
+    const atRoot = !first; //this is the app/ index splash screen 
 
     // routes when logged out:
     // - "/" ( app/index.tsx intro splash)
@@ -36,8 +40,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
     // 🚫 Logged out users:
     if (!token) {
-      if (isIntroRoot) return;
-      if (isAuthGroup) return;
+      if (atRoot) return; //splash allowed
+      if (isAuthGroup) return; //login/reg allowed
       if (isGuestAllowedTab) return;
       //if (isWizardGuest) return;
       if (isGenerate) return;
@@ -45,17 +49,22 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       //if (isProfileGuest) return;
 
       // Block everything else (currently just saved?)
-      router.replace("/(tabs)");
+      router.replace("/"); //sends to splash screen
       return;
     }
 
     // logged in users:
     // keep them out of auth pages
+      if (atRoot) {
+        if (splashDone) router.replace("/(tabs)");
+      return;
+    }
+
     if (isAuthGroup) {
       router.replace("/(tabs)");
       return;
     }
-  }, [token, isLoading, segments, router]);
+  },  [token, isLoading, splashDone, segments, router]);
 
 if (isLoading) return <LoadingScreen />; //add loading screen!
 
