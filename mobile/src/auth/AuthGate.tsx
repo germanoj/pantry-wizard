@@ -1,9 +1,10 @@
-// This file decides where users go when auth state changes
+//this file decides where the users go when the state of auth changes
 
 import { useEffect } from "react";
 import { useRouter, useSegments } from "expo-router";
 import { useAuth } from "./AuthContext";
 import LoadingScreen from "@/src/components/LoadingScreen";
+
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { token, isLoading } = useAuth();
@@ -11,51 +12,52 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const segments = useSegments();
 
   useEffect(() => {
-    // 🚨 Do NOT redirect while loading — just wait
     if (isLoading) return;
 
-    const first = segments[0]; // "(tabs)", "(auth)", "generate", undefined
+    const first = segments[0];  // "(tabs)", "(auth)", undefined
     const second = segments[1]; // "chatBot", "saved", etc.
 
     const isAuthGroup = first === "(auth)";
     const isTabsGroup = first === "(tabs)";
-    const isIntroRoot = !first;
+
+    // routes when logged out:
+    // - "/" ( app/index.tsx intro splash)
+    // - auth screens
+    // - wizard screen inside tabs: /(tabs)/chatBot
+    const isIntroRoot = !first; // root index screen
+    //const isWizardGuest = isTabsGroup && second === "chatBot";
     const isGenerate = first === "generate";
+    //const isRecipes = first === "recipes";
+    //const isRecipes = isTabsGroup && second === "recipes";
+    //const isProfileGuest = isTabsGroup && second === "profile";
+    const guestAllowedTabs = new Set(["index", "chatBot", "profile", "saved"])
+    const isGuestAllowedTab = isTabsGroup && guestAllowedTabs.has(String(second));
 
-    const guestAllowedTabs = new Set(["index", "chatBot", "profile", "saved"]);
 
-    const isGuestAllowedTab =
-      isTabsGroup && guestAllowedTabs.has(String(second));
-
-    // 🚫 LOGGED OUT USERS
+    // 🚫 Logged out users:
     if (!token) {
       if (isIntroRoot) return;
       if (isAuthGroup) return;
       if (isGuestAllowedTab) return;
+      //if (isWizardGuest) return;
       if (isGenerate) return;
+      //if (isRecipes) return;
+      //if (isProfileGuest) return;
 
-      // Anything else → send to tabs home
+      // Block everything else (currently just saved?)
       router.replace("/(tabs)");
       return;
     }
 
-    // ✅ LOGGED IN USERS
-    // Keep logged-in users out of auth screens
+    // logged in users:
+    // keep them out of auth pages
     if (isAuthGroup) {
       router.replace("/(tabs)");
       return;
     }
   }, [token, isLoading, segments, router]);
 
-  /**
-   * 🔑 CRITICAL CHANGE
-   *
-   * Never block rendering forever.
-   * While loading, render children so web can hydrate.
-   */
-  if (isLoading) {
-    return <>{children}</>;
-  }
+if (isLoading) return <LoadingScreen />; //add loading screen!
 
   return <>{children}</>;
 }
