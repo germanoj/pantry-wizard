@@ -1,19 +1,4 @@
-// this index is for the introsplash - animation and buttons to navigate
-//
-// 1 app opens to index page
-// 2 sparkle, poof animation
-// 3 pantry wizard logo appears
-// 4 buttons fade in (login, register, chat)
-// (no redirect, user chooses)
-
-//1 app opens to index page
-//2 sparkle, poof annimation
-//3 pantry wizard logo appears
-//4 buttons fade in (login, register, chat)
-//(no redirect, user chooses)
-
-import { useEffect, useState, useRef } from "react";
-
+import { useEffect, useRef, useCallback, useState } from "react";
 import { View, Text, Pressable, StyleSheet, Platform } from "react-native";
 import { router } from "expo-router";
 import Animated, {
@@ -28,46 +13,54 @@ import LottieView from "lottie-react-native";
 import { useSplash } from "@/src/auth/SplashContext";
 import { useAuth } from "@/src/auth/AuthContext";
 
+// this index is for the introsplash - animation and buttons to navigate
+//
+// 1 app opens to index page
+// 2 sparkle, poof animation
+// 3 pantry wizard logo appears
+// 4 buttons fade in (login, register, chat)
+// (no redirect, user chooses) — except when already authed (token)
+
 export default function IntroSplash() {
   const isWeb = Platform.OS === "web";
-
-  const [ready, setReady] = useState(false); // controls if you can click buttons
+  const [ready, setReady] = useState(false);
 
   // lottie refs
   const wandRef = useRef<LottieView>(null);
   const sparklesRef = useRef<LottieView>(null);
   const poofRef = useRef<LottieView>(null);
 
-  //lottie visibility
-  const [showSparkles, setShowSparkles] = useState(false); //starts false, becomes true after wand finishes
-  const [showPoof, setShowPoof] = useState(false); // starts after sparkles
-  const [showWand, setShowWand] = useState(true); //to unmount the wand (clear it when it finishes)
+  // lottie visibility
+  const [showSparkles, setShowSparkles] = useState(false);
+  const [showPoof, setShowPoof] = useState(false);
+  const [showWand, setShowWand] = useState(true);
 
   // reanimated values
-  const logoOpacity = useSharedValue(0); //starts invisible, small and slightly lower (the y axis)
-  const logoScale = useSharedValue(0.2); //was .7, trying smaller start
-  const logoY = useSharedValue(24); //was 16, trying to start lower
-
+  const logoOpacity = useSharedValue(0);
+  const logoScale = useSharedValue(0.2);
+  const logoY = useSharedValue(24);
   const actionsOpacity = useSharedValue(0);
   const actionsY = useSharedValue(12);
-
   const wandOpacity = useSharedValue(1);
 
-  // for redirecting away from splash screen
   const { setSplashDone } = useSplash();
   const { token, isLoading } = useAuth();
 
+  // reset when screen mounts
   useEffect(() => {
-    setSplashDone(false); // prevents AuthGate thinking splash mount is done each time
-    setReady(false); // optional: also reset buttons
+    setSplashDone(false);
+    setReady(false);
   }, [setSplashDone]);
 
-  // Timeline:
-  const startLogoTimeline = () => {
+  // Timeline: reveal logo, then actions (only if logged out)
+  const startLogoTimeline = useCallback(() => {
     logoOpacity.value = withDelay(40, withTiming(1, { duration: 220 }));
 
     logoScale.value = withSequence(
-      withTiming(1.28, { duration: 420, easing: Easing.out(Easing.back(2.2)) }),
+      withTiming(1.28, {
+        duration: 420,
+        easing: Easing.out(Easing.back(2.2)),
+      }),
       withTiming(1, { duration: 240, easing: Easing.out(Easing.cubic) })
     );
 
@@ -76,64 +69,96 @@ export default function IntroSplash() {
       easing: Easing.out(Easing.cubic),
     });
 
-    // Only show actions if logged out
     if (!token) {
       actionsOpacity.value = withDelay(450, withTiming(1, { duration: 350 }));
       actionsY.value = withDelay(450, withTiming(0, { duration: 350 }));
     }
 
-    setTimeout(
+    const t = setTimeout(
       () => {
-        setSplashDone(true); // when splash and logo are done
-        if (!token) setReady(true); // only enable buttons if logged out
+        setSplashDone(true);
+        if (!token) setReady(true);
       },
       token ? 700 : 850
     );
-  };
 
+    return () => clearTimeout(t);
+  }, [
+    actionsOpacity,
+    actionsY,
+    logoOpacity,
+    logoScale,
+    logoY,
+    setSplashDone,
+    token,
+  ]);
+
+  // Web: skip lottie; show UI immediately (prevents infinite splash)
   useEffect(() => {
-    // Wait until auth finishes resolving token
     if (isLoading) return;
 
-    // ✅ WEB: skip lottie entirely; show UI immediately (prevents infinite splash)
     if (isWeb) {
       setShowWand(false);
       setShowSparkles(false);
       setShowPoof(false);
 
-      // snap UI to visible
       logoOpacity.value = 1;
       logoScale.value = 1;
       logoY.value = 0;
 
-      // Only show actions if logged out
       actionsOpacity.value = token ? 0 : 1;
       actionsY.value = token ? 20 : 0;
 
       setSplashDone(true);
-      if (!token) setReady(true);
+
+      if (token) router.replace("/(tabs)/chatBot");
+      else setReady(true);
+    }
+  }, [
+    isWeb,
+    isLoading,
+    token,
+    setSplashDone,
+    logoOpacity,
+    logoScale,
+    logoY,
+    actionsOpacity,
+    actionsY,
+  ]);
+
+  // Native: when auth state is known, kick off wand (or skip if authed)
+  useEffect(() => {
+    if (isWeb) return;
+    if (isLoading) return;
+
+    if (token) {
+      setSplashDone(true);
+      router.replace("/(tabs)/chatBot");
       return;
     }
 
-    // ✅ NATIVE: start wand immediately (timeline will run after wand finishes)
-    wandRef.current?.play();
-  }, [isWeb, isLoading, token, setSplashDone]);
+    // reset visibility in case you revisit this screen
+    setShowWand(true);
+    setShowSparkles(false);
+    setShowPoof(false);
 
-  // Failsafe: if lottie callback never fires, still proceed.
+    wandOpacity.value = withTiming(1, { duration: 0 });
+    wandRef.current?.play();
+  }, [isWeb, isLoading, token, setSplashDone, wandOpacity]);
+
+  // Native failsafe: if lottie never finishes, still proceed
   useEffect(() => {
     if (isWeb) return;
+    if (isLoading) return;
+    if (token) return; // already navigated above
 
     const t = setTimeout(() => {
-      setReady((prev) => {
-        if (prev) return prev;
-        startLogoTimeline();
-        return true;
-      });
-      setSplashDone(true);
+      startLogoTimeline();
+      setReady(true);
     }, 2500);
 
     return () => clearTimeout(t);
-  }, [isWeb, setSplashDone]);
+  }, [isWeb, isLoading, token, startLogoTimeline]);
 
   const logoStyle = useAnimatedStyle(() => ({
     opacity: logoOpacity.value,
@@ -152,7 +177,7 @@ export default function IntroSplash() {
   return (
     <View style={styles.container}>
       {/* Wand (native only) */}
-      {showWand && Platform.OS !== "web" && (
+      {showWand && !isWeb && (
         <Animated.View
           style={[StyleSheet.absoluteFill, wandStyle]}
           pointerEvents="none"
@@ -161,26 +186,20 @@ export default function IntroSplash() {
             ref={wandRef}
             source={require("../assets/lottie/magicWand.json")}
             autoPlay={false}
-            loop={false} // no loops
+            loop={false}
             style={styles.lottie}
             onAnimationFinish={() => {
-              // fade the wand out
               wandOpacity.value = withTiming(0, { duration: 300 });
 
-              // after fade completes, unmount wand
               setTimeout(() => {
                 setShowWand(false);
 
-                // 2) Sparkles next
                 setShowSparkles(true);
-                // tiny delay helps feel like the wand makes it happen
                 setTimeout(() => sparklesRef.current?.play(), 80);
 
-                // 3) Poof shortly after sparkles begin
                 setShowPoof(true);
                 setTimeout(() => poofRef.current?.play(), 240);
 
-                // 4) UI appears shortly after poof begins
                 setTimeout(() => startLogoTimeline(), 350);
               }, 300);
             }}
@@ -189,27 +208,26 @@ export default function IntroSplash() {
       )}
 
       {/* Sparkles (native only) */}
-      {showSparkles && Platform.OS !== "web" && (
+      {showSparkles && !isWeb && (
         <View pointerEvents="none" style={StyleSheet.absoluteFill}>
           <LottieView
             ref={sparklesRef}
             source={require("../assets/lottie/sparkles.json")}
             autoPlay={false}
-            loop={true} // yes loop, its cute
+            loop={true}
             style={styles.lottie}
-            onAnimationFinish={() => setShowSparkles(false)}
           />
         </View>
       )}
 
-      {/* 3) Poof (native only; plays once, then disappears) */}
-      {showPoof && Platform.OS !== "web" && (
+      {/* Poof (native only) */}
+      {showPoof && !isWeb && (
         <View pointerEvents="none" style={styles.poofWrap}>
           <LottieView
             ref={poofRef}
             source={require("../assets/lottie/poof.json")}
             autoPlay={false}
-            loop={false} // no loop
+            loop={false}
             style={styles.poofLottie}
             onAnimationFinish={() => setShowPoof(false)}
           />
@@ -221,8 +239,7 @@ export default function IntroSplash() {
         <Text style={styles.logoText}>🧙 Pantry Wizard</Text>
       </Animated.View>
 
-      {/* actions: replace (not push) prevents swiping back to the splash screen */}
-
+      {/* Actions */}
       <Animated.View style={[styles.actions, actionsStyle]}>
         <Pressable
           disabled={!ready}
@@ -271,7 +288,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   logoText: {
-    fontSize: 34,
+    fontSize: 36,
     fontWeight: "800",
     color: "white",
   },
@@ -302,14 +319,9 @@ const styles = StyleSheet.create({
     left: "50%",
     width: 260,
     height: 260,
-    transform: [
-      { translateX: -100 }, // left to right, lower number is left
-      { translateY: -200 }, // this bit moves it up and down
-    ],
+    transform: [{ translateX: -100 }, { translateY: -200 }],
   },
   poofLottie: {
-    //here controls size
-
     width: "100%",
     height: "100%",
   },
