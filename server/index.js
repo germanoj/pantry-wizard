@@ -1,7 +1,44 @@
-/** ✅ Middleware (order matters) */
+// server/index.js
+
+import express from "express";
+import cors from "cors";
+import "dotenv/config";
+
+import OpenAI from "openai";
+import { v2 as cloudinary } from "cloudinary";
+
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+
+import pg from "pg";
+const { Pool } = pg;
+
+/**
+ * ----------------------------
+ * App + DB
+ * ----------------------------
+ */
+const app = express();
+
+const isRender =
+  !!process.env.RENDER || /render\.com/i.test(process.env.DATABASE_URL || "");
+const needsSSL = isRender || process.env.PGSSLMODE === "require";
+
+const db = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: needsSSL ? { rejectUnauthorized: false } : false,
+});
+
+/**
+ * ----------------------------
+ * Middleware (order matters)
+ * ----------------------------
+ */
+
+// Parse JSON once
 app.use(express.json());
 
-// ✅ CORS for Expo Web + localhost dev + deployed web
+// CORS allowlist: localhost + deployed web
 const allowedOrigins = new Set([
   // local web dev
   "http://localhost:8081",
@@ -24,24 +61,21 @@ app.use(
 
       console.warn("[CORS] Blocked origin:", origin);
       return cb(null, false);
-    }, // <-- IMPORTANT COMMA HERE
-
+    },
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   })
 );
 
-// (optional but helpful) ensure preflight always responds
+// (Optional) preflight
 app.options("*", cors());
 
-// Helpful for preflight requests
-app.options("*", cors());
-
-export { app, db };
-export default app;
-
-// ===== Cloudinary (for durable image URLs) =====
+/**
+ * ----------------------------
+ * Cloudinary (optional)
+ * ----------------------------
+ */
 const hasCloudinary =
   !!process.env.CLOUDINARY_CLOUD_NAME &&
   !!process.env.CLOUDINARY_API_KEY &&
@@ -69,13 +103,11 @@ async function uploadPngDataUrlToCloudinary(dataUrl, publicId) {
   return result.secure_url;
 }
 
-// ===== Middleware =====
-app.use(cors()); // dev-safe: allow all origins
-app.use(express.json());
-
-//import crypto from "crypto";
-
-//// hayley password token and logn/reg routes!!!!! NO TOUCHY
+/**
+ * ----------------------------
+ * Auth helpers
+ * ----------------------------
+ */
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
   console.warn(
@@ -91,6 +123,7 @@ function signToken(userId) {
 function requireUser(req, res, next) {
   if (!JWT_SECRET)
     return res.status(500).json({ message: "Server auth not configured" });
+
   try {
     const auth = req.headers.authorization || "";
     const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
@@ -104,29 +137,150 @@ function requireUser(req, res, next) {
   }
 }
 
+/**
+ * ----------------------------
+ * Dev fallback user (keep if you want)
+ * ----------------------------
+ */
+const DEV_USER_ID = "00000000-0000-0000-0000-000000000001";
+function getUserId(req) {
+  return req.userId || DEV_USER_ID;
+}
+
+/**
+ * ----------------------------
+ * OpenAI
+ * ----------------------------
+ */
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+console.log(
+  "OPENAI key loaded:",
+  process.env.OPENAI_API_KEY
+    ? `yes (len ${process.env.OPENAI_API_KEY.length})`
+    : "NO"
+);
+
+/**
+ * ----------------------------
+ * Image helpers
+ * ----------------------------
+ * NOTE: You referenced placeholderImageUrl() in your original file,
+ * but it wasn't included in the snippet. Add/keep your own version.
+ */
+function placeholderImageUrl(title = "recipe") {
+  // Simple placeholder (replace with your own if you already have one)
+  const safe = String(title)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-");
+  return `https://via.placeholder.com/1024?text=${encodeURIComponent(safe)}`;
+}
+
+function buildFoodImagePrompt(recipe) {
+  const title = String(recipe.title ?? "a homemade dish").trim();
+
+  const used = Array.isArray(recipe.ingredientsUsed)
+    ? recipe.ingredientsUsed
+    : [];
+  const missing = Array.isArray(recipe.missingIngredients)
+    ? recipe.missingIngredients
+    : [];
+
+  const ingredients = [...used, ...missing]
+    .filter(Boolean)
+    .slice(0, 12)
+    .join(", ");
+
+  return `
+A professional food photograph of ${title}.
+Key ingredients: ${ingredients || "simple pantry ingredients"}.
+Plated neatly on a ceramic plate or bowl.
+Soft natural window lighting, shallow depth of field.
+Realistic, appetizing, high detail, no text, no watermark.
+`;
+}
+
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`${label} timed out after ${ms}ms`)),
+        ms
+      )
+    ),
+  ]);
+}
+
+async function generateImageUrlForRecipe(r) {
+  const imgPrompt = buildFoodImagePrompt(r);
+
+  const img = await withTimeout(
+    openai.images.generate({
+      model: "gpt-image-1",
+      prompt: imgPrompt,
+      size: "1024x1024",
+    }),
+    90000,
+    "images.generate"
+  );
+
+  const first = img?.data?.[0];
+  console.log("🧩 image response keys:", Object.keys(first || {}));
+
+  if (first?.url) return first.url;
+
+  if (first?.b64_json) {
+    if (!hasCloudinary) return placeholderImageUrl(r?.title);
+
+    const dataUrl = `data:image/png;base64,${first.b64_json}`;
+
+    const safeTitle = String(r?.title || "recipe")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
+      .slice(0, 60);
+
+    const publicId = `${safeTitle}-${Date.now()}`;
+    return await uploadPngDataUrlToCloudinary(dataUrl, publicId);
+  }
+
+  throw new Error(
+    `No usable image in response. keys=${Object.keys(first || {}).join(",")}`
+  );
+}
+
+/**
+ * ----------------------------
+ * Routes: Auth
+ * ----------------------------
+ */
 app.post("/auth/register", async (req, res) => {
   try {
     const { username, email, password } = req.body ?? {};
 
     if (!username || !email || !password) {
-      return res
-        .status(400)
-        .json({ message: "username, email, password required" });
+      return res.status(400).json({
+        message: "username, email, password required",
+      });
     }
+
     if (String(password).length < 8) {
-      return res
-        .status(400)
-        .json({ message: "password must be at least 8 characters" });
+      return res.status(400).json({
+        message: "password must be at least 8 characters",
+      });
     }
 
     const uname = String(username).trim();
     const mail = String(email).trim().toLowerCase();
 
-    // check uniqueness
     const existing = await db.query(
       "SELECT id FROM users WHERE email = $1 OR username = $2",
       [mail, uname]
     );
+
     if (existing.rowCount > 0) {
       return res
         .status(409)
@@ -148,7 +302,7 @@ app.post("/auth/register", async (req, res) => {
     return res.status(201).json({ token, user });
   } catch (err) {
     console.error("register error:", err);
-    return res.status(500).json({ message: String(err?.message || err) }); //"Registration failed"
+    return res.status(500).json({ message: String(err?.message || err) });
   }
 });
 
@@ -189,9 +343,6 @@ app.post("/auth/login", async (req, res) => {
   }
 });
 
-/////////////// NO TOUCHY //////////////////////
-
-//////getting user info!!!!! ////
 app.get("/auth/me", requireUser, async (req, res) => {
   try {
     const userId = req.userId;
@@ -214,8 +365,6 @@ app.get("/auth/me", requireUser, async (req, res) => {
   }
 });
 
-/////creating a users addition! //////////
-
 app.patch("/users/me", requireUser, async (req, res) => {
   try {
     const userId = req.userId;
@@ -227,11 +376,11 @@ app.patch("/users/me", requireUser, async (req, res) => {
 
     const uname = String(username).trim();
 
-    // optional: prevent duplicates
     const existing = await db.query(
       `SELECT id FROM users WHERE username = $1 AND id <> $2`,
       [uname, userId]
     );
+
     if (existing.rowCount > 0) {
       return res.status(409).json({ message: "Username already in use" });
     }
@@ -255,115 +404,18 @@ app.patch("/users/me", requireUser, async (req, res) => {
   }
 });
 
-//////////HAYLEY DELETED BELOW DEV USER BC DONT NEED NOW!!!! /////////
-// TEMP (Option A): hardcode dev user until auth is done
-//const DEV_USER_ID = "00000000-0000-0000-0000-000000000001";
-
-///ALSO DELETED BELOW BEFORE AI///
-/*
-function recipeHash(obj) {
-  // stable-ish hash to dedupe recipes across saves
-  const str = JSON.stringify(obj);
-  return crypto.createHash("sha256").update(str).digest("hex");
-}
-
-function getUserId(req) {
-  return DEV_USER_ID;
-}
-*/
-
-const DEV_USER_ID = "00000000-0000-0000-0000-000000000001";
-
-function getUserId(req) {
-  // If auth is enabled and a user is present, use it; otherwise dev fallback
-  return req.userId || DEV_USER_ID;
-}
-// ===== OpenAI client =====
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-console.log(
-  "OPENAI key loaded:",
-  process.env.OPENAI_API_KEY
-    ? `yes (len ${process.env.OPENAI_API_KEY.length})`
-    : "NO"
-);
-
-// ================== Recipe Image Generation ==================
-
-function buildFoodImagePrompt(recipe) {
-  const title = String(recipe.title ?? "a homemade dish").trim();
-
-  const used = Array.isArray(recipe.ingredientsUsed)
-    ? recipe.ingredientsUsed
-    : [];
-  const missing = Array.isArray(recipe.missingIngredients)
-    ? recipe.missingIngredients
-    : [];
-
-  const ingredients = [...used, ...missing]
-    .filter(Boolean)
-    .slice(0, 12)
-    .join(", ");
-
-  return `
-A professional food photograph of ${title}.
-Key ingredients: ${ingredients || "simple pantry ingredients"}.
-Plated neatly on a ceramic plate or bowl.
-Soft natural window lighting, shallow depth of field.
-Realistic, appetizing, high detail, no text, no watermark.
-`;
-}
-
-async function generateAndAttachRecipeImage({ recipeId, recipeJson }) {
-  try {
-    // Mark as generating
-    await db.query(
-      `UPDATE recipes
-       SET image_status = 'generating'
-       WHERE id = $1 AND (image_status IS NULL OR image_status IN ('none', 'failed'))`,
-      [recipeId]
-    );
-
-    const prompt = buildFoodImagePrompt(recipeJson);
-
-    const img = await openai.images.generate({
-      model: "gpt-image-1",
-      prompt,
-      size: "1024x1024",
-    });
-
-    const imageUrl = img?.data?.[0]?.url;
-    if (!imageUrl) throw new Error("No image URL returned");
-
-    await db.query(
-      `UPDATE recipes
-       SET image_url = $2, image_status = 'ready'
-       WHERE id = $1`,
-      [recipeId, imageUrl]
-    );
-  } catch (err) {
-    console.error("image generation error:", err);
-    await db.query(
-      `UPDATE recipes
-       SET image_status = 'failed'
-       WHERE id = $1`,
-      [recipeId]
-    );
-  }
-}
-
-// ===== Health check =====
+/**
+ * ----------------------------
+ * Routes: Health + info
+ * ----------------------------
+ */
 app.get("/health", (req, res) => {
   res.json({ ok: true });
 });
+
 app.get("/", (req, res) => {
   res.send("Pantry Wizard API is running. Try GET /health");
 });
-
-db.query("SELECT NOW()")
-  .then(() => console.log("✅ DB connected"))
-  .catch((e) => console.error("❌ DB connection error", e));
 
 app.get("/version", (req, res) => {
   res.json({
@@ -372,10 +424,11 @@ app.get("/version", (req, res) => {
   });
 });
 
-// =======================================================
-// =============== STUB / FALLBACK GENERATOR ==============
-// =======================================================
-
+/**
+ * ----------------------------
+ * Stub generator route
+ * ----------------------------
+ */
 function parsePantry(pantryText) {
   return pantryText
     .split(/[\n,]+/g)
@@ -453,68 +506,11 @@ app.post("/api/generate", (req, res) => {
   res.json({ recipes });
 });
 
-// =======================================================
-// ===================== REAL AI ROUTE ====================
-// =======================================================
-
-function withTimeout(promise, ms, label) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) =>
-      setTimeout(
-        () => reject(new Error(`${label} timed out after ${ms}ms`)),
-        ms
-      )
-    ),
-  ]);
-}
-
-async function generateImageUrlForRecipe(r) {
-  const imgPrompt = buildFoodImagePrompt(r);
-
-  const img = await withTimeout(
-    openai.images.generate({
-      model: "gpt-image-1",
-      prompt: imgPrompt,
-      size: "1024x1024", // faster while debugging
-    }),
-    90000,
-    "images.generate"
-  );
-
-  const first = img?.data?.[0];
-
-  console.log("🧩 image response keys:", Object.keys(first || {}));
-
-  // If it returns a URL directly, use it
-  if (first?.url) return first.url;
-
-  // If it returns base64, upload to Cloudinary and return a real HTTPS URL
-  if (first?.b64_json) {
-    if (!hasCloudinary) {
-      // If Cloudinary isn't configured, fall back to placeholder so responses stay sane
-      return placeholderImageUrl(r?.title);
-    }
-
-    const dataUrl = `data:image/png;base64,${first.b64_json}`;
-
-    const safeTitle = String(r?.title || "recipe")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "")
-      .slice(0, 60);
-
-    const publicId = `${safeTitle}-${Date.now()}`;
-
-    return await uploadPngDataUrlToCloudinary(dataUrl, publicId);
-  }
-
-  // Some SDKs return "base64" under a different key — log and fail loudly
-  throw new Error(
-    `No usable image in response. keys=${Object.keys(first || {}).join(",")}`
-  );
-}
-
+/**
+ * ----------------------------
+ * Real AI route
+ * ----------------------------
+ */
 app.post("/api/generate-ai", async (req, res) => {
   try {
     console.log("🔥 HIT /api/generate-ai", new Date().toISOString());
@@ -584,13 +580,10 @@ Return ONLY valid JSON in this exact shape:
 
     console.log("🧠 parsed recipes:", parsed.recipes?.length);
 
-    // Attach imageUrl to each recipe (fallback to placeholder on any error)
     for (const r of parsed.recipes ?? []) {
       try {
         console.log("🖼️ attempting image for:", r.title);
-
         r.imageUrl = await generateImageUrlForRecipe(r);
-
         console.log("✅ image model succeeded for:", r.title);
       } catch (e) {
         console.error("❌ image gen failed for:", r?.title, e?.message || e);
@@ -605,6 +598,11 @@ Return ONLY valid JSON in this exact shape:
   }
 });
 
+/**
+ * ----------------------------
+ * User recipes (saved)
+ * ----------------------------
+ */
 app.post("/api/user-recipes", requireUser, async (req, res) => {
   try {
     const { recipe } = req.body ?? {};
@@ -612,7 +610,6 @@ app.post("/api/user-recipes", requireUser, async (req, res) => {
       return res.status(400).send("Missing recipe in request body");
     }
 
-    // Validate minimal shape expected from the mobile client
     const title = String(recipe.title ?? "").trim();
     const ingredientsUsed = Array.isArray(recipe.ingredientsUsed)
       ? recipe.ingredientsUsed
@@ -629,19 +626,17 @@ app.post("/api/user-recipes", requireUser, async (req, res) => {
 
     const userId = getUserId(req);
 
-    // TODO: replace these with real logic later (or infer from ingredients)
     const isVeggie = false;
     const isGf = false;
 
-    // 1) Insert into recipes
     const inserted = await db.query(
       `INSERT INTO recipes (name, generated_by_ai, prompt_used, is_veggie, is_gf, recipe_json)
        VALUES ($1, $2, $3, $4, $5, $6::jsonb)
        RETURNING id`,
       [
         title,
-        true, // generated_by_ai
-        recipe.imagePrompt ?? null, // prompt_used (optional)
+        true,
+        recipe.imagePrompt ?? null,
         isVeggie,
         isGf,
         JSON.stringify({
@@ -657,7 +652,6 @@ app.post("/api/user-recipes", requireUser, async (req, res) => {
 
     const recipeId = inserted.rows[0].id;
 
-    // 2) Insert into favorites (assumes table exists)
     await db.query(
       `INSERT INTO favorites (user_id, recipe_id)
        VALUES ($1, $2)
@@ -705,6 +699,11 @@ app.get("/api/user-recipes", requireUser, async (req, res) => {
   }
 });
 
+/**
+ * ----------------------------
+ * Debug routes (optional)
+ * ----------------------------
+ */
 app.get("/_debug/router-shape", (req, res) => {
   const has_router = !!app._router;
   const has_router_stack = !!app._router?.stack;
@@ -718,7 +717,6 @@ app.get("/_debug/router-shape", (req, res) => {
     has_app_router: has_router2,
     has_app_router_stack: has_router2_stack,
     app_router_stack_len: app.router?.stack?.length ?? null,
-    // show keys to see what Express put on the app object
     app_keys: Object.keys(app).slice(0, 40),
   });
 });
@@ -728,7 +726,6 @@ app.get("/_debug/routes", (req, res) => {
 
   function walk(stack, prefix = "") {
     for (const layer of stack || []) {
-      // Direct route
       if (layer.route?.path) {
         const methods = Object.keys(layer.route.methods || {})
           .filter((m) => layer.route.methods[m])
@@ -737,9 +734,7 @@ app.get("/_debug/routes", (req, res) => {
         routes.push({ path: prefix + layer.route.path, methods });
       }
 
-      // Mounted router (nested)
       if (layer.name === "router" && layer.handle?.stack) {
-        // Best-effort mount path extraction from regexp
         let mount = "";
         const s = layer.regexp?.toString?.() || "";
         const m = s.match(/^\/\^\\\/(.+?)\\\/\?\(\?=\\\/\|\$\)\/i$/);
@@ -750,14 +745,11 @@ app.get("/_debug/routes", (req, res) => {
     }
   }
 
-  // Express 4 uses app._router.stack; Express 5 may use app.router.stack
   const rootStack = app._router?.stack || app.router?.stack || [];
   walk(rootStack, "");
 
   res.json({ routes });
 });
-
-// Auto-deploy trigger: verified user-recipes POST route
 
 app.get("/_debug/db", async (req, res) => {
   const dbName = await db.query("select current_database() as db");
@@ -776,9 +768,24 @@ app.get("/_debug/db", async (req, res) => {
   });
 });
 
-// ===== Start server =====
+/**
+ * ----------------------------
+ * DB ping + server start
+ * ----------------------------
+ */
+db.query("SELECT NOW()")
+  .then(() => console.log("✅ DB connected"))
+  .catch((e) => console.error("❌ DB connection error", e));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server listening on port ${PORT}`);
 });
+
+/**
+ * ----------------------------
+ * Exports (must be after app/db exist)
+ * ----------------------------
+ */
+export { app, db };
+export default app;
