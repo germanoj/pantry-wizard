@@ -7,8 +7,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const { token, isLoading } = useAuth();
   const router = useRouter();
   const segments = useSegments();
-
+  
   useEffect(() => {
+     //only splash when loading, no loading
     if (isLoading) return;
 
     const first = segments[0]; // "(tabs)", "(auth)", undefined
