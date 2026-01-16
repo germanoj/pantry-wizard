@@ -1,78 +1,58 @@
 import { Tabs } from "expo-router";
-//import {React} from "react";
 import { useAuth } from "@/src/auth/AuthContext";
 
 import { HapticTab } from "@/components/haptic-tab";
 import Feather from "react-native-vector-icons/Feather";
 import WizardHatIcon from "../wizardHat";
 
-//import { Theme } from "@/src/theme/theme";
 import { useTheme } from "@/src/theme/usetheme";
-//import { Colors } from "@/constants/theme";
-//import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function TabLayout() {
-  const { token, isLoading } = useAuth();
+  const { token } = useAuth(); // ✅ don't block UI on isLoading here
   const theme = useTheme();
 
-  if (isLoading) return null; //create fun splash?
-  
   const isAuthed = !!token;
-  
-  //if not loggeed in, can see home, wizard, my profile
-    //will change profile to look diff when logged in and not
-  //other tabs are hidden
 
-  //if logged in have seeing eye - nothing hidden except that which is hidden for all
+  return (
+    <Tabs
+      screenOptions={{
+        headerTitleAlign: "center",
+        tabBarLabelPosition: "below-icon",
+        tabBarButton: HapticTab,
+        tabBarActiveTintColor: theme.accent,
+        tabBarInactiveTintColor: theme.textMuted,
+        tabBarStyle: {
+          position: "absolute",
+          left: 18,
+          right: 18,
+          bottom: 18,
 
-    return (
-      <Tabs
-        screenOptions={{
-          headerTitleAlign: "center",
-          tabBarLabelPosition: "below-icon",
-          //headerShown: false,
-          //tab colors
-          tabBarButton: HapticTab,
-          tabBarActiveTintColor: theme.accent, //when you click on the tab it highlights 
-          //gold "accent" ot "primary"?????
-          tabBarInactiveTintColor: theme.textMuted,
-          tabBarStyle: {
-              position: "absolute",
-              left: 18,
-              right: 18,
-              bottom: 18,
+          height: 72,
+          paddingTop: 10,
+          paddingBottom: 10,
+          backgroundColor: theme.surface2,
+          borderTopColor: theme.border,
+          borderTopWidth: 1,
 
-              height: 72,
-              paddingTop: 10,
-              paddingBottom: 10,
-              backgroundColor: theme.surface2,
-              borderTopColor: theme.border,
-              borderTopWidth: 1,
-
-              borderRadius: 999, // pill style
-              // iOS shadow
-              shadowColor: "#000",
-              shadowOpacity: 0.18,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: 8 },
-              // Android shadow
-              elevation: 12,
-
-            },
-          tabBarItemStyle: {
-              paddingVertical: 1,
-            },
-          tabBarLabelStyle: {
-              fontSize: 11,
-              marginTop: 2,
-            },
-
-          //header colors
-          headerStyle: { backgroundColor: theme.surface2},
-          headerTitleStyle: { color: theme.text },
-          headerTintColor: theme.text, // back button / icons
-        }}
-      >
+          borderRadius: 999,
+          shadowColor: "#000",
+          shadowOpacity: 0.18,
+          shadowRadius: 12,
+          shadowOffset: { width: 0, height: 8 },
+          elevation: 12,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 1,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          marginTop: 2,
+        },
+        headerStyle: { backgroundColor: theme.surface2 },
+        headerTitleStyle: { color: theme.text },
+        headerTintColor: theme.text,
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
@@ -83,7 +63,7 @@ export default function TabLayout() {
           ),
         }}
       />
-    
+
       <Tabs.Screen
         name="chatBot"
         options={{
@@ -93,7 +73,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* only show when logged in */}
       <Tabs.Screen
         name="saved"
         options={{
@@ -105,7 +84,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* keep visible always (content changes inside ProfilePage) */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -118,7 +96,7 @@ export default function TabLayout() {
       />
 
       {/* hidden routes that still exist */}
-      <Tabs.Screen name="recipes" options={{href: null}}/>
+      <Tabs.Screen name="recipes" options={{ href: null }} />
       <Tabs.Screen
         name="loginReg"
         options={{
@@ -130,7 +108,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen name="explore" options={{ href: null }} />
-      
     </Tabs>
-    )
-  }
+  );
+}

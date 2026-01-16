@@ -1,28 +1,45 @@
-import express from "express";
-import cors from "cors";
-import "dotenv/config";
-import OpenAI from "openai";
-import { v2 as cloudinary } from "cloudinary";
+/** ✅ Middleware (order matters) */
+app.use(express.json());
 
-//for hayley for password hashing and tokens!!
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-//////////////////////////////
+// ✅ CORS for Expo Web + localhost dev + deployed web
+const allowedOrigins = new Set([
+  // local web dev
+  "http://localhost:8081",
+  "http://localhost:19006",
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "http://localhost:8080",
 
-import pg from "pg";
-const { Pool } = pg;
+  // add your deployed web origins here if/when you have them:
+  // "https://your-web-domain.com",
+  // "https://your-vercel-app.vercel.app",
+]);
 
-const isRender =
-  !!process.env.RENDER || /render\.com/i.test(process.env.DATABASE_URL || "");
-const needsSSL = isRender || process.env.PGSSLMODE === "require";
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      // Allow non-browser requests with no Origin header (native apps, curl, Postman)
+      if (!origin) return cb(null, true);
 
-const db = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: needsSSL ? { rejectUnauthorized: false } : false,
-});
+      if (allowedOrigins.has(origin)) return cb(null, true);
 
-const app = express();
+      // IMPORTANT: don't throw (can become a 500). Just deny.
+      console.warn("[CORS] Blocked origin:", origin);
+      return cb(null, false);
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
 
+// (optional but helpful) ensure preflight always responds
+app.options("*", cors());
+
+// Helpful for preflight requests
+app.options("*", cors());
+
+export { app, db };
 export default app;
 
 // ===== Cloudinary (for durable image URLs) =====
