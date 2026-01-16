@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Pressable,
   Alert,
+  Image,
 } from "react-native";
 import { router, useRouter } from "expo-router";
 import {
@@ -116,14 +117,15 @@ export default function SavedRecipes() {
                 pressed && { opacity: 0.7 },
               ]}
             >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 12,
-                }}
-              >
+              <View style={styles.row}>
+                {!!item.imageUrl && (
+                  <Image
+                    source={{ uri: item.imageUrl }}
+                    style={styles.thumb}
+                    resizeMode="cover"
+                  />
+                )}
+
                 <View style={{ flex: 1 }}>
                   <Text style={styles.cardTitle}>{item.title}</Text>
                   {!!item.timeMinutes && (
@@ -133,7 +135,7 @@ export default function SavedRecipes() {
 
                 <Pressable
                   onPress={(e) => {
-                    e.stopPropagation(); // ⛔ prevent card navigation
+                    e.stopPropagation();
                     onDeleteRecipe(item.id);
                   }}
                   hitSlop={10}
@@ -176,5 +178,16 @@ const styles = StyleSheet.create({
   cardMeta: {
     marginTop: 6,
     opacity: 0.7,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  thumb: {
+    width: 64,
+    height: 64,
+    borderRadius: 10,
+    backgroundColor: "#eee",
   },
 });

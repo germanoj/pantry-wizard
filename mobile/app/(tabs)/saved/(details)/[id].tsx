@@ -7,7 +7,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, Stack } from "expo-router";
 import { fetchSavedRecipes } from "../../../../src/lib/savedRecipes";
 import type { Recipe } from "../../../../src/types/recipe";
 
