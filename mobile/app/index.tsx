@@ -75,6 +75,7 @@ export default function IntroSplash() {
       }),
       withTiming(1, { duration: 240, easing: Easing.out(Easing.cubic) })
     );
+<<<<<<< HEAD
 
     logoY.value = withTiming(0, {
       duration: 420,
@@ -101,9 +102,15 @@ export default function IntroSplash() {
     actionsY,
 =======
     } else {
+=======
+    logoY.value = withTiming(0, { duration: 420, easing: Easing.out(Easing.cubic) });
+
+    //actions if logged out , prevents seeing buttons DoNT TOUCH!!!!
+    if (!token) {
+>>>>>>> 750267a (fixed splash screen finally)
       actionsOpacity.value = withDelay(450, withTiming(1, { duration: 350 })); //buttons fade in after the logo
       actionsY.value = withDelay(450, withTiming(0, { duration: 350 }));
-    }
+    } 
 
     // Mark splash done + route decisions
     setTimeout(
