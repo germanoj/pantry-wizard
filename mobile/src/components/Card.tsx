@@ -28,6 +28,10 @@ const styles = StyleSheet.create({
     borderRadius: ui.radius.lg,
     borderWidth: 1,
 
+    //alignment within the card
+    alignItems: "center",     // ⬅️ horizontal
+    justifyContent: "center", // ⬅️ vertical (optional)
+
     // this creates that lift impresssion
     shadowColor: "#000",
     shadowOpacity: 0.08,

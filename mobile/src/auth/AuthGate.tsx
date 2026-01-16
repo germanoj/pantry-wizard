@@ -21,6 +21,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const isGenerate = first === "generate";
 
   useEffect(() => {
+    //dont run any redirects until auth loads
     if (isLoading) return;
 
     const guestAllowedTabs = new Set(["index", "chatBot", "profile"]);
@@ -28,6 +29,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
       isTabsGroup && guestAllowedTabs.has(String(second));
 
     // ✅ LOGGED OUT USERS
+
     if (!token) {
       if (isIntroRoot) return; // splash allowed
       if (isAuthGroup) return; // login/reg allowed
