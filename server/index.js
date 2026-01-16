@@ -43,21 +43,18 @@ const allowedOrigins = new Set([
 app.use(
   cors({
     origin: (origin, cb) => {
-      // Allow non-browser requests with no Origin header
+      // Allow non-browser requests with no Origin header (native apps, curl, Postman)
       if (!origin) return cb(null, true);
 
       if (allowedOrigins.has(origin)) return cb(null, true);
 
       console.warn("[CORS] Blocked origin:", origin);
       return cb(null, false);
-    },
-    credentials: true,
-  })
-);
+    }, // <-- IMPORTANT COMMA HERE
 
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   })
 );
 
