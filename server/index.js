@@ -105,7 +105,7 @@ async function uploadPngDataUrlToCloudinary(dataUrl, publicId) {
 }
 // ===== Middleware =====
 app.use(cors()); // dev-safe: allow all origins
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 
 app.use((req, res, next) => {
   console.log(`[REQ] ${req.method} ${req.originalUrl}`);

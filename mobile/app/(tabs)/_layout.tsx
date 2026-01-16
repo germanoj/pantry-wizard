@@ -19,9 +19,12 @@ export default function TabLayout() {
       screenOptions={{
         headerTitleAlign: "center",
         tabBarLabelPosition: "below-icon",
+
+        // tab colors / behavior
         tabBarButton: HapticTab,
         tabBarActiveTintColor: theme.accent,
         tabBarInactiveTintColor: theme.textMuted,
+
         tabBarStyle: {
           position: "absolute",
           left: 18,
@@ -35,24 +38,23 @@ export default function TabLayout() {
           borderTopColor: theme.border,
           borderTopWidth: 1,
 
-          borderRadius: 999,
+          borderRadius: 999, // pill style
+          // iOS shadow
           shadowColor: "#000",
           shadowOpacity: 0.18,
           shadowRadius: 12,
           shadowOffset: { width: 0, height: 8 },
-
+          // Android shadow
           elevation: 12,
         },
-        tabBarItemStyle: {
-          paddingVertical: 1,
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          marginTop: 2,
-        },
+
+        tabBarItemStyle: { paddingVertical: 1 },
+        tabBarLabelStyle: { fontSize: 11, marginTop: 2 },
+
+        // header colors
         headerStyle: { backgroundColor: theme.surface2 },
         headerTitleStyle: { color: theme.text },
-        headerTintColor: theme.text,
+        headerTintColor: theme.text, // back button / icons
       }}
     >
       <Tabs.Screen
@@ -75,6 +77,7 @@ export default function TabLayout() {
         }}
       />
 
+      {/* only show when logged in */}
       <Tabs.Screen
         name="saved"
         options={{
@@ -86,6 +89,7 @@ export default function TabLayout() {
         }}
       />
 
+      {/* keep visible always (content changes inside ProfilePage) */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -100,7 +104,6 @@ export default function TabLayout() {
       {/* hidden routes */}
       <Tabs.Screen name="recipes" options={{ href: null }} />
       <Tabs.Screen name="saved/(details)/[id]" options={{ href: null }} />
-
       <Tabs.Screen
         name="loginReg"
         options={{
