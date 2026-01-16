@@ -248,7 +248,7 @@ export default function IntroSplash() {
         <Text style={styles.logoText}>🧙 Pantry Wizard</Text>
       </Animated.View>
 
-      {/* Actions */}
+      {/* Actions replace instead of router.push prevents swiping back to the splash screen */}
       <Animated.View style={[styles.actions, actionsStyle]}>
         <Pressable
           disabled={!ready}
