@@ -36,9 +36,16 @@ export default function IntroSplash() {
   const [showWand, setShowWand] = useState(true);
 
   // reanimated values
+<<<<<<< HEAD
   const logoOpacity = useSharedValue(0);
   const logoScale = useSharedValue(0.2);
   const logoY = useSharedValue(24);
+=======
+  const logoOpacity = useSharedValue(0); //starts invisible, small and slightly lower (the y axis)
+  const logoScale = useSharedValue(0.2); //was .7, trying smaller start
+  const logoY = useSharedValue(24); //was 16, trying to start lower
+
+>>>>>>> a1b3e57 (Fix web splash rendering and add font loading fallback)
   const actionsOpacity = useSharedValue(0);
   const actionsY = useSharedValue(12);
   const wandOpacity = useSharedValue(1);
@@ -48,8 +55,13 @@ export default function IntroSplash() {
 
   // reset when screen mounts
   useEffect(() => {
+<<<<<<< HEAD
     setSplashDone(false);
     setReady(false);
+=======
+    setSplashDone(false); // prevents authgate thinking splash mount is done each time
+    setReady(false); // optional: also reset buttons
+>>>>>>> a1b3e57 (Fix web splash rendering and add font loading fallback)
   }, [setSplashDone]);
 
   // Timeline: reveal logo, then actions (only if logged out)
@@ -72,6 +84,7 @@ export default function IntroSplash() {
     if (!token) {
       actionsOpacity.value = withDelay(450, withTiming(1, { duration: 350 }));
       actionsY.value = withDelay(450, withTiming(0, { duration: 350 }));
+<<<<<<< HEAD
     }
 
     const t = setTimeout(
@@ -86,6 +99,28 @@ export default function IntroSplash() {
   }, [
     actionsOpacity,
     actionsY,
+=======
+    } else {
+      actionsOpacity.value = withDelay(450, withTiming(1, { duration: 350 })); //buttons fade in after the logo
+      actionsY.value = withDelay(450, withTiming(0, { duration: 350 }));
+    }
+
+    // Mark splash done + route decisions
+    setTimeout(
+      () => {
+        setSplashDone(true); //when splash and logo are done
+        if (!token) {
+          setReady(true); //only show button options if lohhed out
+        } else {
+          router.replace("/(tabs)");
+        }
+      },
+      token ? 700 : 850
+    ); // ready becomes true after UI, if token the movement is quicker
+  }, [
+    token,
+    setSplashDone,
+>>>>>>> a1b3e57 (Fix web splash rendering and add font loading fallback)
     logoOpacity,
     logoScale,
     logoY,
@@ -93,6 +128,7 @@ export default function IntroSplash() {
     token,
   ]);
 
+<<<<<<< HEAD
   // Web: skip lottie; show UI immediately (prevents infinite splash)
   useEffect(() => {
     if (isLoading) return;
@@ -114,6 +150,32 @@ export default function IntroSplash() {
       if (token) router.replace("/(tabs)/chatBot");
       else setReady(true);
     }
+=======
+  // Web fallback: no lottie timeline; show UI immediately
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    if (isLoading) return;
+
+    // Hide lottie layers (they won't render on web anyway)
+    setShowWand(false);
+    setShowSparkles(false);
+    setShowPoof(false);
+
+    // Show UI immediately
+    logoOpacity.value = withTiming(1, { duration: 0 });
+    logoScale.value = withTiming(1, { duration: 0 });
+    logoY.value = withTiming(0, { duration: 0 });
+
+    actionsOpacity.value = withTiming(1, { duration: 0 });
+    actionsY.value = withTiming(0, { duration: 0 });
+
+    // Mark splash done and enable buttons
+    setSplashDone(true);
+    setReady(true);
+
+    // Optional: if you WANT auto-redirect when logged in on web, do it explicitly:
+    // if (token) router.replace("/(tabs)/chatBot");
+>>>>>>> a1b3e57 (Fix web splash rendering and add font loading fallback)
   }, [
     isWeb,
     isLoading,
@@ -126,7 +188,11 @@ export default function IntroSplash() {
     actionsY,
   ]);
 
+<<<<<<< HEAD
   // Native: when auth state is known, kick off wand (or skip if authed)
+=======
+  // Native: kick off wand animation when auth state is known
+>>>>>>> a1b3e57 (Fix web splash rendering and add font loading fallback)
   useEffect(() => {
     if (isWeb) return;
     if (isLoading) return;
@@ -158,7 +224,27 @@ export default function IntroSplash() {
     }, 2500);
 
     return () => clearTimeout(t);
+<<<<<<< HEAD
   }, [isWeb, isLoading, token, startLogoTimeline]);
+=======
+  }, [isLoading, startLogoTimeline, token]);
+  {
+    /*
+  // Failsafe: if lottie callback never fires, still show UI.
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    const t = setTimeout(() => {
+      setReady((prev) => {
+        if (prev) return prev;
+        startLogoTimeline();
+        return true;
+      });
+    }, 2500);
+
+    return () => clearTimeout(t);
+  }, []); */
+  }
+>>>>>>> a1b3e57 (Fix web splash rendering and add font loading fallback)
 
   const logoStyle = useAnimatedStyle(() => ({
     opacity: logoOpacity.value,
@@ -288,7 +374,11 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   logoText: {
+<<<<<<< HEAD
     fontSize: 36,
+=======
+    fontSize: 36, //46-56 will give that big pop feel
+>>>>>>> a1b3e57 (Fix web splash rendering and add font loading fallback)
     fontWeight: "800",
     color: "white",
   },
