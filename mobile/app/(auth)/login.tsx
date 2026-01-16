@@ -1,105 +1,81 @@
-import { useState } from "react";
-import { View, StyleSheet, Alert } from "react-native";
-import { Link, router } from "expo-router";
+import React, { useState } from "react";
+import { View, Text, TextInput, Pressable } from "react-native";
 
-import { useTheme } from '@/src/theme/usetheme';
-import { WizardBody, WizardTitle, WizardInput, WizardButton } from '@/src/components/WizardText';
-import { Card } from '@/src/components/Card';
+// TODO: adjust these imports to match your project
+// If you already have apiLogin + signIn elsewhere, keep those and remove these placeholders.
+import { apiLogin } from "../../src/auth/library"; // <-- change if path differs
+import { useAuth } from "../../src/auth/AuthContext"; // <-- change if path differs
 
-import { useAuth } from "@/src/auth/AuthContext";
-import { apiLogin } from "@/src/auth/library";
+export default function LoginScreen() {
+  const { signIn } = useAuth();
 
-
-export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const {signIn} = useAuth();
-
   const onLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Missing info", "Email and password are required.");
-      return;
-    }
-
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-
       const data = await apiLogin(email, password);
-      // EXPLICIT NULL CHECK
-      // data.user may be undefined if backend changes or fails
-            // this updates auth state
-    if (data.user !== null && data.user !== undefined) {
-      await signIn(data.token, data.user);
-    } else {
-      await signIn(data.token, null);
-    }
 
-      Alert.alert("Welcome back!", "You're logged in. Let's get cookin'!");
-      router.replace("/(tabs)/profile"); //can switch just to (tabs) so it open the tab homescreen
-    } catch (err: any) {
-      Alert.alert("Error", err.message || "Hmm the magic isn't magic-ing... login failed. Try again?");    } finally {
+      // depending on your api response shape
+      await signIn(data.token, data.user ?? null);
+    } catch (e: any) {
+      setError(e?.message ?? "Login failed");
+    } finally {
       setLoading(false);
     }
   };
 
-  const theme = useTheme();
-
   return (
-    <View style={[styles.container, {backgroundColor: theme.background}]}>
-      <Card>
-      <WizardTitle>Log in</WizardTitle>
+    <View style={{ flex: 1, padding: 20, justifyContent: "center", gap: 12 }}>
+      <Text style={{ fontSize: 24, fontWeight: "600" }}>Login</Text>
 
-      <WizardInput
-        value={email}
-        onChangeText={setEmail}
-        placeholder="email"
+      <TextInput
+        placeholder="Email"
         autoCapitalize="none"
         keyboardType="email-address"
-        style={styles.input}
+        value={email}
+        onChangeText={setEmail}
+        style={{
+          borderWidth: 1,
+          borderColor: "#ccc",
+          padding: 12,
+          borderRadius: 8,
+        }}
       />
 
-      <WizardInput
+      <TextInput
+        placeholder="Password"
+        secureTextEntry
         value={password}
         onChangeText={setPassword}
-        placeholder="password"
-        secureTextEntry
-        style={styles.input}
+        style={{
+          borderWidth: 1,
+          borderColor: "#ccc",
+          padding: 12,
+          borderRadius: 8,
+        }}
       />
 
-      <WizardButton style={styles.button} onPress={onLogin} disabled={loading}>
-        <WizardBody style={[styles.buttonText, { color: theme.primaryText }]}>
-            {loading ? "Casting spell..." : "Accio"}</WizardBody>
-      </WizardButton>
+      {!!error && <Text style={{ color: "red" }}>{error}</Text>}
 
-      <WizardBody style={styles.linkRow}>
-       First time visiting the wizard? <Link href="/register" style={[styles.link, { color: theme.accent2 }]}>Create an account</Link>
-      </WizardBody>
-      </Card>
+      <Pressable
+        onPress={onLogin}
+        disabled={loading}
+        style={{
+          padding: 12,
+          borderRadius: 8,
+          alignItems: "center",
+          opacity: loading ? 0.6 : 1,
+          borderWidth: 1,
+          borderColor: "#333",
+        }}
+      >
+        <Text>{loading ? "Signing in..." : "Sign in"}</Text>
+      </Pressable>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    alignItems: "center", 
-    justifyContent: "center", 
-    backgroundColor: "#fff", 
-    padding: 20, 
-  },
-  title: { 
-    fontSize: 28, 
-    fontWeight: "700", 
-    marginBottom: 10,
-    fontFamily: "YuseiMagic",
-},
-  input: { width: "100%", borderWidth: 1, borderColor: "#ddd", borderRadius: 12, padding: 12, fontSize: 16, marginTop: 10 },
-  button: { width: "100%" },
-  buttonText: { fontSize: 16, fontWeight: "600" },
-  linkRow: { marginTop: 12, fontSize: 14 },
-  link: {
-
-  },
-});

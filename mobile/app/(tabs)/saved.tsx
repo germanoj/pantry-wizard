@@ -5,8 +5,14 @@ import {
   StyleSheet,
   FlatList,
   ActivityIndicator,
+  Pressable,
+  Alert,
 } from "react-native";
-import { fetchSavedRecipes } from "../../src/lib/savedRecipes"; // adjust path if needed
+import { router, useRouter } from "expo-router";
+import {
+  fetchSavedRecipes,
+  deleteSavedRecipe,
+} from "../../src/lib/savedRecipes"; // adjust path if needed
 
 type SavedRecipe = {
   id: string;
@@ -16,12 +22,40 @@ type SavedRecipe = {
   missingIngredients?: string[];
   steps?: string[];
   timeMinutes?: number;
+  imageUrl?: string; // (optional, if you have it)
 };
 
 export default function SavedRecipes() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [recipes, setRecipes] = useState<SavedRecipe[]>([]);
+
+  const onDeleteRecipe = (id: string) => {
+    Alert.alert(
+      "Remove recipe?",
+      "This will delete it from your saved recipes.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            // optimistic update
+            const prev = recipes;
+            setRecipes((r) => r.filter((x) => x.id !== id));
+
+            try {
+              await deleteSavedRecipe(id);
+            } catch (e: any) {
+              // rollback on failure
+              setRecipes(prev);
+              setError(e?.message ?? "Failed to delete recipe");
+            }
+          },
+        },
+      ]
+    );
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -75,12 +109,42 @@ export default function SavedRecipes() {
           data={recipes}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>{item.title}</Text>
-              {!!item.timeMinutes && (
-                <Text style={styles.cardMeta}>{item.timeMinutes} min</Text>
-              )}
-            </View>
+            <Pressable
+              onPress={() => router.push(`/saved/(details)/${item.id}`)}
+              style={({ pressed }) => [
+                styles.card,
+                pressed && { opacity: 0.7 },
+              ]}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.cardTitle}>{item.title}</Text>
+                  {!!item.timeMinutes && (
+                    <Text style={styles.cardMeta}>{item.timeMinutes} min</Text>
+                  )}
+                </View>
+
+                <Pressable
+                  onPress={(e) => {
+                    e.stopPropagation(); // ⛔ prevent card navigation
+                    onDeleteRecipe(item.id);
+                  }}
+                  hitSlop={10}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
+                >
+                  <Text style={{ color: "crimson", fontWeight: "600" }}>
+                    Remove
+                  </Text>
+                </Pressable>
+              </View>
+            </Pressable>
           )}
         />
       )}

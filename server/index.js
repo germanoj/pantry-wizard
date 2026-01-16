@@ -3,6 +3,7 @@ import cors from "cors";
 import "dotenv/config";
 import OpenAI from "openai";
 import { v2 as cloudinary } from "cloudinary";
+import { v4 as uuidv4 } from "uuid";
 
 //for hayley for password hashing and tokens!!
 import bcrypt from "bcryptjs";
@@ -60,7 +61,7 @@ async function uploadPngDataUrlToCloudinary(dataUrl, publicId) {
 
 // ===== Middleware =====
 app.use(cors()); // dev-safe: allow all origins
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 
 app.use((req, res, next) => {
   console.log(`[REQ] ${req.method} ${req.originalUrl}`);
@@ -639,14 +640,35 @@ app.post("/api/user-recipes", requireUser, async (req, res) => {
     const isGf = false;
 
     // 1) Insert into recipes
+    // Step 1: strip id so DB default (gen_random_uuid) can run
+    delete recipe.id;
+
+    // 🔍 DEBUG: inspect DB schema for recipes.id (temporary)
+    const idInfo = await db.query(`
+  SELECT column_name, data_type, is_nullable, column_default
+  FROM information_schema.columns
+  WHERE table_schema='public'
+    AND table_name='recipes'
+    AND column_name='id'
+`);
+    console.log("DB recipes.id column:", idInfo.rows[0]);
+
+    const ext = await db.query(
+      `SELECT extname FROM pg_extension WHERE extname='pgcrypto'`
+    );
+    console.log("pgcrypto installed:", ext.rows.length > 0);
+
+    const newId = uuidv4();
+
     const inserted = await db.query(
-      `INSERT INTO recipes (name, generated_by_ai, prompt_used, is_veggie, is_gf, recipe_json)
-       VALUES ($1, $2, $3, $4, $5, $6::jsonb)
-       RETURNING id`,
+      `INSERT INTO recipes (id, name, generated_by_ai, prompt_used, is_veggie, is_gf, recipe_json)
+   VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
+   RETURNING id`,
       [
+        newId,
         title,
         true, // generated_by_ai
-        recipe.imagePrompt ?? null, // prompt_used (optional)
+        recipe.imagePrompt ?? null,
         isVeggie,
         isGf,
         JSON.stringify({
@@ -663,16 +685,44 @@ app.post("/api/user-recipes", requireUser, async (req, res) => {
     const recipeId = inserted.rows[0].id;
 
     // 2) Insert into favorites (assumes table exists)
+    const favId = uuidv4();
+
     await db.query(
-      `INSERT INTO favorites (user_id, recipe_id)
-       VALUES ($1, $2)
-       ON CONFLICT (user_id, recipe_id) DO NOTHING`,
-      [userId, recipeId]
+      `INSERT INTO favorites (id, user_id, recipe_id)
+   VALUES ($1, $2, $3)
+   ON CONFLICT (user_id, recipe_id) DO NOTHING`,
+      [favId, userId, recipeId]
     );
 
     return res.json({ ok: true, recipeId });
   } catch (err) {
     console.error("save recipe error:", err);
+    return res.status(500).json({ error: String(err?.message || err) });
+  }
+});
+
+app.delete("/api/user-recipes/:id", requireUser, async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const { id: recipeId } = req.params;
+
+    // Remove the saved relationship for THIS user + THIS recipe
+    const result = await db.query(
+      `
+      DELETE FROM favorites
+      WHERE user_id = $1 AND recipe_id = $2
+      RETURNING id
+      `,
+      [userId, recipeId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).send("Saved recipe not found");
+    }
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("delete saved recipe error:", err);
     return res.status(500).json({ error: String(err?.message || err) });
   }
 });
