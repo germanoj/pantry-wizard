@@ -9,7 +9,7 @@ export default function ChatBot() {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Card>
-        <WizardTitle>Time to whip you up a magical recipe!</WizardTitle>
+        <WizardTitle style={{ textAlign: "center", alignSelf: "center" }}>Time to whip you up a magical recipe!</WizardTitle>
         <WizardBody>Click below to get started</WizardBody>
         <Link href="/generate" asChild>
           <Pressable style={styles.button}>
