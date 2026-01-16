@@ -1,3 +1,16 @@
+import express from "express";
+import cors from "cors";
+import "dotenv/config";
+import db from "./db/client.js";
+import OpenAI from "openai";
+
+import pg from "pg";
+const { Pool } = pg;
+
+const app = express();
+
+app.use(cors());
+
 /** ✅ Middleware (order matters) */
 app.use(express.json());
 
@@ -34,13 +47,11 @@ app.use(
 );
 
 // (optional but helpful) ensure preflight always responds
-app.options("*", cors());
+//app.options("*", cors());
+//hayley commented this out on 1/15 bc its doubled
 
 // Helpful for preflight requests
-app.options("*", cors());
-
-export { app, db };
-export default app;
+app.options(/.*/, cors());
 
 // ===== Cloudinary (for durable image URLs) =====
 const hasCloudinary =
@@ -779,7 +790,10 @@ app.get("/_debug/db", async (req, res) => {
 
 // ===== Start server =====
 
-const PORT = process.env.PORT || 3000;
+{
+  /*const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server listening on port ${PORT}`);
 });
+*/}
+export default app;

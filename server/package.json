@@ -5,9 +5,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start:dev": "nodemon server",
-    "dev": "nodemon index.js",
-    "start": "node index.js",
+    "start:dev": "nodemon server.js",
+    "dev": "nodemon server.js",
+    "start": "node server.js",
     "db:schema": "psql $DATABASE_URL -f db/schema.sql",
     "db:seed": "psql $DATABASE_URL -f db/seed.sql",
     "db:reset": "npm run db:schema && npm run db:seed"

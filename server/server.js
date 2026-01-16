@@ -1,5 +1,5 @@
-import app from "#index";
-import db from "#db/client";
+import app from "./index.js";
+import db from "./db/client.js";
 
 const PORT = process.env.PORT || 3000;
 
