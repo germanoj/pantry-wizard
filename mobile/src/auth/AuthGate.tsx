@@ -17,9 +17,10 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const isTabsGroup = first === "(tabs)";
   const atRoot = !first;
 
-
   useEffect(() => {
+    //dont run any redirects until auth loads
     if (isLoading) return;
+    
 
     //const first = segments[0]; // "(tabs)", "(auth)", undefined
     //const second = segments[1]; // "chatBot", "saved", etc.
@@ -36,6 +37,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     const isGuestAllowedTab =
       isTabsGroup && guestAllowedTabs.has(String(second));
 
+      //logged out users
     if (!token) {
       //if (isIntroRoot) return;
       //if (isAuthGroup) return;

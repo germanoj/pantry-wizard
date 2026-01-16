@@ -13,8 +13,8 @@ export default function HomeScreen() {
   if (!token) {
   return (
     <View style={[styles.container, {backgroundColor: theme.background}]}>
-      <Card>
-        <WizardTitle>Welcome to Pantry Wizard 🧙‍♂️</WizardTitle>
+      <Card centered>
+        <WizardTitle style={{ textAlign: "center", alignSelf: "center" }}>Welcome to Pantry Wizard 🧙‍♂️</WizardTitle>
         <WizardBody><Link href="/(auth)/login" style={[styles.link, { color: theme.accent2 }]}>Login</Link> to see past recipes and ask the wize wizard for more food inspo</WizardBody>
         <WizardBody> <Link href="/(auth)/register" style={[styles.link, { color: theme.accent2 }]}>Register </Link> a new account </WizardBody>
         <WizardBody> Or visit the <Link href="/(tabs)/chatBot" style={[styles.link, { color: theme.accent2 }]}>wizard</Link> as a guest</WizardBody>
@@ -26,7 +26,7 @@ export default function HomeScreen() {
   return (
     <View style={[styles.container, {backgroundColor: theme.background}]}>
       <Card>
-        <WizardTitle>Welcome back fellow magician✨</WizardTitle>
+        <WizardTitle style={{ textAlign: "center", alignSelf: "center" }}>Welcome back fellow magician✨</WizardTitle>
         <Link href="/chatBot"><WizardBody>Visit the Wizard for new recipe ideas</WizardBody></Link>
         <Link href="/saved"><WizardBody>Check out your saved recipes</WizardBody></Link>
       </Card>
