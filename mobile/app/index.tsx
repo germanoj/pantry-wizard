@@ -39,7 +39,7 @@ export default function IntroSplash() {
   const logoOpacity = useSharedValue(0); //starts invisible, small and slightly lower (the y axis)
   const logoScale = useSharedValue(0.2); //was .7, trying smaller start
   const logoY = useSharedValue(24); //was 16, trying to start lower
-  
+
   const actionsOpacity = useSharedValue(0);
   const actionsY = useSharedValue(12);
 
@@ -50,7 +50,7 @@ export default function IntroSplash() {
   const { token, isLoading } = useAuth();
 
   useEffect(() => {
-    setSplashDone(false); // prevents authgate thinking splash mount is done each time 
+    setSplashDone(false); // prevents authgate thinking splash mount is done each time
     setReady(false); // optional: also reset buttons
   }, [setSplashDone]);
 
@@ -66,24 +66,26 @@ export default function IntroSplash() {
 
     //actions if logged out
     if (!token) {
-    actionsOpacity.value = withDelay(450, withTiming(1, { duration: 350 }));
-    actionsY.value = withDelay(450, withTiming(0, { duration: 350 }));
+      actionsOpacity.value = withDelay(450, withTiming(1, { duration: 350 }));
+      actionsY.value = withDelay(450, withTiming(0, { duration: 350 }));
     } else {
+      actionsOpacity.value = withDelay(450, withTiming(1, { duration: 350 })); //buttons fade in after the logo
+      actionsY.value = withDelay(450, withTiming(0, { duration: 350 }));
+    }
 
-    actionsOpacity.value = withDelay(450, withTiming(1, { duration: 350 })); //buttons fade in after the logo
-    actionsY.value = withDelay(450, withTiming(0, { duration: 350 }));
-  }
-
-  // Mark splash done + route decisions
-  setTimeout(() => {
-      setSplashDone(true); //when splash and logo are done
-      if (!token) {
-        setReady(true); //only show button options if lohhed out
-      } else {
-      router.replace("/(tabs)")
-      }
-      }, token ? 700 : 850); // ready becomes true after UI, if token the movement is quicker 
-    },[
+    // Mark splash done + route decisions
+    setTimeout(
+      () => {
+        setSplashDone(true); //when splash and logo are done
+        if (!token) {
+          setReady(true); //only show button options if lohhed out
+        } else {
+          router.replace("/(tabs)");
+        }
+      },
+      token ? 700 : 850
+    ); // ready becomes true after UI, if token the movement is quicker
+  }, [
     token,
     setSplashDone,
     logoOpacity,
@@ -92,30 +94,31 @@ export default function IntroSplash() {
     actionsOpacity,
     actionsY,
   ]);
-      
-  // Web fallback: lottie-react-native can be flaky on web.
+
+  // Web fallback: no lottie timeline; show UI immediately
   useEffect(() => {
-    // If lottie doesn't run, onAnimationFinish never fires -> UI stays hidden.
-     //always play splash even if logged in 
-    if (Platform.OS === "web") return;
+    if (Platform.OS !== "web") return;
     if (isLoading) return;
 
+    // Hide lottie layers (they won't render on web anyway)
     setShowWand(false);
     setShowSparkles(false);
     setShowPoof(false);
 
-      // Show UI immediately
-      logoOpacity.value = withTiming(1, { duration: 0 });
-      logoScale.value = withTiming(1, { duration: 0 });
-      logoY.value = withTiming(0, { duration: 0 });
+    // Show UI immediately
+    logoOpacity.value = withTiming(1, { duration: 0 });
+    logoScale.value = withTiming(1, { duration: 0 });
+    logoY.value = withTiming(0, { duration: 0 });
 
-      actionsOpacity.value = withTiming(1, { duration: 0 });
-      actionsY.value = withTiming(0, { duration: 0 });
+    actionsOpacity.value = withTiming(1, { duration: 0 });
+    actionsY.value = withTiming(0, { duration: 0 });
 
+    // Mark splash done and enable buttons
     setSplashDone(true);
+    setReady(true);
 
-        if (token) router.replace("/(tabs)/chatBot");
-    else setReady(true);
+    // Optional: if you WANT auto-redirect when logged in on web, do it explicitly:
+    // if (token) router.replace("/(tabs)/chatBot");
   }, [
     isLoading,
     token,
@@ -127,7 +130,7 @@ export default function IntroSplash() {
     actionsY,
   ]);
 
-    // Native: kick off wand animation when auth state is known
+  // Native: kick off wand animation when auth state is known
   useEffect(() => {
     if (Platform.OS === "web") return;
     if (isLoading) return;
@@ -154,7 +157,8 @@ export default function IntroSplash() {
 
     return () => clearTimeout(t);
   }, [isLoading, startLogoTimeline, token]);
-{/*
+  {
+    /*
   // Failsafe: if lottie callback never fires, still show UI.
   useEffect(() => {
     if (Platform.OS === "web") return;
@@ -167,7 +171,8 @@ export default function IntroSplash() {
     }, 2500);
 
     return () => clearTimeout(t);
-  }, []); */}
+  }, []); */
+  }
 
   const logoStyle = useAnimatedStyle(() => ({
     opacity: logoOpacity.value,
@@ -297,7 +302,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   logoText: {
-    fontSize: 36, //46-56 will give that big pop feel    
+    fontSize: 36, //46-56 will give that big pop feel
     fontWeight: "800",
     color: "white",
   },

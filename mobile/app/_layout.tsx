@@ -6,6 +6,7 @@ import {
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
+import { View, Text } from "react-native";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useFonts } from "expo-font";
@@ -31,7 +32,13 @@ export default function RootLayout() {
     YuseiMagic: require("../assets/fonts/YuseiMagic-Regular.ttf"),
   });
 
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <Text>Loading…</Text>
+      </View>
+    );
+  }
 
   return (
     <AuthProvider>
