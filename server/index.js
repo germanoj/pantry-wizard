@@ -36,23 +36,25 @@ const allowedOrigins = new Set([
   "http://localhost:5173",
   "http://localhost:8080",
 
-  // add your deployed web origins here if/when you have them:
-  // "https://your-web-domain.com",
-  // "https://your-vercel-app.vercel.app",
+  // production web (Render static site)
+  "https://pantry-wizard-yxez.onrender.com",
 ]);
 
 app.use(
   cors({
     origin: (origin, cb) => {
-      // Allow non-browser requests with no Origin header (native apps, curl, Postman)
+      // Allow non-browser requests with no Origin header
       if (!origin) return cb(null, true);
 
       if (allowedOrigins.has(origin)) return cb(null, true);
 
-      // IMPORTANT: don't throw (can become a 500). Just deny.
       console.warn("[CORS] Blocked origin:", origin);
       return cb(null, false);
     },
+    credentials: true,
+  })
+);
+
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
