@@ -4,12 +4,14 @@ import "dotenv/config";
 import db from "./db/client.js";
 import OpenAI from "openai";
 
-import pg from "pg";
-const { Pool } = pg;
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+import { v2 as cloudinary } from "cloudinary";
 
 const app = express();
 
-app.use(cors());
+//dont need this cors bc have one later 
+//app.use(cors());
 
 /** ✅ Middleware (order matters) */
 app.use(express.json());
@@ -82,8 +84,8 @@ async function uploadPngDataUrlToCloudinary(dataUrl, publicId) {
 }
 
 // ===== Middleware =====
-app.use(cors()); // dev-safe: allow all origins
-app.use(express.json());
+//app.use(cors()); // dev-safe: allow all origins
+//app.use(express.json());
 
 //import crypto from "crypto";
 
@@ -498,6 +500,12 @@ async function generateImageUrlForRecipe(r) {
 
   console.log("🧩 image response keys:", Object.keys(first || {}));
 
+  //added this function bc placeholder is called multple times 
+  function placeholderImageUrl(title = "recipe") {
+  const safe = encodeURIComponent(String(title));
+  return `https://placehold.co/1024x1024?text=${safe}`;
+}
+
   // If it returns a URL directly, use it
   if (first?.url) return first.url;
 
@@ -788,12 +796,5 @@ app.get("/_debug/db", async (req, res) => {
   });
 });
 
-// ===== Start server =====
 
-{
-  /*const PORT = process.env.PORT || 3000;
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server listening on port ${PORT}`);
-});
-*/}
 export default app;
