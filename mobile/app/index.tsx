@@ -173,12 +173,17 @@ export default function IntroSplash() {
     logoScale.value = withTiming(1, { duration: 0 });
     logoY.value = withTiming(0, { duration: 0 });
 
-    actionsOpacity.value = withTiming(1, { duration: 0 });
-    actionsY.value = withTiming(0, { duration: 0 });
+    if (!token) {
+  actionsOpacity.value = withTiming(1, { duration: 0 });
+  actionsY.value = withTiming(0, { duration: 0 });
+  setReady(true);
+} else {
+  actionsOpacity.value = withTiming(0, { duration: 0 });
+  actionsY.value = withTiming(12, { duration: 0 });
+  // optionally: router.replace("/(tabs)");
+}
+setSplashDone(true);
 
-    // Mark splash done and enable buttons
-    setSplashDone(true);
-    setReady(true);
 
     // Optional: if you WANT auto-redirect when logged in on web, do it explicitly:
     // if (token) router.replace("/(tabs)/chatBot");
