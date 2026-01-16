@@ -83,7 +83,7 @@ export default function ProfilePage() {
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <Card>
-          <WizardTitle>Hey there stranger!👋</WizardTitle> 
+          <WizardTitle style={{ textAlign: "center", alignSelf: "center" }}>Hey there stranger!👋</WizardTitle> 
           <WizardBody>Make an 
             <Link href="/(auth)/register" style={[ { color: theme.accent2 }]} > account </Link> 
             and start saving your recipes✨
@@ -96,7 +96,7 @@ export default function ProfilePage() {
   return (
   <View style={[styles.container, { backgroundColor: theme.background }]}>
     <Card>
-      <WizardTitle>
+      <WizardTitle style={{ textAlign: "center", alignSelf: "center" }}>
         Welcome back, {user && user.username ? user.username : "wizard"}!
       </WizardTitle>
 
