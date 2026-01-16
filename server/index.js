@@ -68,9 +68,6 @@ app.use(
   })
 );
 
-// (Optional) preflight
-app.options("*", cors());
-
 /**
  * ----------------------------
  * Cloudinary (optional)
