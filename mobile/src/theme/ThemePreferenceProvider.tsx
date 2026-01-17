@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { useColorScheme } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { darkTheme, lightTheme, Theme } from "./theme";
@@ -45,14 +45,13 @@ export function ThemePreferenceProvider({ children }: { children: React.ReactNod
 
   const theme = effectiveMode === "dark" ? darkTheme : lightTheme;
 
-  const toggleDarkMode = () => {
-    // if dark, switch to light; otherwise switch to dark
+  const toggleDarkMode = useCallback(() => {
     void setPreference(effectiveMode === "dark" ? "light" : "dark");
-  };
+    }, [effectiveMode]);
 
   const value = useMemo(
     () => ({ preference, setPreference, toggleDarkMode, theme, isHydrated }),
-    [preference, theme, isHydrated]
+    [preference, toggleDarkMode, theme, isHydrated]
   );
 
   return <ThemePrefContext.Provider value={value}>{children}</ThemePrefContext.Provider>;
