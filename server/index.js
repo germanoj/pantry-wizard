@@ -389,7 +389,6 @@ app.post("/auth/reactivate", async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // If already active, you can either treat as normal login or just return token
     if (user.is_active) {
       const token = signToken(user.id);
       return res.json({
