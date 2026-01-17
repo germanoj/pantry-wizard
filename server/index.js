@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { randomUUID } from "crypto";
 
 import pg from "pg";
 const { Pool } = pg;
@@ -189,13 +190,6 @@ console.log(
  * NOTE: You referenced placeholderImageUrl() in your original file,
  * but it wasn't included in the snippet. Add/keep your own version.
  */
-function placeholderImageUrl(title = "recipe") {
-  // Simple placeholder (replace with your own if you already have one)
-  const safe = String(title)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-");
-  return `https://via.placeholder.com/1024?text=${encodeURIComponent(safe)}`;
-}
 
 function buildFoodImagePrompt(recipe) {
   const title = String(recipe.title ?? "a homemade dish").trim();
@@ -219,56 +213,6 @@ Plated neatly on a ceramic plate or bowl.
 Soft natural window lighting, shallow depth of field.
 Realistic, appetizing, high detail, no text, no watermark.
 `;
-}
-
-function withTimeout(promise, ms, label) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) =>
-      setTimeout(
-        () => reject(new Error(`${label} timed out after ${ms}ms`)),
-        ms
-      )
-    ),
-  ]);
-}
-
-async function generateImageUrlForRecipe(r) {
-  const imgPrompt = buildFoodImagePrompt(r);
-
-  const img = await withTimeout(
-    openai.images.generate({
-      model: "gpt-image-1",
-      prompt: imgPrompt,
-      size: "1024x1024",
-    }),
-    90000,
-    "images.generate"
-  );
-
-  const first = img?.data?.[0];
-  console.log("🧩 image response keys:", Object.keys(first || {}));
-
-  if (first?.url) return first.url;
-
-  if (first?.b64_json) {
-    if (!hasCloudinary) return placeholderImageUrl(r?.title);
-
-    const dataUrl = `data:image/png;base64,${first.b64_json}`;
-
-    const safeTitle = String(r?.title || "recipe")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "")
-      .slice(0, 60);
-
-    const publicId = `${safeTitle}-${Date.now()}`;
-    return await uploadPngDataUrlToCloudinary(dataUrl, publicId);
-  }
-
-  throw new Error(
-    `No usable image in response. keys=${Object.keys(first || {}).join(",")}`
-  );
 }
 
 /**
@@ -716,6 +660,20 @@ app.post("/api/user-recipes", requireUser, async (req, res) => {
 
     const userId = getUserId(req);
 
+    const dbInfo = await db.query(
+      "select current_database() as db, current_user as usr"
+    );
+    console.log("CONNECTED DB:", dbInfo.rows[0]);
+
+    const favIdDefault = await db.query(`
+  SELECT column_default, is_nullable, data_type
+  FROM information_schema.columns
+  WHERE table_name='favorites' AND column_name='id'
+`);
+    console.log("favorites.id default:", favIdDefault.rows[0]);
+
+    const newId = randomUUID();
+
     const isVeggie = false;
     const isGf = false;
 
@@ -770,12 +728,11 @@ app.post("/api/user-recipes", requireUser, async (req, res) => {
     const favId = uuidv4();
 
     await db.query(
-      `INSERT INTO favorites (id, user_id, recipe_id)
-   VALUES ($1, $2, $3)
+      `INSERT INTO favorites (user_id, recipe_id)
+   VALUES ($1, $2)
    ON CONFLICT (user_id, recipe_id) DO NOTHING`,
-      [favId, userId, recipeId]
+      [userId, recipeId]
     );
-
     return res.json({ ok: true, recipeId });
   } catch (err) {
     console.error("save recipe error:", err);

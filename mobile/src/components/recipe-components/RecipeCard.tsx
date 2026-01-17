@@ -13,6 +13,7 @@ import { useTheme } from "@/src/theme/usetheme";
 import { ui } from "@/src/theme/theme";
 import { Card } from "@/src/components/Card";
 import { WizardTitle, WizardBody } from "@/src/components/WizardText";
+import { saveUiRecipe } from "@/src/lib/saveRecipeAction";
 
 export interface RecipeCardProps {
   title: string;
@@ -52,7 +53,20 @@ export default function RecipeCard({
 
   const handleSave = (e: GestureResponderEvent) => {
     stop(e);
-    onSaveForLater?.();
+
+    if (onSaveForLater) {
+      onSaveForLater();
+      return;
+    }
+
+    // Default save behavior (works everywhere)
+    saveUiRecipe({
+      title,
+      time,
+      // list cards don't have ingredients/steps, so save minimal
+      ingredients: [],
+      steps: [],
+    });
   };
 
   const handleToggleNotInterested = (e: GestureResponderEvent) => {
@@ -137,12 +151,11 @@ export default function RecipeCard({
 
             <Pressable
               onPress={handleSave}
-              disabled={!onSaveForLater}
+              disabled={false}
               style={({ pressed }) => [
                 styles.actionBtn,
                 { backgroundColor: theme.surface2, borderColor: theme.border },
                 pressed && styles.actionPressed,
-                !onSaveForLater && styles.disabledBtn,
               ]}
               hitSlop={8}
               accessibilityRole="button"

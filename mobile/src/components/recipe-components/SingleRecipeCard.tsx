@@ -7,7 +7,10 @@ import {
   Image,
   Pressable,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 import { useTheme } from "@/src/theme/usetheme";
 import { ui } from "@/src/theme/theme";
@@ -54,6 +57,7 @@ export default function SingleRecipeCard({
   onBottomSecondaryAction,
 }: SingleRecipeCardProps) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
 
   // Only show footer if it has both label + handler
   const hasPrimaryBottomAction = !!bottomActionLabel && !!onBottomAction;
@@ -68,7 +72,7 @@ export default function SingleRecipeCard({
         contentContainerStyle={[
           styles.content,
           isNotInterested && styles.notInterested,
-          hasBottomBar && { paddingBottom: 120 }, // avoid overlapping footer
+          hasBottomBar && { paddingBottom: 180 + insets.bottom },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -90,6 +94,10 @@ export default function SingleRecipeCard({
         <WizardTitle style={styles.title}>{title}</WizardTitle>
         <WizardBody style={[styles.time, { color: theme.textMuted }]}>
           {time}
+        </WizardBody>
+
+        <WizardBody style={{ color: "red" }}>
+          SINGLE RECIPE CARD DEBUG
         </WizardBody>
 
         {/* Action Buttons (hidden in cook mode) */}
@@ -188,52 +196,16 @@ export default function SingleRecipeCard({
         <View
           style={[
             styles.bottomBar,
-            { borderTopColor: theme.border, backgroundColor: theme.surface },
+            {
+              borderTopColor: theme.border,
+              backgroundColor: theme.surface, // remove yellow once tested
+              paddingBottom: ui.spacing.sm + insets.bottom, // ✅ key line
+              zIndex: 9999, // ✅ helps on web
+              elevation: 9999, // ✅ helps on Android
+            },
           ]}
         >
-          <View style={styles.bottomRow}>
-            {hasSecondaryBottomAction && (
-              <Pressable
-                onPress={onBottomSecondaryAction}
-                style={({ pressed }) => [
-                  styles.bottomBtnSecondary,
-                  {
-                    backgroundColor: theme.surface2,
-                    borderColor: theme.border,
-                  },
-                  pressed && styles.actionPressed,
-                ]}
-                hitSlop={8}
-              >
-                <Text
-                  style={[styles.bottomBtnSecondaryText, { color: theme.text }]}
-                >
-                  {bottomSecondaryActionLabel}
-                </Text>
-              </Pressable>
-            )}
-
-            {hasPrimaryBottomAction && (
-              <Pressable
-                onPress={onBottomAction}
-                style={({ pressed }) => [
-                  styles.bottomBtnPrimary,
-                  { backgroundColor: theme.primary },
-                  pressed && styles.actionPressed,
-                ]}
-                hitSlop={8}
-              >
-                <Text
-                  style={[
-                    styles.bottomBtnPrimaryText,
-                    { color: theme.primaryText },
-                  ]}
-                >
-                  {bottomActionLabel}
-                </Text>
-              </Pressable>
-            )}
-          </View>
+          ...
         </View>
       )}
     </SafeAreaView>
@@ -328,7 +300,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: ui.spacing.md,
     paddingTop: ui.spacing.sm,
-    paddingBottom: ui.spacing.sm,
     borderTopWidth: 1,
   },
 

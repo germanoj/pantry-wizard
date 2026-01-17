@@ -69,45 +69,66 @@ export default function SavedRecipeDetails() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>{recipe.title}</Text>
+    <>
+      <Stack.Screen options={{ title: "Saved Recipe" }} />
 
-      {!!recipe.imageUrl && (
-        <Image source={{ uri: recipe.imageUrl }} style={styles.image} />
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator />
+          <Text style={{ marginTop: 10 }}>Loading recipe…</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.center}>
+          <Text style={{ color: "crimson" }}>{error}</Text>
+        </View>
+      ) : !recipe ? (
+        <View style={styles.center}>
+          <Text>Recipe not found.</Text>
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.container}>
+          <Text style={styles.title}>{recipe.title}</Text>
+
+          {!!recipe.imageUrl && (
+            <Image source={{ uri: recipe.imageUrl }} style={styles.image} />
+          )}
+
+          <Text style={styles.meta}>
+            Time: {recipe.timeMinutes ? `${recipe.timeMinutes} min` : "—"}
+          </Text>
+
+          <Section title="Ingredients">
+            {recipe.ingredientsUsed?.length ? (
+              recipe.ingredientsUsed.map((x, i) => <Text key={i}>• {x}</Text>)
+            ) : (
+              <Text>—</Text>
+            )}
+          </Section>
+
+          <Section title="Missing">
+            {recipe.missingIngredients?.length ? (
+              recipe.missingIngredients.map((x, i) => (
+                <Text key={i}>• {x}</Text>
+              ))
+            ) : (
+              <Text>Nothing missing 🎉</Text>
+            )}
+          </Section>
+
+          <Section title="Steps">
+            {recipe.steps?.length ? (
+              recipe.steps.map((x, i) => (
+                <Text key={i}>
+                  {i + 1}. {x}
+                </Text>
+              ))
+            ) : (
+              <Text>—</Text>
+            )}
+          </Section>
+        </ScrollView>
       )}
-
-      <Text style={styles.meta}>
-        Time: {recipe.timeMinutes ? `${recipe.timeMinutes} min` : "—"}
-      </Text>
-
-      <Section title="Ingredients">
-        {recipe.ingredientsUsed?.length ? (
-          recipe.ingredientsUsed.map((x, i) => <Text key={i}>• {x}</Text>)
-        ) : (
-          <Text>—</Text>
-        )}
-      </Section>
-
-      <Section title="Missing">
-        {recipe.missingIngredients?.length ? (
-          recipe.missingIngredients.map((x, i) => <Text key={i}>• {x}</Text>)
-        ) : (
-          <Text>Nothing missing 🎉</Text>
-        )}
-      </Section>
-
-      <Section title="Steps">
-        {recipe.steps?.length ? (
-          recipe.steps.map((x, i) => (
-            <Text key={i}>
-              {i + 1}. {x}
-            </Text>
-          ))
-        ) : (
-          <Text>—</Text>
-        )}
-      </Section>
-    </ScrollView>
+    </>
   );
 }
 
