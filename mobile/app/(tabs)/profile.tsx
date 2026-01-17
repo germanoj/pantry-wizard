@@ -69,12 +69,13 @@ export default function ProfilePage() {
     }
   };
 
-  const confirmDeactivate = async () => {
+    const confirmDeactivate = async () => {
     try {
       if (!token) {
+      
         Alert.alert("Not logged in", "Please log in again.");
         return;
-      }
+      } 
 
       await apiDeactivateAccount(token);  // calls POST /users/me/deactivate
       await signOut();                    // clears token locally

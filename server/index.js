@@ -484,7 +484,7 @@ app.post("/users/me/deactivate", requireUser, async (req, res) => {
 
     await db.query(
       `UPDATE users
-       SET is_active = false, deactivated_at = NOW()
+       SET is_active = false
        WHERE id = $1`,
       [userId]
     );
@@ -520,7 +520,7 @@ app.post("/auth/reactivate", async (req, res) => {
     // flip them back on
     await db.query(
       `UPDATE users
-       SET is_active = true, deactivated_at = NULL
+       SET is_active = true
        WHERE id = $1`,
       [user.id]
     );
