@@ -104,3 +104,23 @@ export async function apiUpdateUsername(token: string, username: string) {
     throw new Error(getErrorMessage(err));
   }
 }
+
+//deactivate api//
+
+export async function apiDeactivateAccount(token: string) {
+  const res = await fetch(`${API}/users/me/deactivate`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new Error(data?.message || "Failed to deactivate account");
+  }
+
+  return data;
+}

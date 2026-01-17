@@ -346,7 +346,7 @@ app.post("/auth/login", async (req, res) => {
     // for deactivating account
     if (!user.is_active) {
       return res.status(403).json({
-        message: "Account is deactivated. Please reactivate your account.",
+        message: "This account is deactivated. Reactivate?.",
       });
     }
 
