@@ -346,7 +346,8 @@ app.post("/auth/login", async (req, res) => {
     // for deactivating account
     if (!user.is_active) {
       return res.status(403).json({
-        message: "Account is deactivated. Please reactivate your account.",
+        code: "ACCOUNT_DEACTIVATED",
+        message: "This account is deactivated. Reactivate?.",
       });
     }
 
@@ -360,6 +361,60 @@ app.post("/auth/login", async (req, res) => {
     return res.status(500).json({ message: "Login failed" });
   }
 });
+
+//for reactivating
+app.post("/auth/reactivate", async (req, res) => {
+  try {
+    const { email, password } = req.body ?? {};
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "email and password required" });
+    }
+
+    const mail = String(email).trim().toLowerCase();
+
+    const found = await db.query(
+      "SELECT id, username, email, password, is_active FROM users WHERE email = $1",
+      [mail]
+    );
+
+    if (found.rowCount === 0) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const user = found.rows[0];
+    const ok = await bcrypt.compare(String(password), user.password);
+
+    if (!ok) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    if (user.is_active) {
+      const token = signToken(user.id);
+      return res.json({
+        token,
+        user: { id: user.id, username: user.username, email: user.email },
+      });
+    }
+
+    await db.query(
+      `UPDATE users
+       SET is_active = true
+       WHERE id = $1`,
+      [user.id]
+    );
+
+    const token = signToken(user.id);
+    return res.json({
+      token,
+      user: { id: user.id, username: user.username, email: user.email },
+    });
+  } catch (err) {
+    console.error("reactivate error:", err);
+    return res.status(500).json({ message: "Reactivation failed" });
+  }
+});
+
 
 app.get("/auth/me", requireUser, async (req, res) => {
   try {

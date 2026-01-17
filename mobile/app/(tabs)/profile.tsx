@@ -3,7 +3,7 @@ import { Modal, Pressable, StyleSheet, View, Text, Alert } from "react-native";
 import { router, Link } from "expo-router";
 import { useEffect, useState } from "react";
 
-import { apiUpdateUsername } from "@/src/auth/library";
+import { apiUpdateUsername, apiDeactivateAccount } from "@/src/auth/library";
 
 import { useAuth } from "@/src/auth/AuthContext";
 import { useTheme } from '@/src/theme/usetheme';
@@ -20,6 +20,8 @@ export default function ProfilePage() {
   const [showLogout, setShowLogout] = useState(false);
   const [showEditName, setShowEditName] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
+  const [showDeactivate, setShowDeactivate] = useState(false);
+
 
   useEffect(() => {
     if (user && user.username) {
@@ -53,9 +55,10 @@ export default function ProfilePage() {
   };
 
   if(!isHydrated) return null; //prevents that weird flash when loading
-  const isDark = theme.mode === "dark";
+  //const isDark = theme.mode === "dark";
   //changed to a modal set up instead so works on both web and mobile
-   const confirmLogout = async () => {
+   
+  const confirmLogout = async () => {
     try {
       await signOut();
       setShowLogout(false);
@@ -66,19 +69,24 @@ export default function ProfilePage() {
     }
   };
 
+  const confirmDeactivate = async () => {
+    try {
+      if (!token) {
+        Alert.alert("Not logged in", "Please log in again.");
+        return;
+      }
 
-/*  const onLogout = () => {
-        Alert.alert("Log out?", "You’ll be returned to the home screen.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Log out",
-        style: "destructive",
-        onPress: async () => {
-          await signOut();
-           },
-          },
-        ]);
-      };*/
+      await apiDeactivateAccount(token);  // calls POST /users/me/deactivate
+      await signOut();                    // clears token locally
+      setShowDeactivate(false);
+      router.replace("/(tabs)");          // or "/" depending on your flow
+    } catch (e: any) {
+      console.log("Deactivate failed:", e);
+      Alert.alert("Couldn’t deactivate", e?.message ?? String(e));
+      setShowDeactivate(false);
+    }
+  };
+
   if (!token) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -190,6 +198,21 @@ export default function ProfilePage() {
           Log out
         </WizardBody>
       </Pressable>
+
+      {/* DEACTIVATE BUTTON */}
+      <Pressable
+        style={({ pressed }) => [
+          styles.logoutButton,
+          { borderColor: theme.danger, backgroundColor: theme.surface2 },
+          pressed && { opacity: 0.75 },
+        ]}
+        onPress={() => setShowDeactivate(true)}
+      >
+        <WizardBody style={[styles.logoutText, { color: theme.danger }]}>
+          Deactivate account
+        </WizardBody>
+      </Pressable>
+
     </Card>
 
     {/* ========================= */}
@@ -313,6 +336,63 @@ export default function ProfilePage() {
         </Pressable>
       </Pressable>
     </Modal>
+
+    {/* ========================= */}
+    {/* DEACTIVATE MODAL (3)      */}
+    {/* ========================= */}
+    <Modal
+      visible={showDeactivate}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowDeactivate(false)}
+    >
+      {/* Backdrop */}
+      <Pressable
+        style={[styles.backdrop, { backgroundColor: theme.overlay }]}
+        onPress={() => setShowDeactivate(false)}
+      >
+        {/* Inner card (stop backdrop closing) */}
+        <Pressable
+          onPress={() => {}}
+          style={[
+            styles.modalCard,
+            { backgroundColor: theme.surface, borderColor: theme.border },
+          ]}
+        >
+          <WizardTitle>Deactivate account?</WizardTitle>
+
+          <WizardBody style={{ marginTop: 8, color: theme.textMuted }}>
+            If you&apos;d like to exit through the wardrobe this will 
+            delete your login info until you reactivate your account and return to the magic.
+          </WizardBody>
+
+          <View style={styles.modalButtons}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.modalBtn,
+                { borderColor: theme.border, backgroundColor: theme.surface2 },
+                pressed && { opacity: 0.75 },
+              ]}
+              onPress={() => setShowDeactivate(false)}
+            >
+              <WizardBody style={{ color: theme.textOnSurface }}>Cancel</WizardBody>
+            </Pressable>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.modalBtn,
+                { borderColor: theme.danger, backgroundColor: theme.surface2 },
+                pressed && { opacity: 0.75 },
+              ]}
+              onPress={confirmDeactivate}
+            >
+              <WizardBody style={{ color: theme.danger }}>Deactivate</WizardBody>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+
   </View>
 );
 
