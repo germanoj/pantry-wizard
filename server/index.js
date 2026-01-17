@@ -318,6 +318,12 @@ app.post("/auth/login", async (req, res) => {
       [mail]
     );
 
+    if (!user.is_active) {
+      return res.status(403).json({
+        message: "Account is deactivated. Please reactivate your account.",
+      });
+    }
+
     if (found.rowCount === 0) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
