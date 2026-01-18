@@ -512,7 +512,7 @@ app.post("/api/generate-ai", async (req, res) => {
   try {
     console.log("🔥 HIT /api/generate-ai", new Date().toISOString());
 
-    const { pantryText } = req.body ?? {};
+    const { pantryText, preferences } = req.body ?? {};
     if (typeof pantryText !== "string" || pantryText.trim().length === 0) {
       return res.status(400).json({ error: "pantryText is required" });
     }
@@ -523,21 +523,61 @@ app.post("/api/generate-ai", async (req, res) => {
         .json({ error: "OPENAI_API_KEY not set on server" });
     }
 
+    const pref = preferences || {};
+    const mealType =
+      typeof pref.mealType === "string" && pref.mealType.trim()
+        ? pref.mealType.trim()
+        : "no preference";
+
+    const dietaryRestrictions =
+      typeof pref.dietaryRestrictions === "string" &&
+      pref.dietaryRestrictions.trim()
+        ? pref.dietaryRestrictions.trim()
+        : "none";
+
+    const maxTimeMinutes =
+      Number.isFinite(pref.maxTimeMinutes) && pref.maxTimeMinutes > 0
+        ? Math.floor(pref.maxTimeMinutes)
+        : null;
+
+    const maxIngredients =
+      Number.isFinite(pref.maxIngredients) && pref.maxIngredients > 0
+        ? Math.floor(pref.maxIngredients)
+        : null;
+
+    const preferencesBlock = `
+User preferences (follow these if provided):
+- Meal type: ${mealType}
+- Dietary restrictions/allergies: ${dietaryRestrictions}
+- Max cooking time: ${maxTimeMinutes ? `${maxTimeMinutes} minutes` : "no limit"}
+- Max total ingredients (including pantry items + optional extras): ${
+      maxIngredients ? `${maxIngredients}` : "no limit"
+    }
+`;
+
     const prompt = `
 You are a helpful cooking assistant.
 
 Given this list of pantry ingredients:
 ${pantryText}
 
+${preferencesBlock}
+
 Generate 3 realistic recipes.
 
 Rules:
-- Use AS MANY of the provided ingredients as possible
-- Do NOT invent ingredients unless marked as optional
+- Use AS MANY of the provided ingredients as possible.
+- Do NOT invent ingredients unless marked as optional.
+- If dietary restrictions/allergies are provided, do NOT include restricted ingredients.
+- If a max cooking time is provided, set timeMinutes <= that value.
+- If a max total ingredients is provided, keep the total count of ingredientsUsed + missingIngredients <= that max.
+- If max total ingredients is provided, prefer fewer optional items first (keep missingIngredients short).
+- Each recipe must include realistic ingredient quantities and units
+  (e.g. "1 cup rice", "2 eggs", "1 tbsp olive oil").
 - Each recipe should include:
   - title
-  - ingredientsUsed (array)
-  - missingIngredients (array, optional items only)
+  - ingredientsUsed (array of strings; INCLUDE quantities)
+  - missingIngredients (array of strings; OPTIONAL items only; INCLUDE quantities if applicable)
   - steps (array of strings)
   - timeMinutes (number)
 
@@ -552,6 +592,7 @@ Return ONLY valid JSON in this exact shape:
     const completion = await withTimeout(
       openai.chat.completions.create({
         model: "gpt-4o-mini",
+        response_format: { type: "json_object" }, // ✅ add this
         messages: [
           { role: "system", content: "You are a precise JSON-only API." },
           { role: "user", content: prompt },
@@ -564,7 +605,7 @@ Return ONLY valid JSON in this exact shape:
 
     console.log("🧾 chat.completions returned");
 
-    const raw = completion.choices[0].message.content ?? "";
+    const raw = (completion.choices[0].message.content ?? "").trim();
     console.log("🧾 raw length:", raw.length);
 
     let parsed;
@@ -573,6 +614,13 @@ Return ONLY valid JSON in this exact shape:
     } catch (e) {
       console.error("❌ JSON.parse failed. raw was:", raw);
       return res.status(500).json({ error: "AI returned invalid JSON" });
+    }
+
+    if (!parsed || !Array.isArray(parsed.recipes)) {
+      console.error("❌ Unexpected AI response shape:", parsed);
+      return res
+        .status(500)
+        .json({ error: "AI returned unexpected JSON shape" });
     }
 
     console.log("🧠 parsed recipes:", parsed.recipes?.length);
