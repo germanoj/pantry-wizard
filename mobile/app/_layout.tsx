@@ -41,8 +41,8 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <SplashProvider>
+    <SplashProvider>
+      <AuthProvider>
         <AuthGate>
           <ThemePreferenceProvider>
             <GeneratedRecipesProvider>
@@ -75,7 +75,7 @@ export default function RootLayout() {
             </GeneratedRecipesProvider>
           </ThemePreferenceProvider>
         </AuthGate>
-      </SplashProvider>
-    </AuthProvider>
+      </AuthProvider>
+    </SplashProvider>
   );
 }
