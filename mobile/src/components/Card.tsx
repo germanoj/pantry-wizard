@@ -2,7 +2,11 @@ import { View, StyleSheet, ViewProps } from "react-native";
 import { useTheme } from "@/src/theme/usetheme";
 import { ui } from "@/src/theme/theme";
 
-export function Card(props: ViewProps) {
+export function Card({
+  centered = false,
+  style,
+  ...props
+}: ViewProps & { centered?: boolean }) {
   const theme = useTheme();
 
   return (
@@ -10,11 +14,12 @@ export function Card(props: ViewProps) {
       {...props}
       style={[
         styles.card,
+          centered && styles.centered,
         {
           backgroundColor: theme.surface,
           borderColor: theme.border,
         },
-        props.style,
+        style,
       ]}
     />
   );
@@ -28,6 +33,10 @@ const styles = StyleSheet.create({
     borderRadius: ui.radius.lg,
     borderWidth: 1,
 
+    //alignment within the card
+    //alignItems: "center",     // ⬅️ horizontal
+    //justifyContent: "center", // ⬅️ vertical (optional)
+
     // this creates that lift impresssion
     shadowColor: "#000",
     shadowOpacity: 0.08,
@@ -36,4 +45,7 @@ const styles = StyleSheet.create({
 
     elevation: 3, // android!!
   },
+   centered: {
+    alignItems: "center",
+   }
 });

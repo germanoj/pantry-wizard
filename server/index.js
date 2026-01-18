@@ -117,7 +117,7 @@ function signToken(userId) {
   return jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: "30d" });
 }
 
-function requireUser(req, res, next) {
+async function requireUser(req, res, next) {
   if (!JWT_SECRET)
     return res.status(500).json({ message: "Server auth not configured" });
 
@@ -128,6 +128,20 @@ function requireUser(req, res, next) {
 
     const payload = jwt.verify(token, JWT_SECRET);
     req.userId = payload.sub;
+
+    // NEW: check if user is still active
+    const result = await db.query(
+      "SELECT is_active FROM users WHERE id = $1",
+      [req.userId]
+      );
+
+      if (result.rowCount === 0) {
+        return res.status(401).json({ message: "User not found" });
+      }
+
+      if (!result.rows[0].is_active) {
+        return res.status(403).json({ message: "Account is deactivated" });
+      }
     return next();
   } catch {
     return res.status(401).json({ message: "Invalid token" });
@@ -314,7 +328,7 @@ app.post("/auth/login", async (req, res) => {
     const mail = String(email).trim().toLowerCase();
 
     const found = await db.query(
-      "SELECT id, username, email, password FROM users WHERE email = $1",
+      "SELECT id, username, email, password, is_active FROM users WHERE email = $1",
       [mail]
     );
 
@@ -329,6 +343,14 @@ app.post("/auth/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    // for deactivating account
+    if (!user.is_active) {
+      return res.status(403).json({
+        code: "ACCOUNT_DEACTIVATED",
+        message: "This account is deactivated. Reactivate?.",
+      });
+    }
+
     const token = signToken(user.id);
     return res.json({
       token,
@@ -340,6 +362,60 @@ app.post("/auth/login", async (req, res) => {
   }
 });
 
+//for reactivating
+app.post("/auth/reactivate", async (req, res) => {
+  try {
+    const { email, password } = req.body ?? {};
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "email and password required" });
+    }
+
+    const mail = String(email).trim().toLowerCase();
+
+    const found = await db.query(
+      "SELECT id, username, email, password, is_active FROM users WHERE email = $1",
+      [mail]
+    );
+
+    if (found.rowCount === 0) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const user = found.rows[0];
+    const ok = await bcrypt.compare(String(password), user.password);
+
+    if (!ok) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    if (user.is_active) {
+      const token = signToken(user.id);
+      return res.json({
+        token,
+        user: { id: user.id, username: user.username, email: user.email },
+      });
+    }
+
+    await db.query(
+      `UPDATE users
+       SET is_active = true
+       WHERE id = $1`,
+      [user.id]
+    );
+
+    const token = signToken(user.id);
+    return res.json({
+      token,
+      user: { id: user.id, username: user.username, email: user.email },
+    });
+  } catch (err) {
+    console.error("reactivate error:", err);
+    return res.status(500).json({ message: "Reactivation failed" });
+  }
+});
+
+
 app.get("/auth/me", requireUser, async (req, res) => {
   try {
     const userId = req.userId;
@@ -347,7 +423,7 @@ app.get("/auth/me", requireUser, async (req, res) => {
     const result = await db.query(
       `SELECT id, username, email
        FROM users
-       WHERE id = $1`,
+       WHERE id = $1 AND is_active = true`,
       [userId]
     );
 
@@ -400,6 +476,66 @@ app.patch("/users/me", requireUser, async (req, res) => {
     return res.status(500).json({ message: "Failed to update username" });
   }
 });
+
+//new for deactivate
+app.post("/users/me/deactivate", requireUser, async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    await db.query(
+      `UPDATE users
+       SET is_active = false
+       WHERE id = $1`,
+      [userId]
+    );
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("deactivate error:", err);
+    return res.status(500).json({ message: "Failed to deactivate account" });
+  }
+});
+
+// new for reactivate email
+app.post("/auth/reactivate", async (req, res) => {
+  try {
+    const { email, password } = req.body ?? {};
+    if (!email || !password) {
+      return res.status(400).json({ message: "email and password required" });
+    }
+
+    const mail = String(email).trim().toLowerCase();
+
+    const found = await db.query(
+      "SELECT id, username, email, password, is_active FROM users WHERE email = $1",
+      [mail]
+    );
+
+    if (found.rowCount === 0) return res.status(401).json({ message: "Invalid credentials" });
+
+    const user = found.rows[0];
+    const ok = await bcrypt.compare(String(password), user.password);
+    if (!ok) return res.status(401).json({ message: "Invalid credentials" });
+
+    // flip them back on
+    await db.query(
+      `UPDATE users
+       SET is_active = true
+       WHERE id = $1`,
+      [user.id]
+    );
+
+    const token = signToken(user.id);
+    return res.json({
+      token,
+      user: { id: user.id, username: user.username, email: user.email },
+    });
+  } catch (err) {
+    console.error("reactivate error:", err);
+    return res.status(500).json({ message: "Reactivation failed" });
+  }
+});
+
 
 /**
  * ----------------------------

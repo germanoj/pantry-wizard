@@ -17,6 +17,7 @@ import { useTheme } from "@/src/theme/usetheme";
 import { WizardBody, WizardTitle } from "@/src/components/WizardText";
 import { GeneratedRecipeCard } from "@/src/components/GeneratedRecipeCard";
 import { useGeneratedRecipes } from "@/src/state/GeneratedRecipesContext";
+import AiLoadingOverlay from "@/src/components/AiLoadingOverlay";
 
 type MealType =
   | "no_preference"
@@ -43,7 +44,7 @@ export default function GenerateScreen() {
 
   const mealOptions: Array<{ label: string; value: MealType }> = useMemo(
     () => [
-      { label: "No pref", value: "no_preference" },
+      { label: "No preference", value: "no_preference" },
       { label: "Breakfast", value: "breakfast" },
       { label: "Lunch", value: "lunch" },
       { label: "Dinner", value: "dinner" },

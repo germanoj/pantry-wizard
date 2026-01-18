@@ -62,16 +62,13 @@ export default function IntroSplash() {
       withTiming(1.28, { duration: 420, easing: Easing.out(Easing.back(2.2)) }), //this increases it a little and then shrinks back, was 1.6
       withTiming(1, { duration: 240, easing: Easing.out(Easing.cubic) })
     );
-    logoY.value = withTiming(0, { duration: 450 });
+    logoY.value = withTiming(0, { duration: 420, easing: Easing.out(Easing.cubic) });
 
-    //actions if logged out
+    //actions if logged out , prevents seeing buttons DoNT TOUCH!!!!
     if (!token) {
-      actionsOpacity.value = withDelay(450, withTiming(1, { duration: 350 }));
-      actionsY.value = withDelay(450, withTiming(0, { duration: 350 }));
-    } else {
       actionsOpacity.value = withDelay(450, withTiming(1, { duration: 350 })); //buttons fade in after the logo
       actionsY.value = withDelay(450, withTiming(0, { duration: 350 }));
-    }
+    } 
 
     // Mark splash done + route decisions
     setTimeout(
@@ -110,12 +107,17 @@ export default function IntroSplash() {
     logoScale.value = withTiming(1, { duration: 0 });
     logoY.value = withTiming(0, { duration: 0 });
 
-    actionsOpacity.value = withTiming(1, { duration: 0 });
-    actionsY.value = withTiming(0, { duration: 0 });
+    if (!token) {
+  actionsOpacity.value = withTiming(1, { duration: 0 });
+  actionsY.value = withTiming(0, { duration: 0 });
+  setReady(true);
+} else {
+  actionsOpacity.value = withTiming(0, { duration: 0 });
+  actionsY.value = withTiming(12, { duration: 0 });
+  // optionally: router.replace("/(tabs)");
+}
+setSplashDone(true);
 
-    // Mark splash done and enable buttons
-    setSplashDone(true);
-    setReady(true);
 
     // Optional: if you WANT auto-redirect when logged in on web, do it explicitly:
     // if (token) router.replace("/(tabs)/chatBot");
