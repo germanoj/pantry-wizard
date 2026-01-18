@@ -9,6 +9,8 @@ import { useTheme } from "@/src/theme/usetheme";
 import { WizardBody, WizardTitle } from "@/src/components/WizardText";
 import { GeneratedRecipeCard } from "@/src/components/GeneratedRecipeCard";
 import { useGeneratedRecipes } from "@/src/state/GeneratedRecipesContext";
+import AiLoadingOverlay from "@/src/components/AiLoadingOverlay";
+
 
 export default function GenerateScreen() {
   const [pantryText, setPantryText] = useState("pasta, garlic, olive oil");
@@ -89,6 +91,7 @@ export default function GenerateScreen() {
           Hmm no recipes yet... Try tapping the summon button.
         </WizardBody>
       ) : null}
+      {loading && <AiLoadingOverlay />}
     </View>
   );
 }
