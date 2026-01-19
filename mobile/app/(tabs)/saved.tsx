@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
-  Text,
   View,
   StyleSheet,
   FlatList,
@@ -10,11 +9,21 @@ import {
   Image,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { router, useRouter } from "expo-router";
+import { router } from "expo-router";
+
 import {
   fetchSavedRecipes,
   deleteSavedRecipe,
-} from "../../src/lib/savedRecipes"; // adjust path if needed
+} from "../../src/lib/savedRecipes";
+
+import { useTheme } from "@/src/theme/usetheme";
+import { ui } from "@/src/theme/theme";
+import { Card } from "@/src/components/Card";
+import {
+  WizardBody,
+  WizardTitle,
+  WizardButton,
+} from "@/src/components/WizardText";
 
 type SavedRecipe = {
   id: string;
@@ -24,10 +33,12 @@ type SavedRecipe = {
   missingIngredients?: string[];
   steps?: string[];
   timeMinutes?: number;
-  imageUrl?: string; // (optional, if you have it)
+  imageUrl?: string;
 };
 
 export default function SavedRecipes() {
+  const theme = useTheme();
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [recipes, setRecipes] = useState<SavedRecipe[]>([]);
@@ -42,14 +53,12 @@ export default function SavedRecipes() {
           text: "Remove",
           style: "destructive",
           onPress: async () => {
-            // optimistic update
             const prev = recipes;
             setRecipes((r) => r.filter((x) => x.id !== id));
 
             try {
               await deleteSavedRecipe(id);
             } catch (e: any) {
-              // rollback on failure
               setRecipes(prev);
               setError(e?.message ?? "Failed to delete recipe");
             }
@@ -64,7 +73,7 @@ export default function SavedRecipes() {
       setLoading(true);
       setError(null);
 
-      const data = await fetchSavedRecipes(); // { recipes: [...] }
+      const data = await fetchSavedRecipes();
       setRecipes(data.recipes ?? []);
     } catch (e: any) {
       setError(e?.message ?? "Failed to load saved recipes");
@@ -73,55 +82,99 @@ export default function SavedRecipes() {
     }
   }, []);
 
-  // initial load (mount)
   useEffect(() => {
     loadSaved();
   }, [loadSaved]);
 
-  // refresh whenever tab/screen becomes active
   useFocusEffect(
     useCallback(() => {
       loadSaved();
     }, [loadSaved])
   );
 
+  const Header = (
+    <View style={{ marginBottom: ui.spacing.md }}>
+      <WizardTitle>Saved recipes</WizardTitle>
+      <WizardBody style={{ marginTop: 6, opacity: 0.9 }}>
+        {recipes.length} recipe{recipes.length === 1 ? "" : "s"} saved
+      </WizardBody>
+    </View>
+  );
+
   if (loading) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator />
-        <Text style={{ marginTop: 10 }}>Loading saved recipes…</Text>
+      <View style={[styles.screen, { backgroundColor: theme.background }]}>
+        <View style={styles.content}>
+          {Header}
+          <View style={styles.center}>
+            <ActivityIndicator />
+            <WizardBody style={{ marginTop: 10 }}>
+              Loading saved recipes…
+            </WizardBody>
+          </View>
+        </View>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Saved Recipes</Text>
-        <Text style={{ marginTop: 10, color: "crimson" }}>{error}</Text>
+      <View style={[styles.screen, { backgroundColor: theme.background }]}>
+        <View style={styles.content}>
+          {Header}
+          <Card>
+            <WizardBody style={{ color: theme.danger }}>{error}</WizardBody>
+
+            <WizardButton style={{ marginTop: 12 }} onPress={loadSaved}>
+              <WizardBody
+                style={{ color: theme.text /* readable on primary */ }}
+              >
+                Try again
+              </WizardBody>
+            </WizardButton>
+          </Card>
+        </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Here are your saved recipes:</Text>
+    <View style={[styles.screen, { backgroundColor: theme.background }]}>
+      <FlatList
+        data={recipes}
+        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: ui.spacing.xl ?? ui.spacing.lg },
+        ]}
+        ListHeaderComponent={Header}
+        ItemSeparatorComponent={() => (
+          <View style={{ height: ui.spacing.md }} />
+        )}
+        ListEmptyComponent={
+          <Card>
+            <WizardTitle>No saved recipes yet</WizardTitle>
+            <WizardBody style={{ marginTop: 8 }}>
+              Save something from your recipe results to see it here.
+            </WizardBody>
 
-      {recipes.length === 0 ? (
-        <Text style={{ marginTop: 12 }}>No saved recipes yet.</Text>
-      ) : (
-        <FlatList
-          style={{ marginTop: 12, width: "100%" }}
-          data={recipes}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <Pressable
-              onPress={() => router.push(`/saved/(details)/${item.id}`)}
-              style={({ pressed }) => [
-                styles.card,
-                pressed && { opacity: 0.7 },
-              ]}
+            <WizardButton
+              style={{ marginTop: 12 }}
+              onPress={() => router.replace("/(tabs)/recipes")}
             >
+              <WizardBody style={{ color: theme.text }}>
+                Go to recipes
+              </WizardBody>
+            </WizardButton>
+          </Card>
+        }
+        renderItem={({ item }) => (
+          <Pressable
+            onPress={() => router.push(`/saved/(details)/${item.id}`)}
+            style={({ pressed }) => [{ opacity: pressed ? 0.92 : 1 }]}
+          >
+            <Card>
               <View style={styles.row}>
                 {!!item.imageUrl && (
                   <Image
@@ -132,57 +185,53 @@ export default function SavedRecipes() {
                 )}
 
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle}>{item.title}</Text>
+                  <WizardTitle style={{ marginTop: 0 }}>
+                    {item.title}
+                  </WizardTitle>
+
                   {!!item.timeMinutes && (
-                    <Text style={styles.cardMeta}>{item.timeMinutes} min</Text>
+                    <WizardBody style={{ marginTop: 6, opacity: 0.85 }}>
+                      {item.timeMinutes} min
+                    </WizardBody>
                   )}
                 </View>
 
+                {/* Inline action: avoids nested WizardButton press issues on web */}
                 <Pressable
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    onDeleteRecipe(item.id);
-                  }}
+                  onPress={() => onDeleteRecipe(item.id)}
                   hitSlop={10}
-                  style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
+                  style={({ pressed }) => [
+                    styles.removePill,
+                    {
+                      borderColor: theme.danger,
+                      opacity: pressed ? 0.75 : 1,
+                    },
+                  ]}
                 >
-                  <Text style={{ color: "crimson", fontWeight: "600" }}>
+                  <WizardBody style={{ marginTop: 0, color: theme.danger }}>
                     Remove
-                  </Text>
+                  </WizardBody>
                 </Pressable>
               </View>
-            </Pressable>
-          )}
-        />
-      )}
+            </Card>
+          </Pressable>
+        )}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: { flex: 1 },
+  content: {
+    paddingHorizontal: ui.spacing.md,
+    paddingTop: ui.spacing.md,
+    flexGrow: 1,
+  },
+  center: {
     flex: 1,
-    padding: 22,
-    backgroundColor: "#fff",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "600",
-  },
-  card: {
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#eee",
-    borderRadius: 12,
-    marginBottom: 10,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  cardMeta: {
-    marginTop: 6,
-    opacity: 0.7,
+    alignItems: "center",
+    justifyContent: "center",
   },
   row: {
     flexDirection: "row",
@@ -194,5 +243,11 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: 10,
     backgroundColor: "#eee",
+  },
+  removePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderRadius: 999,
   },
 });
