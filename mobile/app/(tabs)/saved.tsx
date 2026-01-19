@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
-
+import SavedRecipeCard from "@/src/components/recipe-components/SavedRecipeCard";
 import {
   fetchSavedRecipes,
   deleteSavedRecipe,
@@ -170,51 +170,13 @@ export default function SavedRecipes() {
           </Card>
         }
         renderItem={({ item }) => (
-          <Pressable
+          <SavedRecipeCard
+            title={item.title}
+            timeMinutes={item.timeMinutes}
+            imageUrl={item.imageUrl}
             onPress={() => router.push(`/saved/(details)/${item.id}`)}
-            style={({ pressed }) => [{ opacity: pressed ? 0.92 : 1 }]}
-          >
-            <Card>
-              <View style={styles.row}>
-                {!!item.imageUrl && (
-                  <Image
-                    source={{ uri: item.imageUrl }}
-                    style={styles.thumb}
-                    resizeMode="cover"
-                  />
-                )}
-
-                <View style={{ flex: 1 }}>
-                  <WizardTitle style={{ marginTop: 0 }}>
-                    {item.title}
-                  </WizardTitle>
-
-                  {!!item.timeMinutes && (
-                    <WizardBody style={{ marginTop: 6, opacity: 0.85 }}>
-                      {item.timeMinutes} min
-                    </WizardBody>
-                  )}
-                </View>
-
-                {/* Inline action: avoids nested WizardButton press issues on web */}
-                <Pressable
-                  onPress={() => onDeleteRecipe(item.id)}
-                  hitSlop={10}
-                  style={({ pressed }) => [
-                    styles.removePill,
-                    {
-                      borderColor: theme.danger,
-                      opacity: pressed ? 0.75 : 1,
-                    },
-                  ]}
-                >
-                  <WizardBody style={{ marginTop: 0, color: theme.danger }}>
-                    Remove
-                  </WizardBody>
-                </Pressable>
-              </View>
-            </Card>
-          </Pressable>
+            onRemove={() => onDeleteRecipe(item.id)}
+          />
         )}
       />
     </View>
