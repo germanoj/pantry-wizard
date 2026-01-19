@@ -2,8 +2,6 @@ import { useMemo, useState } from "react";
 import {
   View,
   Text,
-  TextInput,
-  Pressable,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
@@ -14,7 +12,7 @@ import { generateRecipes } from "../lib/apiClient";
 import type { Recipe } from "../types/recipe";
 
 import { useTheme } from "@/src/theme/usetheme";
-import { WizardBody, WizardTitle } from "@/src/components/WizardText";
+import { WizardBody, WizardTitle, WizardInput, WizardButton } from "@/src/components/WizardText";
 import { GeneratedRecipeCard } from "@/src/components/GeneratedRecipeCard";
 import { useGeneratedRecipes } from "@/src/state/GeneratedRecipesContext";
 import AiLoadingOverlay from "@/src/components/AiLoadingOverlay";
@@ -113,29 +111,30 @@ export default function GenerateScreen() {
           {mealOptions.map((opt) => {
             const selected = opt.value === mealType;
             return (
-              <Pressable
+              <WizardButton
                 key={opt.value}
                 onPress={() => setMealType(opt.value)}
                 style={[
                   styles.pill,
                   {
-                    borderColor: selected ? theme.text : "#ddd",
+                    borderColor: selected ? theme.text : theme.border,
                     backgroundColor: selected
                       ? "rgba(255,255,255,0.08)"
                       : "transparent",
                   },
                 ]}
               >
-                <Text
+                <WizardBody
                   style={{
                     color: theme.text,
                     fontSize: 13,
                     fontWeight: selected ? "700" : "600",
+                    marginTop: 0,
                   }}
                 >
                   {opt.label}
-                </Text>
-              </Pressable>
+                </WizardBody>
+              </WizardButton>
             );
           })}
         </View>
@@ -145,12 +144,18 @@ export default function GenerateScreen() {
         >
           Dietary restrictions / allergies (optional)
         </WizardBody>
-        <TextInput
+        <WizardInput
           value={dietaryRestrictions}
           onChangeText={setDietaryRestrictions}
           placeholder="e.g. vegetarian, peanut allergy, halal"
-          placeholderTextColor="#888"
-          style={[styles.input, { minHeight: 44 }]}
+          placeholderTextColor={theme.textMuted}
+          style={[
+            styles.input,
+            {
+              minHeight: 44,
+              marginTop: 0
+            },
+          ]}
         />
 
         <View style={styles.inlineRow}>
@@ -158,12 +163,12 @@ export default function GenerateScreen() {
             <WizardBody style={[styles.label, { color: theme.textMuted }]}>
               Max time (min)
             </WizardBody>
-            <TextInput
+            <WizardInput
               value={maxTimeMinutes}
               onChangeText={setMaxTimeMinutes}
               placeholder="e.g. 30"
-              placeholderTextColor="#888"
-              style={[styles.input, { minHeight: 44 }]}
+              placeholderTextColor={theme.textMuted}
+              style={[styles.input, { minHeight: 44, marginTop: 0 }]}
               keyboardType="number-pad"
             />
           </View>
@@ -172,12 +177,12 @@ export default function GenerateScreen() {
             <WizardBody style={[styles.label, { color: theme.textMuted }]}>
               Max ingredients
             </WizardBody>
-            <TextInput
+            <WizardInput
               value={maxIngredients}
               onChangeText={setMaxIngredients}
               placeholder="e.g. 8"
-              placeholderTextColor="#888"
-              style={[styles.input, { minHeight: 44 }]}
+              placeholderTextColor={theme.textMuted}
+              style={[styles.input, { minHeight: 44, marginTop: 0 }]}
               keyboardType="number-pad"
             />
           </View>
@@ -190,24 +195,24 @@ export default function GenerateScreen() {
           Ingredients
         </WizardBody>
 
-        <TextInput
+        <WizardInput
           value={pantryText}
           onChangeText={setPantryText}
           placeholder="Enter ingredients (comma or new lines)."
-          placeholderTextColor="#888"
+          placeholderTextColor={theme.textMuted} 
           style={styles.input}
           multiline
           textAlignVertical="top"
         />
       </View>
 
-      <Pressable style={styles.button} onPress={onGenerate} disabled={loading}>
-        <WizardBody style={styles.buttonText}>
+      <WizardButton onPress={onGenerate} loading={loading}>
+        <WizardBody style={{ color: "white", fontSize: 16, fontWeight: "700", marginTop: 0 }}>
           {loading ? "Brewing..." : "Summon!"}
         </WizardBody>
-      </Pressable>
+      </WizardButton>
 
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {error ? <WizardBody style={{ color: "tomato", marginTop: 0 }}>{error}</WizardBody> : null}
 
       <View style={styles.results}>
         {recipes.slice(0, 3).map((r) => (
@@ -256,7 +261,6 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
     borderRadius: 12,
     padding: 12,
     minHeight: 90,
@@ -283,7 +287,6 @@ const styles = StyleSheet.create({
   },
   button: {
     borderWidth: 1,
-    borderColor: "#ddd",
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: "center",
@@ -296,7 +299,6 @@ const styles = StyleSheet.create({
     color: "red",
   },
   emptyText: {
-    color: "#666",
     marginTop: 8,
   },
   results: {
