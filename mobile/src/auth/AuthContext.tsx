@@ -9,18 +9,11 @@ import React, {
 import { getToken, setToken as saveToken, clearToken } from "./tokenStorage";
 import { apiMe, User } from "./library";
 
-async function withTimeout<T>(
-  p: Promise<T>,
-  ms: number,
-  label: string
-): Promise<T> {
+async function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   let t: ReturnType<typeof setTimeout> | undefined;
 
   const timeout = new Promise<never>((_, reject) => {
-    t = setTimeout(
-      () => reject(new Error(`${label} timed out after ${ms}ms`)),
-      ms
-    );
+    t = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
   });
 
   try {
@@ -53,7 +46,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
 
     const loadToken = async () => {
+      console.log("[Auth] loadToken: start");
       try {
+        // ✅ Failsafe: if secure storage hangs, unblock UI anyway
         const timeout = new Promise<null>((resolve) =>
           setTimeout(() => resolve(null), 4000)
         );
@@ -63,12 +58,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           timeout,
         ]);
 
+        console.log(
+          "[Auth] loadToken: storage result =",
+          saved ? "TOKEN" : String(saved)
+        );
+
         if (!mounted) return;
         setTokenState(saved ?? null);
-      } catch {
+      } catch (e) {
+        console.log("[Auth] loadToken: ERROR", e);
         if (!mounted) return;
         setTokenState(null);
       } finally {
+        console.log("[Auth] loadToken: done -> isLoading false");
         if (!mounted) return;
         setIsLoading(false);
       }
@@ -85,10 +87,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!token) return;
 
     try {
+      console.log("[Auth] refreshMe: start");
       const me = await apiMe(token);
       setUser(me);
-    } catch {
-      // ignore
+      console.log("[Auth] refreshMe: success");
+    } catch (e) {
+      console.log("[Auth] refreshMe failed:", e);
     }
   }, [token]);
 
@@ -101,39 +105,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [token, refreshMe]);
 
   const signIn = async (newToken: string, newUser?: User | null) => {
+    console.log("[Auth] signIn: start");
     setTokenState(newToken);
 
     try {
+      // ✅ keep timeout so storage can't hang the UI
       await withTimeout(saveToken(newToken), 1500, "saveToken()");
-    } catch (err) {
-      console.error("Auth: saveToken failed (or timed out)", err);
+      console.log("[Auth] signIn: token saved");
+    } catch (e) {
+      console.log("[Auth] signIn: saveToken failed (or timed out)", e);
     }
 
     if (newUser) {
       setUser(newUser);
+      console.log("[Auth] signIn: user provided");
       return;
     }
 
     try {
       const me = await apiMe(newToken);
       setUser(me);
-    } catch {
-      // ignore
+      console.log("[Auth] signIn: apiMe success");
+    } catch (e) {
+      console.log("[Auth] signIn -> apiMe failed:", e);
     }
   };
 
   const signOut = async () => {
+    console.log("[Auth] signOut: start");
     setTokenState(null);
     setUser(null);
 
     try {
+      // ✅ keep timeout so storage can't hang the UI
       await withTimeout(clearToken(), 1500, "clearToken()");
-    } catch (err) {
-      console.error("Auth: clearToken failed (or timed out)", err);
+      console.log("[Auth] signOut: token cleared");
+    } catch (e) {
+      console.log("[Auth] signOut: clearToken failed (or timed out)", e);
     }
   };
 
-  // ✅ IMPORTANT: return is INSIDE AuthProvider
   return (
     <AuthContext.Provider
       value={{ token, user, isLoading, signIn, signOut, refreshMe, setUser }}
@@ -143,7 +154,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ✅ IMPORTANT: useAuth is OUTSIDE AuthProvider
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) throw new Error("useAuth must be used inside an AuthProvider");

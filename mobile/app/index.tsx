@@ -1,3 +1,11 @@
+// this index is for the introsplash - animation and buttons to navigate
+//
+// 1 app opens to index page
+// 2 sparkle, poof animation
+// 3 pantry wizard logo appears
+// 4 buttons fade in (login, register, chat)
+// (no redirect, user chooses) — except when already authed (token)
+
 import { useEffect, useRef, useCallback, useState } from "react";
 import { View, Text, Pressable, StyleSheet, Platform } from "react-native";
 import { router } from "expo-router";
@@ -10,16 +18,9 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import LottieView from "lottie-react-native";
+
 import { useSplash } from "@/src/auth/SplashContext";
 import { useAuth } from "@/src/auth/AuthContext";
-
-// this index is for the introsplash - animation and buttons to navigate
-//
-// 1 app opens to index page
-// 2 sparkle, poof animation
-// 3 pantry wizard logo appears
-// 4 buttons fade in (login, register, chat)
-// (no redirect, user chooses) — except when already authed (token)
 
 export default function IntroSplash() {
   const isWeb = Platform.OS === "web";
@@ -36,9 +37,10 @@ export default function IntroSplash() {
   const [showWand, setShowWand] = useState(true);
 
   // reanimated values
-  const logoOpacity = useSharedValue(0);
-  const logoScale = useSharedValue(0.2);
-  const logoY = useSharedValue(24);
+  const logoOpacity = useSharedValue(0); // starts invisible
+  const logoScale = useSharedValue(0.2); // starts small
+  const logoY = useSharedValue(24); // starts lower
+
   const actionsOpacity = useSharedValue(0);
   const actionsY = useSharedValue(12);
   const wandOpacity = useSharedValue(1);
@@ -54,8 +56,8 @@ export default function IntroSplash() {
 
   // Timeline: reveal logo, then actions (only if logged out)
   const startLogoTimeline = useCallback(() => {
+    // logo animation
     logoOpacity.value = withDelay(40, withTiming(1, { duration: 220 }));
-
     logoScale.value = withSequence(
       withTiming(1.28, {
         duration: 420,
@@ -63,57 +65,59 @@ export default function IntroSplash() {
       }),
       withTiming(1, { duration: 240, easing: Easing.out(Easing.cubic) })
     );
-
     logoY.value = withTiming(0, {
       duration: 420,
       easing: Easing.out(Easing.cubic),
     });
 
+    // actions only when logged out
     if (!token) {
       actionsOpacity.value = withDelay(450, withTiming(1, { duration: 350 }));
       actionsY.value = withDelay(450, withTiming(0, { duration: 350 }));
     }
 
-    const t = setTimeout(
-      () => {
-        setSplashDone(true);
-        if (!token) setReady(true);
-      },
-      token ? 700 : 850
-    );
+    const t = setTimeout(() => {
+      setSplashDone(true);
+
+      if (!token) {
+        setReady(true);
+      } else {
+        // redirect away from splash when already authed
+        router.replace("/(tabs)/chatBot");
+      }
+    }, token ? 700 : 850);
 
     return () => clearTimeout(t);
   }, [
-    actionsOpacity,
-    actionsY,
+    token,
+    setSplashDone,
     logoOpacity,
     logoScale,
     logoY,
-    setSplashDone,
-    token,
+    actionsOpacity,
+    actionsY,
   ]);
 
   // Web: skip lottie; show UI immediately (prevents infinite splash)
   useEffect(() => {
     if (isLoading) return;
+    if (!isWeb) return;
 
-    if (isWeb) {
-      setShowWand(false);
-      setShowSparkles(false);
-      setShowPoof(false);
+    setShowWand(false);
+    setShowSparkles(false);
+    setShowPoof(false);
 
-      logoOpacity.value = 1;
-      logoScale.value = 1;
-      logoY.value = 0;
+    logoOpacity.value = 1;
+    logoScale.value = 1;
+    logoY.value = 0;
 
-      actionsOpacity.value = token ? 0 : 1;
-      actionsY.value = token ? 20 : 0;
+    actionsOpacity.value = token ? 0 : 1;
+    actionsY.value = token ? 20 : 0;
 
-      setSplashDone(true);
+    setSplashDone(true);
 
-      if (token) router.replace("/(tabs)/chatBot");
-      else setReady(true);
-    }
+    if (token) router.replace("/(tabs)/chatBot");
+    else setReady(true);
   }, [
     isWeb,
     isLoading,
@@ -150,11 +154,11 @@ export default function IntroSplash() {
   useEffect(() => {
     if (isWeb) return;
     if (isLoading) return;
-    if (token) return; // already navigated above
+    if (token) return;
 
     const t = setTimeout(() => {
       startLogoTimeline();
-      setReady(true);
+      // don't setReady(true) here; the timeline will handle it
     }, 2500);
 
     return () => clearTimeout(t);
@@ -288,7 +292,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   logoText: {
-    fontSize: 36,
+    fontSize: 36, // 46–56 will give that big pop feel
     fontWeight: "800",
     color: "white",
   },

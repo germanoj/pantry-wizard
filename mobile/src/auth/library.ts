@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 import { API_BASE_URL } from "@/src/config/api";
 import * as SecureStore from "expo-secure-store";
 
@@ -12,6 +12,11 @@ export type User = {
   id: string;
   username: string;
   email: string;
+};
+
+export type AuthError = {
+  message: string;
+  code?: string;
 };
 
 type AuthResponse = {
@@ -29,15 +34,18 @@ function authHeaders(token: string) {
   return { Authorization: `Bearer ${token}` };
 }
 
-function getErrorMessage(err: unknown) {
-  if (axios.isAxiosError(err)) {
-    const msg =
-      (err.response?.data as any)?.message ||
-      (err.response?.data as any)?.error ||
-      err.message;
-    return msg;
+function getErrorMessage(err: unknown): AuthError {
+  if (isAxiosError(err)) {
+    const data = err.response?.data as any;
+    return {
+      message: data?.message || data?.error || err.message || "Request failed",
+      code: data?.code,
+    };
   }
-  return err instanceof Error ? err.message : String(err);
+
+  return {
+    message: err instanceof Error ? err.message : String(err),
+  };
 }
 
 // ===== login =====
@@ -53,7 +61,7 @@ export async function apiLogin(email: string, password: string) {
 
     return res.data;
   } catch (err) {
-    throw new Error(getErrorMessage(err));
+    throw getErrorMessage(err);
   }
 }
 
@@ -75,26 +83,23 @@ export async function apiRegister(
 
     return res.data;
   } catch (err) {
-    throw new Error(getErrorMessage(err));
+    throw getErrorMessage(err);
   }
 }
 
-///get user from token ////
-
+// ===== me =====
 export async function apiMe(token: string) {
   try {
-    // try one route first (fallback added below)
     const res = await client.get<User>("/auth/me", {
       headers: authHeaders(token),
     });
     return res.data;
   } catch (err) {
-    throw new Error(getErrorMessage(err));
+    throw getErrorMessage(err);
   }
 }
 
-////update username so users can change their name in the system!! ////
-
+// ===== update username =====
 export async function apiUpdateUsername(token: string, username: string) {
   try {
     const res = await client.patch<User>(
@@ -104,6 +109,33 @@ export async function apiUpdateUsername(token: string, username: string) {
     );
     return res.data;
   } catch (err) {
-    throw new Error(getErrorMessage(err));
+    throw getErrorMessage(err);
+  }
+}
+
+// ===== deactivate =====
+export async function apiDeactivateAccount(token: string) {
+  try {
+    const res = await client.post<{ ok: boolean }>(
+      "/users/me/deactivate",
+      {},
+      { headers: authHeaders(token) }
+    );
+    return res.data;
+  } catch (err) {
+    throw getErrorMessage(err);
+  }
+}
+
+// ===== reactivate =====
+export async function apiReactivate(email: string, password: string) {
+  try {
+    const res = await client.post<AuthResponse>("/auth/reactivate", {
+      email,
+      password,
+    });
+    return res.data; // { token, user }
+  } catch (err) {
+    throw getErrorMessage(err);
   }
 }

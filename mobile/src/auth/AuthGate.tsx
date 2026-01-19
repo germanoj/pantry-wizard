@@ -1,11 +1,10 @@
-import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { useRouter, useSegments } from "expo-router";
 import { useAuth } from "./AuthContext";
 import { useSplash } from "./SplashContext";
 import LoadingScreen from "@/src/components/LoadingScreen";
 
-export function AuthGate({ children }: { children: ReactNode }) {
+export function AuthGate({ children }: { children: React.ReactNode }) {
   const { token, isLoading } = useAuth();
   const { splashDone } = useSplash();
 
@@ -21,15 +20,15 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const isGenerate = first === "generate";
 
   useEffect(() => {
-    //dont run any redirects until auth loads
+    // don't run any redirects until auth loads
     if (isLoading) return;
 
+    // logged-out allowed tabs (keep aligned with Tabs layout rules)
     const guestAllowedTabs = new Set(["index", "chatBot", "profile"]);
     const isGuestAllowedTab =
       isTabsGroup && guestAllowedTabs.has(String(second));
 
     // ✅ LOGGED OUT USERS
-
     if (!token) {
       if (isIntroRoot) return; // splash allowed
       if (isAuthGroup) return; // login/reg allowed
@@ -48,7 +47,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
       return;
     }
 
-    // logged in: keep out of auth pages
+    // Keep logged-in users out of auth pages
     if (isAuthGroup) {
       router.replace("/(tabs)");
       return;

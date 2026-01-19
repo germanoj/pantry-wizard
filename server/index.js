@@ -10,7 +10,6 @@ import { v4 as uuidv4 } from "uuid";
 
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { randomUUID } from "crypto";
 
 import pg from "pg";
 const { Pool } = pg;
@@ -31,28 +30,22 @@ const db = new Pool({
   ssl: needsSSL ? { rejectUnauthorized: false } : false,
 });
 
-const app = express();
-
 /**
  * ----------------------------
  * Middleware (order matters)
  * ----------------------------
  */
 
-// Parse JSON once
-
-app.use(express.json());
+// Parse JSON once (10mb supports larger payloads)
+app.use(express.json({ limit: "10mb" }));
 
 // CORS allowlist: localhost + deployed web
 const allowedOrigins = new Set([
-  // local web dev
   "http://localhost:8081",
   "http://localhost:19006",
   "http://localhost:3000",
   "http://localhost:5173",
   "http://localhost:8080",
-
-  // production web (Render static site)
   "https://pantry-wizard-yxez.onrender.com",
 ]);
 
@@ -72,6 +65,12 @@ app.use(
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   })
 );
+
+// Request logger
+app.use((req, res, next) => {
+  console.log(`[REQ] ${req.method} ${req.originalUrl}`);
+  next();
+});
 
 /**
  * ----------------------------
@@ -104,23 +103,6 @@ async function uploadPngDataUrlToCloudinary(dataUrl, publicId) {
 
   return result.secure_url;
 }
-// ===== Middleware =====
-app.use(cors()); // dev-safe: allow all origins
-app.use(express.json({ limit: "10mb" }));
-
-app.use((req, res, next) => {
-  console.log(`[REQ] ${req.method} ${req.originalUrl}`);
-  next();
-});
-
-// ===== Middleware =====
-app.use(cors()); // dev-safe: allow all origins
-app.use(express.json({ limit: "10mb" }));
-
-app.use((req, res, next) => {
-  console.log(`[REQ] ${req.method} ${req.originalUrl}`);
-  next();
-});
 
 /**
  * ----------------------------
@@ -130,9 +112,7 @@ app.use((req, res, next) => {
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
-  console.warn(
-    "⚠️ Missing JWT_SECRET in server .env (auth will fail until set)."
-  );
+  console.warn("⚠️ Missing JWT_SECRET in server .env (auth will fail until set).");
 }
 
 function signToken(userId) {
@@ -140,9 +120,10 @@ function signToken(userId) {
   return jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: "30d" });
 }
 
-function requireUser(req, res, next) {
-  if (!JWT_SECRET)
+async function requireUser(req, res, next) {
+  if (!JWT_SECRET) {
     return res.status(500).json({ message: "Server auth not configured" });
+  }
 
   try {
     const auth = req.headers.authorization || "";
@@ -151,9 +132,31 @@ function requireUser(req, res, next) {
 
     const payload = jwt.verify(token, JWT_SECRET);
     req.userId = payload.sub;
+
+    // check if user is still active
+    const result = await db.query("SELECT is_active FROM users WHERE id = $1", [
+      req.userId,
+    ]);
+
+    if (result.rowCount === 0) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    if (!result.rows[0].is_active) {
+      return res.status(403).json({ message: "Account is deactivated" });
+    }
+
     return next();
-  } catch {
-    return res.status(401).json({ message: "Invalid token" });
+  } catch (err) {
+    console.error("requireUser error:", err);
+    const isJwtError =
+      err?.name === "JsonWebTokenError" ||
+      err?.name === "TokenExpiredError" ||
+      err?.name === "NotBeforeError";
+
+    return res
+      .status(isJwtError ? 401 : 500)
+      .json({ message: isJwtError ? "Invalid token" : "Auth check failed" });
   }
 }
 
@@ -187,9 +190,11 @@ console.log(
  * ----------------------------
  * Image helpers
  * ----------------------------
- * NOTE: You referenced placeholderImageUrl() in your original file,
- * but it wasn't included in the snippet. Add/keep your own version.
  */
+function placeholderImageUrl(title = "recipe") {
+  const safe = String(title).toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  return `https://via.placeholder.com/1024?text=${encodeURIComponent(safe)}`;
+}
 
 function buildFoodImagePrompt(recipe) {
   const title = String(recipe.title ?? "a homemade dish").trim();
@@ -215,6 +220,53 @@ Realistic, appetizing, high detail, no text, no watermark.
 `;
 }
 
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+    ),
+  ]);
+}
+
+async function generateImageUrlForRecipe(r) {
+  const imgPrompt = buildFoodImagePrompt(r);
+
+  const img = await withTimeout(
+    openai.images.generate({
+      model: "gpt-image-1",
+      prompt: imgPrompt,
+      size: "1024x1024",
+    }),
+    90000,
+    "images.generate"
+  );
+
+  const first = img?.data?.[0];
+  console.log("🧩 image response keys:", Object.keys(first || {}));
+
+  if (first?.url) return first.url;
+
+  if (first?.b64_json) {
+    if (!hasCloudinary) return placeholderImageUrl(r?.title);
+
+    const dataUrl = `data:image/png;base64,${first.b64_json}`;
+
+    const safeTitle = String(r?.title || "recipe")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
+      .slice(0, 60);
+
+    const publicId = `${safeTitle}-${Date.now()}`;
+    return await uploadPngDataUrlToCloudinary(dataUrl, publicId);
+  }
+
+  throw new Error(
+    `No usable image in response. keys=${Object.keys(first || {}).join(",")}`
+  );
+}
+
 /**
  * ----------------------------
  * Routes: Auth
@@ -225,15 +277,11 @@ app.post("/auth/register", async (req, res) => {
     const { username, email, password } = req.body ?? {};
 
     if (!username || !email || !password) {
-      return res.status(400).json({
-        message: "username, email, password required",
-      });
+      return res.status(400).json({ message: "username, email, password required" });
     }
 
     if (String(password).length < 8) {
-      return res.status(400).json({
-        message: "password must be at least 8 characters",
-      });
+      return res.status(400).json({ message: "password must be at least 8 characters" });
     }
 
     const uname = String(username).trim();
@@ -245,9 +293,7 @@ app.post("/auth/register", async (req, res) => {
     );
 
     if (existing.rowCount > 0) {
-      return res
-        .status(409)
-        .json({ message: "Email or username already in use" });
+      return res.status(409).json({ message: "Email or username already in use" });
     }
 
     const hash = await bcrypt.hash(String(password), 10);
@@ -280,7 +326,7 @@ app.post("/auth/login", async (req, res) => {
     const mail = String(email).trim().toLowerCase();
 
     const found = await db.query(
-      "SELECT id, username, email, password FROM users WHERE email = $1",
+      "SELECT id, username, email, password, is_active FROM users WHERE email = $1",
       [mail]
     );
 
@@ -295,6 +341,13 @@ app.post("/auth/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    if (!user.is_active) {
+      return res.status(403).json({
+        code: "ACCOUNT_DEACTIVATED",
+        message: "This account is deactivated. Reactivate?.",
+      });
+    }
+
     const token = signToken(user.id);
     return res.json({
       token,
@@ -306,6 +359,53 @@ app.post("/auth/login", async (req, res) => {
   }
 });
 
+// reactivate
+app.post("/auth/reactivate", async (req, res) => {
+  try {
+    const { email, password } = req.body ?? {};
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "email and password required" });
+    }
+
+    const mail = String(email).trim().toLowerCase();
+
+    const found = await db.query(
+      "SELECT id, username, email, password, is_active FROM users WHERE email = $1",
+      [mail]
+    );
+
+    if (found.rowCount === 0) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const user = found.rows[0];
+    const ok = await bcrypt.compare(String(password), user.password);
+
+    if (!ok) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    if (!user.is_active) {
+      await db.query(
+        `UPDATE users
+         SET is_active = true
+         WHERE id = $1`,
+        [user.id]
+      );
+    }
+
+    const token = signToken(user.id);
+    return res.json({
+      token,
+      user: { id: user.id, username: user.username, email: user.email },
+    });
+  } catch (err) {
+    console.error("reactivate error:", err);
+    return res.status(500).json({ message: "Reactivation failed" });
+  }
+});
+
 app.get("/auth/me", requireUser, async (req, res) => {
   try {
     const userId = req.userId;
@@ -313,7 +413,7 @@ app.get("/auth/me", requireUser, async (req, res) => {
     const result = await db.query(
       `SELECT id, username, email
        FROM users
-       WHERE id = $1`,
+       WHERE id = $1 AND is_active = true`,
       [userId]
     );
 
@@ -364,6 +464,25 @@ app.patch("/users/me", requireUser, async (req, res) => {
   } catch (err) {
     console.error("users/me patch error:", err);
     return res.status(500).json({ message: "Failed to update username" });
+  }
+});
+
+// deactivate
+app.post("/users/me/deactivate", requireUser, async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    await db.query(
+      `UPDATE users
+       SET is_active = false
+       WHERE id = $1`,
+      [userId]
+    );
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("deactivate error:", err);
+    return res.status(500).json({ message: "Failed to deactivate account" });
   }
 });
 
@@ -457,11 +576,7 @@ app.post("/api/generate", (req, res) => {
             title: "Chef’s Choice",
             ingredientsUsed: pantry.slice(0, 6),
             missingIngredients: ["protein", "vegetable", "sauce"],
-            steps: [
-              "Choose a protein.",
-              "Choose a vegetable.",
-              "Cook and combine.",
-            ],
+            steps: ["Choose a protein.", "Choose a vegetable.", "Cook and combine."],
             timeMinutes: 25,
           },
         ];
@@ -474,85 +589,50 @@ app.post("/api/generate", (req, res) => {
  * Real AI route
  * ----------------------------
  */
-
-function withTimeout(promise, ms, label) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) =>
-      setTimeout(
-        () => reject(new Error(`${label} timed out after ${ms}ms`)),
-        ms
-      )
-    ),
-  ]);
-}
-
-function placeholderImageUrl(title = "Recipe") {
-  const text = encodeURIComponent(String(title).slice(0, 40));
-  return `https://via.placeholder.com/512?text=${text}`;
-}
-
-async function generateImageUrlForRecipe(r) {
-  const imgPrompt = buildFoodImagePrompt(r);
-
-  const img = await withTimeout(
-    openai.images.generate({
-      model: "gpt-image-1",
-      prompt: imgPrompt,
-      size: "1024x1024", // faster while debugging
-    }),
-    90000,
-    "images.generate"
-  );
-
-  const first = img?.data?.[0];
-
-  console.log("🧩 image response keys:", Object.keys(first || {}));
-
-  // If it returns a URL directly, use it
-  if (first?.url) return first.url;
-
-  // If it returns base64, upload to Cloudinary and return a real HTTPS URL
-  if (first?.b64_json) {
-    const dataUrl = `data:image/png;base64,${first.b64_json}`;
-
-    // ✅ Local/dev fallback: return a data URL so the phone can render it
-    // (React Native <Image source={{ uri }} /> supports this)
-    if (!hasCloudinary) {
-      return dataUrl;
-    }
-
-    const safeTitle = String(r?.title || "recipe")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "")
-      .slice(0, 60);
-
-    const publicId = `${safeTitle}-${Date.now()}`;
-
-    return await uploadPngDataUrlToCloudinary(dataUrl, publicId);
-  }
-
-  // Some SDKs return "base64" under a different key — log and fail loudly
-  throw new Error(
-    `No usable image in response. keys=${Object.keys(first || {}).join(",")}`
-  );
-}
-
 app.post("/api/generate-ai", async (req, res) => {
   try {
     console.log("🔥 HIT /api/generate-ai", new Date().toISOString());
 
-    const { pantryText } = req.body ?? {};
+    const { pantryText, preferences } = req.body ?? {};
     if (typeof pantryText !== "string" || pantryText.trim().length === 0) {
       return res.status(400).json({ error: "pantryText is required" });
     }
 
     if (!process.env.OPENAI_API_KEY) {
-      return res
-        .status(500)
-        .json({ error: "OPENAI_API_KEY not set on server" });
+      return res.status(500).json({ error: "OPENAI_API_KEY not set on server" });
     }
+
+    const pref = preferences || {};
+    const mealType =
+      typeof pref.mealType === "string" && pref.mealType.trim()
+        ? pref.mealType.trim()
+        : "no preference";
+
+    const dietaryRestrictions =
+      typeof pref.dietaryRestrictions === "string" &&
+      pref.dietaryRestrictions.trim()
+        ? pref.dietaryRestrictions.trim()
+        : "none";
+
+    const maxTimeMinutes =
+      Number.isFinite(pref.maxTimeMinutes) && pref.maxTimeMinutes > 0
+        ? Math.floor(pref.maxTimeMinutes)
+        : null;
+
+    const maxIngredients =
+      Number.isFinite(pref.maxIngredients) && pref.maxIngredients > 0
+        ? Math.floor(pref.maxIngredients)
+        : null;
+
+    const preferencesBlock = `
+User preferences (follow these if provided):
+- Meal type: ${mealType}
+- Dietary restrictions/allergies: ${dietaryRestrictions}
+- Max cooking time: ${maxTimeMinutes ? `${maxTimeMinutes} minutes` : "no limit"}
+- Max total ingredients (including pantry items + optional extras): ${
+      maxIngredients ? `${maxIngredients}` : "no limit"
+    }
+`;
 
     const prompt = `
 You are a helpful cooking assistant.
@@ -560,15 +640,23 @@ You are a helpful cooking assistant.
 Given this list of pantry ingredients:
 ${pantryText}
 
+${preferencesBlock}
+
 Generate 3 realistic recipes.
 
 Rules:
-- Use AS MANY of the provided ingredients as possible
-- Do NOT invent ingredients unless marked as optional
+- Use AS MANY of the provided ingredients as possible.
+- Do NOT invent ingredients unless marked as optional.
+- If dietary restrictions/allergies are provided, do NOT include restricted ingredients.
+- If a max cooking time is provided, set timeMinutes <= that value.
+- If a max total ingredients is provided, keep the total count of ingredientsUsed + missingIngredients <= that max.
+- If max total ingredients is provided, prefer fewer optional items first (keep missingIngredients short).
+- Each recipe must include realistic ingredient quantities and units
+  (e.g. "1 cup rice", "2 eggs", "1 tbsp olive oil").
 - Each recipe should include:
   - title
-  - ingredientsUsed (array)
-  - missingIngredients (array, optional items only)
+  - ingredientsUsed (array of strings; INCLUDE quantities)
+  - missingIngredients (array of strings; OPTIONAL items only; INCLUDE quantities if applicable)
   - steps (array of strings)
   - timeMinutes (number)
 
@@ -578,11 +666,10 @@ Return ONLY valid JSON in this exact shape:
 }
 `;
 
-    console.log("🧾 calling chat.completions...");
-
     const completion = await withTimeout(
       openai.chat.completions.create({
         model: "gpt-4o-mini",
+        response_format: { type: "json_object" },
         messages: [
           { role: "system", content: "You are a precise JSON-only API." },
           { role: "user", content: prompt },
@@ -593,10 +680,7 @@ Return ONLY valid JSON in this exact shape:
       "chat.completions"
     );
 
-    console.log("🧾 chat.completions returned");
-
-    const raw = completion.choices[0].message.content ?? "";
-    console.log("🧾 raw length:", raw.length);
+    const raw = (completion.choices[0].message.content ?? "").trim();
 
     let parsed;
     try {
@@ -606,13 +690,14 @@ Return ONLY valid JSON in this exact shape:
       return res.status(500).json({ error: "AI returned invalid JSON" });
     }
 
-    console.log("🧠 parsed recipes:", parsed.recipes?.length);
+    if (!parsed || !Array.isArray(parsed.recipes)) {
+      console.error("❌ Unexpected AI response shape:", parsed);
+      return res.status(500).json({ error: "AI returned unexpected JSON shape" });
+    }
 
     for (const r of parsed.recipes ?? []) {
       try {
-        console.log("🖼️ attempting image for:", r.title);
         r.imageUrl = await generateImageUrlForRecipe(r);
-        console.log("✅ image model succeeded for:", r.title);
       } catch (e) {
         console.error("❌ image gen failed for:", r?.title, e?.message || e);
         r.imageUrl = placeholderImageUrl(r?.title);
@@ -621,10 +706,7 @@ Return ONLY valid JSON in this exact shape:
 
     return res.json(parsed);
   } catch (err) {
-    // Log the richest version of the error
     console.error("AI ERROR:", err?.response?.data || err);
-
-    // Return details temporarily so your phone can show the real reason
     return res.status(500).json({
       error: "AI generation failed",
       details: err?.response?.data || err?.message || String(err),
@@ -660,54 +742,19 @@ app.post("/api/user-recipes", requireUser, async (req, res) => {
 
     const userId = getUserId(req);
 
-    const dbInfo = await db.query(
-      "select current_database() as db, current_user as usr"
-    );
-    console.log("CONNECTED DB:", dbInfo.rows[0]);
-
-    const favIdDefault = await db.query(`
-  SELECT column_default, is_nullable, data_type
-  FROM information_schema.columns
-  WHERE table_name='favorites' AND column_name='id'
-`);
-    console.log("favorites.id default:", favIdDefault.rows[0]);
-
-    const newId = randomUUID();
-
     const isVeggie = false;
     const isGf = false;
-
-    // 1) Insert into recipes
-    // Step 1: strip id so DB default (gen_random_uuid) can run
-    delete recipe.id;
-
-    // 🔍 DEBUG (temporary): inspect DB schema for recipes.id
-    // Consider removing once confirmed in production.
-    const idInfo = await db.query(`
-      SELECT column_name, data_type, is_nullable, column_default
-      FROM information_schema.columns
-      WHERE table_schema='public'
-        AND table_name='recipes'
-        AND column_name='id'
-    `);
-    console.log("DB recipes.id column:", idInfo.rows[0]);
-
-    const ext = await db.query(
-      `SELECT extname FROM pg_extension WHERE extname='pgcrypto'`
-    );
-    console.log("pgcrypto installed:", ext.rows.length > 0);
 
     const newId = uuidv4();
 
     const inserted = await db.query(
       `INSERT INTO recipes (id, name, generated_by_ai, prompt_used, is_veggie, is_gf, recipe_json)
-   VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
-   RETURNING id`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
+       RETURNING id`,
       [
         newId,
         title,
-        true, // generated_by_ai
-
+        true,
         recipe.imagePrompt ?? null,
         isVeggie,
         isGf,
@@ -724,15 +771,13 @@ app.post("/api/user-recipes", requireUser, async (req, res) => {
 
     const recipeId = inserted.rows[0].id;
 
-    // 2) Insert into favorites (assumes table exists)
-    const favId = uuidv4();
-
     await db.query(
       `INSERT INTO favorites (user_id, recipe_id)
-   VALUES ($1, $2)
-   ON CONFLICT (user_id, recipe_id) DO NOTHING`,
+       VALUES ($1, $2)
+       ON CONFLICT (user_id, recipe_id) DO NOTHING`,
       [userId, recipeId]
     );
+
     return res.json({ ok: true, recipeId });
   } catch (err) {
     console.error("save recipe error:", err);
@@ -745,7 +790,6 @@ app.delete("/api/user-recipes/:id", requireUser, async (req, res) => {
     const userId = getUserId(req);
     const { id: recipeId } = req.params;
 
-    // Remove the saved relationship for THIS user + THIS recipe
     const result = await db.query(
       `
       DELETE FROM favorites
@@ -801,75 +845,6 @@ app.get("/api/user-recipes", requireUser, async (req, res) => {
 
 /**
  * ----------------------------
- * Debug routes (optional)
- * ----------------------------
- */
-app.get("/_debug/router-shape", (req, res) => {
-  const has_router = !!app._router;
-  const has_router_stack = !!app._router?.stack;
-  const has_router2 = !!app.router;
-  const has_router2_stack = !!app.router?.stack;
-
-  res.json({
-    has_router,
-    has_router_stack,
-    router_stack_len: app._router?.stack?.length ?? null,
-    has_app_router: has_router2,
-    has_app_router_stack: has_router2_stack,
-    app_router_stack_len: app.router?.stack?.length ?? null,
-    app_keys: Object.keys(app).slice(0, 40),
-  });
-});
-
-app.get("/_debug/routes", (req, res) => {
-  const routes = [];
-
-  function walk(stack, prefix = "") {
-    for (const layer of stack || []) {
-      if (layer.route?.path) {
-        const methods = Object.keys(layer.route.methods || {})
-          .filter((m) => layer.route.methods[m])
-          .map((m) => m.toUpperCase());
-
-        routes.push({ path: prefix + layer.route.path, methods });
-      }
-
-      if (layer.name === "router" && layer.handle?.stack) {
-        let mount = "";
-        const s = layer.regexp?.toString?.() || "";
-        const m = s.match(/^\/\^\\\/(.+?)\\\/\?\(\?=\\\/\|\$\)\/i$/);
-        if (m?.[1]) mount = "/" + m[1].replace(/\\\//g, "/");
-
-        walk(layer.handle.stack, prefix + mount);
-      }
-    }
-  }
-
-  const rootStack = app._router?.stack || app.router?.stack || [];
-  walk(rootStack, "");
-
-  res.json({ routes });
-});
-
-app.get("/_debug/db", async (req, res) => {
-  const dbName = await db.query("select current_database() as db");
-  const schema = await db.query("select current_schema() as schema");
-  const idDefault = await db.query(`
-    SELECT table_schema, column_default
-    FROM information_schema.columns
-    WHERE table_name='users' AND column_name='id'
-    ORDER BY table_schema;
-  `);
-
-  res.json({
-    current_database: dbName.rows[0].db,
-    current_schema: schema.rows[0].schema,
-    users_id_defaults: idDefault.rows,
-  });
-});
-
-/**
- * ----------------------------
  * DB ping + server start
  * ----------------------------
  */
@@ -884,7 +859,7 @@ app.listen(PORT, "0.0.0.0", () => {
 
 /**
  * ----------------------------
- * Exports (must be after app/db exist)
+ * Exports
  * ----------------------------
  */
 export { app, db };

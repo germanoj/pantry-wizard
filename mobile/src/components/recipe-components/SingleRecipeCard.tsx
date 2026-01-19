@@ -72,7 +72,8 @@ export default function SingleRecipeCard({
         contentContainerStyle={[
           styles.content,
           isNotInterested && styles.notInterested,
-          hasBottomBar && { paddingBottom: 180 + insets.bottom },
+          // avoid overlapping footer + account for safe area
+          hasBottomBar && { paddingBottom: 140 + insets.bottom },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -94,10 +95,6 @@ export default function SingleRecipeCard({
         <WizardTitle style={styles.title}>{title}</WizardTitle>
         <WizardBody style={[styles.time, { color: theme.textMuted }]}>
           {time}
-        </WizardBody>
-
-        <WizardBody style={{ color: "red" }}>
-          SINGLE RECIPE CARD DEBUG
         </WizardBody>
 
         {/* Action Buttons (hidden in cook mode) */}
@@ -198,14 +195,56 @@ export default function SingleRecipeCard({
             styles.bottomBar,
             {
               borderTopColor: theme.border,
-              backgroundColor: theme.surface, // remove yellow once tested
-              paddingBottom: ui.spacing.sm + insets.bottom, // ✅ key line
-              zIndex: 9999, // ✅ helps on web
-              elevation: 9999, // ✅ helps on Android
+              backgroundColor: theme.surface,
+              paddingBottom: ui.spacing.sm + insets.bottom, // ✅ safe area
+              zIndex: 9999,
+              elevation: 9999,
             },
           ]}
         >
-          ...
+          <View style={styles.bottomRow}>
+            {hasSecondaryBottomAction && (
+              <Pressable
+                onPress={onBottomSecondaryAction}
+                style={({ pressed }) => [
+                  styles.bottomBtnSecondary,
+                  {
+                    backgroundColor: theme.surface2,
+                    borderColor: theme.border,
+                  },
+                  pressed && styles.actionPressed,
+                ]}
+                hitSlop={8}
+              >
+                <Text
+                  style={[styles.bottomBtnSecondaryText, { color: theme.text }]}
+                >
+                  {bottomSecondaryActionLabel}
+                </Text>
+              </Pressable>
+            )}
+
+            {hasPrimaryBottomAction && (
+              <Pressable
+                onPress={onBottomAction}
+                style={({ pressed }) => [
+                  styles.bottomBtnPrimary,
+                  { backgroundColor: theme.primary },
+                  pressed && styles.actionPressed,
+                ]}
+                hitSlop={8}
+              >
+                <Text
+                  style={[
+                    styles.bottomBtnPrimaryText,
+                    { color: theme.primaryText },
+                  ]}
+                >
+                  {bottomActionLabel}
+                </Text>
+              </Pressable>
+            )}
+          </View>
         </View>
       )}
     </SafeAreaView>
@@ -235,7 +274,7 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    marginTop: 0, // WizardTitle default adds marginTop; detail screen doesn't need extra
+    marginTop: 0,
   },
 
   time: {

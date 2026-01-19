@@ -1,5 +1,4 @@
 import { Tabs } from "expo-router";
-
 import { useAuth } from "@/src/auth/AuthContext";
 
 import { HapticTab } from "@/components/haptic-tab";
@@ -9,7 +8,7 @@ import WizardHatIcon from "../wizardHat";
 import { useTheme } from "@/src/theme/usetheme";
 
 export default function TabLayout() {
-  const { token } = useAuth();
+  const { token } = useAuth(); // ✅ don't block UI on isLoading here
   const theme = useTheme();
 
   const isAuthed = !!token;
@@ -19,12 +18,9 @@ export default function TabLayout() {
       screenOptions={{
         headerTitleAlign: "center",
         tabBarLabelPosition: "below-icon",
-
-        // tab colors / behavior
         tabBarButton: HapticTab,
         tabBarActiveTintColor: theme.accent,
         tabBarInactiveTintColor: theme.textMuted,
-
         tabBarStyle: {
           position: "absolute",
           left: 18,
@@ -38,12 +34,12 @@ export default function TabLayout() {
           borderTopColor: theme.border,
           borderTopWidth: 1,
 
-          borderRadius: 999, // pill style
-          // iOS shadow
+          borderRadius: 999,
           shadowColor: "#000",
           shadowOpacity: 0.18,
           shadowRadius: 12,
           shadowOffset: { width: 0, height: 8 },
+
           // Android shadow
           elevation: 12,
         },
@@ -77,7 +73,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* only show when logged in */}
       <Tabs.Screen
         name="saved"
         options={{
@@ -89,7 +84,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* keep visible always (content changes inside ProfilePage) */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -104,6 +98,7 @@ export default function TabLayout() {
       {/* hidden routes */}
       <Tabs.Screen name="recipes" options={{ href: null }} />
       <Tabs.Screen name="saved/(details)/[id]" options={{ href: null }} />
+
       <Tabs.Screen
         name="loginReg"
         options={{

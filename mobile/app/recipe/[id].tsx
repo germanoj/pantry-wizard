@@ -20,9 +20,6 @@ export default function RecipeDetailsScreen() {
   const insets = useSafeAreaInsets();
   const { getById } = useGeneratedRecipes();
 
-  // Optional debug (remove later)
-  // console.log("RecipeDetails id:", id);
-
   const recipe = getById(String(id));
 
   if (!recipe) {
