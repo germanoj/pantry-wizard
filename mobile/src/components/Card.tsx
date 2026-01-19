@@ -7,9 +7,9 @@ export function Card({
   variant = "default",
   style,
   ...props
-}: ViewProps & { 
+}: ViewProps & {
   centered?: boolean;
-  variant?: "default" | "overlay"; 
+  variant?: "default" | "overlay" | "list";
 }) {
   const theme = useTheme();
 
@@ -18,14 +18,14 @@ export function Card({
       {...props}
       style={[
         styles.card,
-          centered && styles.centered,
-          variant === "overlay" && styles.overlayCard,
+        variant === "list" && styles.listCard,
+        centered && styles.centered,
+        variant === "overlay" && styles.overlayCard,
         {
-          backgroundColor: 
-            variant === "overlay"
-            ? "rgba(255,255,255,0.20)"
-            : theme.surface,
-          borderColor: variant === "overlay" ? "rgba(255,255,255,0.22)" : theme.border,
+          backgroundColor:
+            variant === "overlay" ? "rgba(255,255,255,0.20)" : theme.surface,
+          borderColor:
+            variant === "overlay" ? "rgba(255,255,255,0.22)" : theme.border,
         },
         style,
       ]}
@@ -41,19 +41,26 @@ const styles = StyleSheet.create({
     borderRadius: ui.radius.lg,
     borderWidth: 1,
 
-    // this creates that lift impresssion
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
-    elevation: 3, // android!!
+    elevation: 3,
   },
+
+  // ✅ new: list-friendly card (for Recipe results, Saved list, etc.)
+  listCard: {
+    maxWidth: undefined, // take full available width in lists
+    padding: ui.spacing.md, // tighter padding
+  },
+
   overlayCard: {
     maxWidth: 320,
     shadowOpacity: 0,
     elevation: 0,
   },
-   centered: {
+
+  centered: {
     alignItems: "center",
-   }
+  },
 });
