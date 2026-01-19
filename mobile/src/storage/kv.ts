@@ -3,16 +3,22 @@ import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export async function getItem(key: string) {
-  if (Platform.OS === "web") return AsyncStorage.getItem(key);
+  if (Platform.OS === "web") {
+    return AsyncStorage.getItem(key); // uses localStorage under the hood on web
+  }
   return SecureStore.getItemAsync(key);
 }
 
 export async function setItem(key: string, value: string) {
-  if (Platform.OS === "web") return AsyncStorage.setItem(key, value);
+  if (Platform.OS === "web") {
+    return AsyncStorage.setItem(key, value);
+  }
   return SecureStore.setItemAsync(key, value);
 }
 
 export async function removeItem(key: string) {
-  if (Platform.OS === "web") return AsyncStorage.removeItem(key);
+  if (Platform.OS === "web") {
+    return AsyncStorage.removeItem(key);
+  }
   return SecureStore.deleteItemAsync(key);
 }

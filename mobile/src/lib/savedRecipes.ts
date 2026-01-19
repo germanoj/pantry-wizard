@@ -1,10 +1,10 @@
 import { API_BASE_URL } from "../config/api";
 import type { Recipe } from "../types/recipe";
-import * as SecureStore from "expo-secure-store";
+import { getItem } from "@/src/lib/storage";
 
 // Helper: get auth token (no top-level await)
 async function getToken() {
-  return await SecureStore.getItemAsync("authToken");
+  return await getItem("authToken");
 }
 
 // Optional helper for debugging (call this from a screen or button)

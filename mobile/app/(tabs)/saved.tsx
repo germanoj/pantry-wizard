@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Text,
   View,
@@ -9,6 +9,7 @@ import {
   Alert,
   Image,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { router, useRouter } from "expo-router";
 import {
   fetchSavedRecipes,
@@ -58,27 +59,31 @@ export default function SavedRecipes() {
     );
   };
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadSaved = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    (async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const data = await fetchSavedRecipes(); // { recipes: [...] }
-        if (!cancelled) setRecipes(data.recipes ?? []);
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message ?? "Failed to load saved recipes");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+      const data = await fetchSavedRecipes(); // { recipes: [...] }
+      setRecipes(data.recipes ?? []);
+    } catch (e: any) {
+      setError(e?.message ?? "Failed to load saved recipes");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  // initial load (mount)
+  useEffect(() => {
+    loadSaved();
+  }, [loadSaved]);
+
+  // refresh whenever tab/screen becomes active
+  useFocusEffect(
+    useCallback(() => {
+      loadSaved();
+    }, [loadSaved])
+  );
 
   if (loading) {
     return (

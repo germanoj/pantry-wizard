@@ -1,6 +1,6 @@
 import axios, { isAxiosError } from "axios";
 import { API_BASE_URL } from "@/src/config/api";
-import * as SecureStore from "expo-secure-store";
+import { setItem } from "@/src/lib/storage";
 
 const API = API_BASE_URL;
 console.log("API baseURL:", API);
@@ -57,7 +57,7 @@ export async function apiLogin(email: string, password: string) {
     });
 
     // ✅ Persist token for later API calls (save recipes, fetch saved recipes)
-    await SecureStore.setItemAsync("authToken", res.data.token);
+    await setItem("authToken", res.data.token);
 
     return res.data;
   } catch (err) {
@@ -79,7 +79,7 @@ export async function apiRegister(
     });
 
     // ✅ Persist token (your server returns token on successful register)
-    await SecureStore.setItemAsync("authToken", res.data.token);
+    await setItem("authToken", res.data.token);
 
     return res.data;
   } catch (err) {
