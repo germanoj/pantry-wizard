@@ -4,9 +4,13 @@ import { ui } from "@/src/theme/theme";
 
 export function Card({
   centered = false,
+  variant = "default",
   style,
   ...props
-}: ViewProps & { centered?: boolean }) {
+}: ViewProps & { 
+  centered?: boolean;
+  variant?: "default" | "overlay"; 
+}) {
   const theme = useTheme();
 
   return (
@@ -15,9 +19,13 @@ export function Card({
       style={[
         styles.card,
           centered && styles.centered,
+          variant === "overlay" && styles.overlayCard,
         {
-          backgroundColor: theme.surface,
-          borderColor: theme.border,
+          backgroundColor: 
+            variant === "overlay"
+            ? "rgba(255,255,255,0.20)"
+            : theme.surface,
+          borderColor: variant === "overlay" ? "rgba(255,255,255,0.22)" : theme.border,
         },
         style,
       ]}
@@ -33,17 +41,17 @@ const styles = StyleSheet.create({
     borderRadius: ui.radius.lg,
     borderWidth: 1,
 
-    //alignment within the card
-    //alignItems: "center",     // ⬅️ horizontal
-    //justifyContent: "center", // ⬅️ vertical (optional)
-
     // this creates that lift impresssion
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
-
     elevation: 3, // android!!
+  },
+  overlayCard: {
+    maxWidth: 320,
+    shadowOpacity: 0,
+    elevation: 0,
   },
    centered: {
     alignItems: "center",
