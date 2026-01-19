@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import {
   View,
-  Text,
+  ScrollView,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 
 import { generateRecipes } from "../lib/apiClient";
@@ -38,6 +39,7 @@ export default function GenerateScreen() {
 
   const theme = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { recipes, setRecipes } = useGeneratedRecipes();
 
   const mealOptions: Array<{ label: string; value: MealType }> = useMemo(
@@ -90,14 +92,21 @@ export default function GenerateScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[
-        styles.container,
-        { backgroundColor: theme.background, position: "relative" },
-      ]}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={[ styles.container, { backgroundColor: theme.background }]}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       {/* ✅ Native-only loading overlay (avoids lottie issues on web) */}
       {loading && Platform.OS !== "web" && <AiLoadingOverlay />}
+
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: insets.top + 16 },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+        showsVerticalScrollIndicator={false}
+    >
 
       <WizardTitle>Summon a Recipe</WizardTitle>
 
@@ -214,6 +223,12 @@ export default function GenerateScreen() {
 
       {error ? <WizardBody style={{ color: "tomato", marginTop: 0 }}>{error}</WizardBody> : null}
 
+      {!loading && !error && recipes.length === 0 ? (
+        <WizardBody style={styles.emptyText}>
+          Hmm no recipes yet... Try tapping the summon button.
+        </WizardBody>
+      ) : null}
+
       <View style={styles.results}>
         {recipes.slice(0, 3).map((r) => (
           <GeneratedRecipeCard
@@ -236,12 +251,7 @@ export default function GenerateScreen() {
           Tap a recipe to see full steps
         </WizardBody>
       )}
-
-      {!loading && !error && recipes.length === 0 ? (
-        <WizardBody style={styles.emptyText}>
-          Hmm no recipes yet... Try tapping the summon button.
-        </WizardBody>
-      ) : null}
+    </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -249,7 +259,10 @@ export default function GenerateScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  content: {
     padding: 16,
+    paddingBottom: 28,
     gap: 12,
   },
   section: {
@@ -299,11 +312,9 @@ const styles = StyleSheet.create({
     color: "red",
   },
   emptyText: {
-    marginTop: 8,
   },
   results: {
     gap: 12,
-    marginTop: 8,
-    flex: 1,
+    marginTop: 12,
   },
 });
