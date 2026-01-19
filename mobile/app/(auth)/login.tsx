@@ -1,36 +1,49 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, Alert } from "react-native";
-import { router, Link } from "expo-router";
+import { useState } from "react";
+import { View, StyleSheet, Alert } from "react-native";
+import { Link, router } from "expo-router";
+
+import { useTheme } from "@/src/theme/usetheme";
+import {
+  WizardBody,
+  WizardTitle,
+  WizardInput,
+  WizardButton,
+} from "@/src/components/WizardText";
+import { Card } from "@/src/components/Card";
 
 import { useAuth } from "@/src/auth/AuthContext";
 import { apiLogin, apiReactivate } from "@/src/auth/library";
 
-// These appear in your teammate's version; keep if they exist in your project
-import { Card } from "@/src/components/Card";
-import { WizardBody, WizardButton } from "@/src/components/WizardText";
-import { useTheme } from "@/src/theme/usetheme";
-
-export default function LoginScreen() {
-  const theme = useTheme();
-  const { signIn } = useAuth();
-
+export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [loading, setLoading] = useState(false);
+
+  const { signIn } = useAuth();
+
   const [canReactivate, setCanReactivate] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const onLogin = async () => {
-    setLoading(true);
-    setCanReactivate(false);
-    setErrorMsg(null);
+    if (!email || !password) {
+      Alert.alert("Missing info", "Email and password are required.");
+      return;
+    }
 
     try {
+      setLoading(true);
+
+      setCanReactivate(false);
+      setErrorMsg(null);
+
       const data = await apiLogin(email, password);
 
-      // ✅ critical: actually set auth state
-      await signIn(data.token, data.user ?? null);
+      // data.user may be undefined if backend changes or fails
+      if (data.user !== null && data.user !== undefined) {
+        await signIn(data.token, data.user);
+      } else {
+        await signIn(data.token, null);
+      }
 
       Alert.alert("Welcome back!", "You're logged in. Let's get cookin'!");
       router.replace("/(tabs)/chatBot");
@@ -52,46 +65,36 @@ export default function LoginScreen() {
     }
   };
 
-  return (
-    <View style={{ flex: 1, padding: 20, justifyContent: "center", gap: 12 }}>
-      <Card>
-        <Text style={{ fontSize: 24, fontWeight: "600" }}>Login</Text>
+  const theme = useTheme();
 
-        <TextInput
-          placeholder="Email"
-          autoCapitalize="none"
-          keyboardType="email-address"
+  return (
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <Card>
+        <WizardTitle>Log in</WizardTitle>
+
+        <WizardInput
           value={email}
           onChangeText={setEmail}
-          style={{
-            borderWidth: 1,
-            borderColor: "#ccc",
-            padding: 12,
-            borderRadius: 8,
-            marginTop: 12,
-          }}
+          placeholder="email"
+          autoCapitalize="none"
+          keyboardType="email-address"
+          style={styles.input}
         />
 
-        <TextInput
-          placeholder="Password"
-          secureTextEntry
+        <WizardInput
           value={password}
           onChangeText={setPassword}
-          style={{
-            borderWidth: 1,
-            borderColor: "#ccc",
-            padding: 12,
-            borderRadius: 8,
-            marginTop: 12,
-          }}
+          placeholder="password"
+          secureTextEntry
+          style={styles.input}
         />
 
         <WizardButton
+          style={styles.button}
           onPress={onLogin}
           disabled={loading}
-          style={{ marginTop: 12 }}
         >
-          <WizardBody style={{ color: theme.primaryText }}>
+          <WizardBody style={[styles.buttonText, { color: theme.primaryText }]}>
             {loading ? "Casting spell..." : "Accio"}
           </WizardBody>
         </WizardButton>
@@ -104,18 +107,21 @@ export default function LoginScreen() {
 
         {canReactivate && (
           <WizardButton
-            style={{
-              marginTop: 12,
-              borderColor: theme.danger,
-            }}
+            style={({ pressed }) => [
+              styles.button,
+              pressed && { opacity: 0.8 },
+              { marginTop: 12, borderColor: theme.danger },
+            ]}
             onPress={async () => {
               try {
                 setLoading(true);
-                setErrorMsg(null);
-
                 const data = await apiReactivate(email, password);
 
-                await signIn(data.token, data.user ?? null);
+                if (data.user !== null && data.user !== undefined) {
+                  await signIn(data.token, data.user);
+                } else {
+                  await signIn(data.token, null);
+                }
 
                 router.replace("/(tabs)/profile");
               } catch (err: any) {
@@ -135,9 +141,12 @@ export default function LoginScreen() {
           </WizardButton>
         )}
 
-        <WizardBody style={{ marginTop: 12 }}>
+        <WizardBody style={styles.linkRow}>
           First time visiting the wizard?{" "}
-          <Link href="/register" style={{ color: theme.accent2 }}>
+          <Link
+            href="/register"
+            style={[styles.link, { color: theme.accent2 }]}
+          >
             Create an account
           </Link>
         </WizardBody>
@@ -145,3 +154,26 @@ export default function LoginScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+    padding: 20,
+  },
+  input: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 16,
+    marginTop: 10,
+  },
+  button: { width: "100%" },
+  buttonText: { fontSize: 16, fontWeight: "600" },
+  linkRow: { marginTop: 12, fontSize: 14 },
+  link: {},
+});
