@@ -73,8 +73,6 @@ export default function GenerateScreen() {
         maxIngredients: parseOptionalInt(maxIngredients),
       };
 
-      // ✅ apiClient should accept 2nd arg now:
-      // generateRecipes(pantryText, preferences)
       const data = await generateRecipes(pantryText, preferences);
 
       // ✅ add client-side id because Recipe type has none
@@ -94,9 +92,15 @@ export default function GenerateScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: theme.background }]}
+      style={[
+        styles.container,
+        { backgroundColor: theme.background, position: "relative" },
+      ]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
+      {/* ✅ Native-only loading overlay (avoids lottie issues on web) */}
+      {loading && Platform.OS !== "web" && <AiLoadingOverlay />}
+
       <WizardTitle>Summon a Recipe</WizardTitle>
 
       {/* ✅ Preferences */}
