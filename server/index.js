@@ -6,6 +6,7 @@ import "dotenv/config";
 
 import OpenAI from "openai";
 import { v2 as cloudinary } from "cloudinary";
+import { v4 as uuidv4 } from "uuid";
 
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -35,19 +36,16 @@ const db = new Pool({
  * ----------------------------
  */
 
-// Parse JSON once
-app.use(express.json());
+// Parse JSON once (10mb supports larger payloads)
+app.use(express.json({ limit: "10mb" }));
 
 // CORS allowlist: localhost + deployed web
 const allowedOrigins = new Set([
-  // local web dev
   "http://localhost:8081",
   "http://localhost:19006",
   "http://localhost:3000",
   "http://localhost:5173",
   "http://localhost:8080",
-
-  // production web (Render static site)
   "https://pantry-wizard-yxez.onrender.com",
 ]);
 
@@ -67,6 +65,12 @@ app.use(
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   })
 );
+
+// Request logger
+app.use((req, res, next) => {
+  console.log(`[REQ] ${req.method} ${req.originalUrl}`);
+  next();
+});
 
 /**
  * ----------------------------
@@ -105,11 +109,10 @@ async function uploadPngDataUrlToCloudinary(dataUrl, publicId) {
  * Auth helpers
  * ----------------------------
  */
+
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
-  console.warn(
-    "⚠️ Missing JWT_SECRET in server .env (auth will fail until set)."
-  );
+  console.warn("⚠️ Missing JWT_SECRET in server .env (auth will fail until set).");
 }
 
 function signToken(userId) {
@@ -118,8 +121,9 @@ function signToken(userId) {
 }
 
 async function requireUser(req, res, next) {
-  if (!JWT_SECRET)
+  if (!JWT_SECRET) {
     return res.status(500).json({ message: "Server auth not configured" });
+  }
 
   try {
     const auth = req.headers.authorization || "";
@@ -129,22 +133,30 @@ async function requireUser(req, res, next) {
     const payload = jwt.verify(token, JWT_SECRET);
     req.userId = payload.sub;
 
-    // NEW: check if user is still active
-    const result = await db.query(
-      "SELECT is_active FROM users WHERE id = $1",
-      [req.userId]
-      );
+    // check if user is still active
+    const result = await db.query("SELECT is_active FROM users WHERE id = $1", [
+      req.userId,
+    ]);
 
-      if (result.rowCount === 0) {
-        return res.status(401).json({ message: "User not found" });
-      }
+    if (result.rowCount === 0) {
+      return res.status(401).json({ message: "User not found" });
+    }
 
-      if (!result.rows[0].is_active) {
-        return res.status(403).json({ message: "Account is deactivated" });
-      }
+    if (!result.rows[0].is_active) {
+      return res.status(403).json({ message: "Account is deactivated" });
+    }
+
     return next();
-  } catch {
-    return res.status(401).json({ message: "Invalid token" });
+  } catch (err) {
+    console.error("requireUser error:", err);
+    const isJwtError =
+      err?.name === "JsonWebTokenError" ||
+      err?.name === "TokenExpiredError" ||
+      err?.name === "NotBeforeError";
+
+    return res
+      .status(isJwtError ? 401 : 500)
+      .json({ message: isJwtError ? "Invalid token" : "Auth check failed" });
   }
 }
 
@@ -178,14 +190,9 @@ console.log(
  * ----------------------------
  * Image helpers
  * ----------------------------
- * NOTE: You referenced placeholderImageUrl() in your original file,
- * but it wasn't included in the snippet. Add/keep your own version.
  */
 function placeholderImageUrl(title = "recipe") {
-  // Simple placeholder (replace with your own if you already have one)
-  const safe = String(title)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-");
+  const safe = String(title).toLowerCase().replace(/[^a-z0-9]+/g, "-");
   return `https://via.placeholder.com/1024?text=${encodeURIComponent(safe)}`;
 }
 
@@ -217,10 +224,7 @@ function withTimeout(promise, ms, label) {
   return Promise.race([
     promise,
     new Promise((_, reject) =>
-      setTimeout(
-        () => reject(new Error(`${label} timed out after ${ms}ms`)),
-        ms
-      )
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
     ),
   ]);
 }
@@ -273,15 +277,11 @@ app.post("/auth/register", async (req, res) => {
     const { username, email, password } = req.body ?? {};
 
     if (!username || !email || !password) {
-      return res.status(400).json({
-        message: "username, email, password required",
-      });
+      return res.status(400).json({ message: "username, email, password required" });
     }
 
     if (String(password).length < 8) {
-      return res.status(400).json({
-        message: "password must be at least 8 characters",
-      });
+      return res.status(400).json({ message: "password must be at least 8 characters" });
     }
 
     const uname = String(username).trim();
@@ -293,9 +293,7 @@ app.post("/auth/register", async (req, res) => {
     );
 
     if (existing.rowCount > 0) {
-      return res
-        .status(409)
-        .json({ message: "Email or username already in use" });
+      return res.status(409).json({ message: "Email or username already in use" });
     }
 
     const hash = await bcrypt.hash(String(password), 10);
@@ -343,7 +341,6 @@ app.post("/auth/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // for deactivating account
     if (!user.is_active) {
       return res.status(403).json({
         code: "ACCOUNT_DEACTIVATED",
@@ -362,7 +359,7 @@ app.post("/auth/login", async (req, res) => {
   }
 });
 
-//for reactivating
+// reactivate
 app.post("/auth/reactivate", async (req, res) => {
   try {
     const { email, password } = req.body ?? {};
@@ -389,20 +386,14 @@ app.post("/auth/reactivate", async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    if (user.is_active) {
-      const token = signToken(user.id);
-      return res.json({
-        token,
-        user: { id: user.id, username: user.username, email: user.email },
-      });
+    if (!user.is_active) {
+      await db.query(
+        `UPDATE users
+         SET is_active = true
+         WHERE id = $1`,
+        [user.id]
+      );
     }
-
-    await db.query(
-      `UPDATE users
-       SET is_active = true
-       WHERE id = $1`,
-      [user.id]
-    );
 
     const token = signToken(user.id);
     return res.json({
@@ -414,7 +405,6 @@ app.post("/auth/reactivate", async (req, res) => {
     return res.status(500).json({ message: "Reactivation failed" });
   }
 });
-
 
 app.get("/auth/me", requireUser, async (req, res) => {
   try {
@@ -477,7 +467,7 @@ app.patch("/users/me", requireUser, async (req, res) => {
   }
 });
 
-//new for deactivate
+// deactivate
 app.post("/users/me/deactivate", requireUser, async (req, res) => {
   try {
     const userId = req.userId;
@@ -495,47 +485,6 @@ app.post("/users/me/deactivate", requireUser, async (req, res) => {
     return res.status(500).json({ message: "Failed to deactivate account" });
   }
 });
-
-// new for reactivate email
-app.post("/auth/reactivate", async (req, res) => {
-  try {
-    const { email, password } = req.body ?? {};
-    if (!email || !password) {
-      return res.status(400).json({ message: "email and password required" });
-    }
-
-    const mail = String(email).trim().toLowerCase();
-
-    const found = await db.query(
-      "SELECT id, username, email, password, is_active FROM users WHERE email = $1",
-      [mail]
-    );
-
-    if (found.rowCount === 0) return res.status(401).json({ message: "Invalid credentials" });
-
-    const user = found.rows[0];
-    const ok = await bcrypt.compare(String(password), user.password);
-    if (!ok) return res.status(401).json({ message: "Invalid credentials" });
-
-    // flip them back on
-    await db.query(
-      `UPDATE users
-       SET is_active = true
-       WHERE id = $1`,
-      [user.id]
-    );
-
-    const token = signToken(user.id);
-    return res.json({
-      token,
-      user: { id: user.id, username: user.username, email: user.email },
-    });
-  } catch (err) {
-    console.error("reactivate error:", err);
-    return res.status(500).json({ message: "Reactivation failed" });
-  }
-});
-
 
 /**
  * ----------------------------
@@ -627,11 +576,7 @@ app.post("/api/generate", (req, res) => {
             title: "Chef’s Choice",
             ingredientsUsed: pantry.slice(0, 6),
             missingIngredients: ["protein", "vegetable", "sauce"],
-            steps: [
-              "Choose a protein.",
-              "Choose a vegetable.",
-              "Cook and combine.",
-            ],
+            steps: ["Choose a protein.", "Choose a vegetable.", "Cook and combine."],
             timeMinutes: 25,
           },
         ];
@@ -654,9 +599,7 @@ app.post("/api/generate-ai", async (req, res) => {
     }
 
     if (!process.env.OPENAI_API_KEY) {
-      return res
-        .status(500)
-        .json({ error: "OPENAI_API_KEY not set on server" });
+      return res.status(500).json({ error: "OPENAI_API_KEY not set on server" });
     }
 
     const pref = preferences || {};
@@ -723,12 +666,10 @@ Return ONLY valid JSON in this exact shape:
 }
 `;
 
-    console.log("🧾 calling chat.completions...");
-
     const completion = await withTimeout(
       openai.chat.completions.create({
         model: "gpt-4o-mini",
-        response_format: { type: "json_object" }, // ✅ add this
+        response_format: { type: "json_object" },
         messages: [
           { role: "system", content: "You are a precise JSON-only API." },
           { role: "user", content: prompt },
@@ -739,10 +680,7 @@ Return ONLY valid JSON in this exact shape:
       "chat.completions"
     );
 
-    console.log("🧾 chat.completions returned");
-
     const raw = (completion.choices[0].message.content ?? "").trim();
-    console.log("🧾 raw length:", raw.length);
 
     let parsed;
     try {
@@ -754,18 +692,12 @@ Return ONLY valid JSON in this exact shape:
 
     if (!parsed || !Array.isArray(parsed.recipes)) {
       console.error("❌ Unexpected AI response shape:", parsed);
-      return res
-        .status(500)
-        .json({ error: "AI returned unexpected JSON shape" });
+      return res.status(500).json({ error: "AI returned unexpected JSON shape" });
     }
-
-    console.log("🧠 parsed recipes:", parsed.recipes?.length);
 
     for (const r of parsed.recipes ?? []) {
       try {
-        console.log("🖼️ attempting image for:", r.title);
         r.imageUrl = await generateImageUrlForRecipe(r);
-        console.log("✅ image model succeeded for:", r.title);
       } catch (e) {
         console.error("❌ image gen failed for:", r?.title, e?.message || e);
         r.imageUrl = placeholderImageUrl(r?.title);
@@ -774,8 +706,11 @@ Return ONLY valid JSON in this exact shape:
 
     return res.json(parsed);
   } catch (err) {
-    console.error("AI ERROR:", err);
-    return res.status(500).json({ error: "AI generation failed" });
+    console.error("AI ERROR:", err?.response?.data || err);
+    return res.status(500).json({
+      error: "AI generation failed",
+      details: err?.response?.data || err?.message || String(err),
+    });
   }
 });
 
@@ -810,11 +745,14 @@ app.post("/api/user-recipes", requireUser, async (req, res) => {
     const isVeggie = false;
     const isGf = false;
 
+    const newId = uuidv4();
+
     const inserted = await db.query(
-      `INSERT INTO recipes (name, generated_by_ai, prompt_used, is_veggie, is_gf, recipe_json)
-       VALUES ($1, $2, $3, $4, $5, $6::jsonb)
+      `INSERT INTO recipes (id, name, generated_by_ai, prompt_used, is_veggie, is_gf, recipe_json)
+       VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
        RETURNING id`,
       [
+        newId,
         title,
         true,
         recipe.imagePrompt ?? null,
@@ -843,6 +781,31 @@ app.post("/api/user-recipes", requireUser, async (req, res) => {
     return res.json({ ok: true, recipeId });
   } catch (err) {
     console.error("save recipe error:", err);
+    return res.status(500).json({ error: String(err?.message || err) });
+  }
+});
+
+app.delete("/api/user-recipes/:id", requireUser, async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const { id: recipeId } = req.params;
+
+    const result = await db.query(
+      `
+      DELETE FROM favorites
+      WHERE user_id = $1 AND recipe_id = $2
+      RETURNING id
+      `,
+      [userId, recipeId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).send("Saved recipe not found");
+    }
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("delete saved recipe error:", err);
     return res.status(500).json({ error: String(err?.message || err) });
   }
 });
@@ -882,75 +845,6 @@ app.get("/api/user-recipes", requireUser, async (req, res) => {
 
 /**
  * ----------------------------
- * Debug routes (optional)
- * ----------------------------
- */
-app.get("/_debug/router-shape", (req, res) => {
-  const has_router = !!app._router;
-  const has_router_stack = !!app._router?.stack;
-  const has_router2 = !!app.router;
-  const has_router2_stack = !!app.router?.stack;
-
-  res.json({
-    has_router,
-    has_router_stack,
-    router_stack_len: app._router?.stack?.length ?? null,
-    has_app_router: has_router2,
-    has_app_router_stack: has_router2_stack,
-    app_router_stack_len: app.router?.stack?.length ?? null,
-    app_keys: Object.keys(app).slice(0, 40),
-  });
-});
-
-app.get("/_debug/routes", (req, res) => {
-  const routes = [];
-
-  function walk(stack, prefix = "") {
-    for (const layer of stack || []) {
-      if (layer.route?.path) {
-        const methods = Object.keys(layer.route.methods || {})
-          .filter((m) => layer.route.methods[m])
-          .map((m) => m.toUpperCase());
-
-        routes.push({ path: prefix + layer.route.path, methods });
-      }
-
-      if (layer.name === "router" && layer.handle?.stack) {
-        let mount = "";
-        const s = layer.regexp?.toString?.() || "";
-        const m = s.match(/^\/\^\\\/(.+?)\\\/\?\(\?=\\\/\|\$\)\/i$/);
-        if (m?.[1]) mount = "/" + m[1].replace(/\\\//g, "/");
-
-        walk(layer.handle.stack, prefix + mount);
-      }
-    }
-  }
-
-  const rootStack = app._router?.stack || app.router?.stack || [];
-  walk(rootStack, "");
-
-  res.json({ routes });
-});
-
-app.get("/_debug/db", async (req, res) => {
-  const dbName = await db.query("select current_database() as db");
-  const schema = await db.query("select current_schema() as schema");
-  const idDefault = await db.query(`
-    SELECT table_schema, column_default
-    FROM information_schema.columns
-    WHERE table_name='users' AND column_name='id'
-    ORDER BY table_schema;
-  `);
-
-  res.json({
-    current_database: dbName.rows[0].db,
-    current_schema: schema.rows[0].schema,
-    users_id_defaults: idDefault.rows,
-  });
-});
-
-/**
- * ----------------------------
  * DB ping + server start
  * ----------------------------
  */
@@ -965,7 +859,7 @@ app.listen(PORT, "0.0.0.0", () => {
 
 /**
  * ----------------------------
- * Exports (must be after app/db exist)
+ * Exports
  * ----------------------------
  */
 export { app, db };

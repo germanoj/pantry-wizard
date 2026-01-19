@@ -184,7 +184,7 @@ export default function GenerateScreen() {
         </View>
       </View>
 
-      {/* ✅ Ingredients (main input stays at bottom) */}
+      {/* ✅ Ingredients */}
       <View style={styles.section}>
         <WizardBody style={[styles.label, { color: theme.textMuted }]}>
           Ingredients

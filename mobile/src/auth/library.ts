@@ -1,9 +1,12 @@
 import axios, { isAxiosError } from "axios";
+import { API_BASE_URL } from "@/src/config/api";
+import * as SecureStore from "expo-secure-store";
 
-const API = process.env.EXPO_PUBLIC_API_URL;
-//console.log("API baseURL:", API);
+const API = API_BASE_URL;
+console.log("API baseURL:", API);
 
-if (!API) throw new Error("Missing API");
+// Expo public env var guard
+if (!API) throw new Error("Missing EXPO_PUBLIC_API_BASE_URL");
 
 export type User = {
   id: string;
@@ -16,10 +19,10 @@ export type AuthError = {
   code?: string;
 };
 
-type AuthResponse = { 
-  token: string; 
+type AuthResponse = {
+  token: string;
   user?: User;
-}; 
+};
 
 const client = axios.create({
   baseURL: API,
@@ -31,43 +34,38 @@ function authHeaders(token: string) {
   return { Authorization: `Bearer ${token}` };
 }
 
-function getErrorMessage(err: unknown): AuthError { 
+function getErrorMessage(err: unknown): AuthError {
   if (isAxiosError(err)) {
     const data = err.response?.data as any;
     return {
-    message:
-      data?.message ||
-      data?.error ||
-      err.message ||
-      "Request failed",
-    code: data?.code,
+      message: data?.message || data?.error || err.message || "Request failed",
+      code: data?.code,
     };
   }
+
   return {
     message: err instanceof Error ? err.message : String(err),
   };
 }
 
-////////////
-//login API
-////////////
-
+// ===== login =====
 export async function apiLogin(email: string, password: string) {
   try {
     const res = await client.post<AuthResponse>("/auth/login", {
       email,
       password,
     });
+
+    // ✅ Persist token for later API calls (save recipes, fetch saved recipes)
+    await SecureStore.setItemAsync("authToken", res.data.token);
+
     return res.data;
   } catch (err) {
     throw getErrorMessage(err);
   }
 }
 
-//////////
-//register api
-//////////
-
+// ===== register =====
 export async function apiRegister(
   username: string,
   email: string,
@@ -79,18 +77,19 @@ export async function apiRegister(
       email,
       password,
     });
+
+    // ✅ Persist token (your server returns token on successful register)
+    await SecureStore.setItemAsync("authToken", res.data.token);
+
     return res.data;
   } catch (err) {
     throw getErrorMessage(err);
   }
 }
 
-
-///get user from token ////
-
+// ===== me =====
 export async function apiMe(token: string) {
   try {
-    // try one route first (fallback added below)
     const res = await client.get<User>("/auth/me", {
       headers: authHeaders(token),
     });
@@ -100,8 +99,7 @@ export async function apiMe(token: string) {
   }
 }
 
-////update username so users can change their name in the system!! ////
-
+// ===== update username =====
 export async function apiUpdateUsername(token: string, username: string) {
   try {
     const res = await client.patch<User>(
@@ -115,13 +113,12 @@ export async function apiUpdateUsername(token: string, username: string) {
   }
 }
 
-//deactivate api//
-
+// ===== deactivate =====
 export async function apiDeactivateAccount(token: string) {
   try {
     const res = await client.post<{ ok: boolean }>(
       "/users/me/deactivate",
-      {}, // no body
+      {},
       { headers: authHeaders(token) }
     );
     return res.data;
@@ -130,8 +127,7 @@ export async function apiDeactivateAccount(token: string) {
   }
 }
 
-
-//reactive api//
+// ===== reactivate =====
 export async function apiReactivate(email: string, password: string) {
   try {
     const res = await client.post<AuthResponse>("/auth/reactivate", {

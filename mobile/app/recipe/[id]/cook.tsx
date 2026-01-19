@@ -1,3 +1,4 @@
+import { Text } from "react-native";
 import React, { useMemo } from "react";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import SingleRecipeCard from "@/src/components/recipe-components/SingleRecipeCard";
@@ -22,7 +23,11 @@ export default function CookRecipeScreen() {
     <>
       {/* Consider headerShown: true if you want an easy back button */}
       <Stack.Screen options={{ headerShown: false }} />
-
+      <Text
+        style={{ fontSize: 22, padding: 16, backgroundColor: "yellow" as any }}
+      >
+        COOK SCREEN DEBUG
+      </Text>
       <SingleRecipeCard
         title={recipe.title}
         time={recipe.time}

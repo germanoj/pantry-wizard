@@ -1,6 +1,27 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
+
 import { getToken, setToken as saveToken, clearToken } from "./tokenStorage";
 import { apiMe, User } from "./library";
+
+async function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  let t: ReturnType<typeof setTimeout> | undefined;
+
+  const timeout = new Promise<never>((_, reject) => {
+    t = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+  });
+
+  try {
+    return await Promise.race([p, timeout]);
+  } finally {
+    if (t) clearTimeout(t);
+  }
+}
 
 type AuthContextValue = {
   token: string | null;
@@ -43,12 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         );
 
         if (!mounted) return;
-
-        if (saved !== null && saved !== undefined) {
-          setTokenState(saved);
-        } else {
-          setTokenState(null);
-        }
+        setTokenState(saved ?? null);
       } catch (e) {
         console.log("[Auth] loadToken: ERROR", e);
         if (!mounted) return;
@@ -67,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const refreshMe = async () => {
+  const refreshMe = useCallback(async () => {
     if (!token) return;
 
     try {
@@ -78,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.log("[Auth] refreshMe failed:", e);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     if (!token) {
@@ -86,18 +102,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     refreshMe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [token, refreshMe]);
 
   const signIn = async (newToken: string, newUser?: User | null) => {
     console.log("[Auth] signIn: start");
     setTokenState(newToken);
 
     try {
-      await saveToken(newToken);
+      // ✅ keep timeout so storage can't hang the UI
+      await withTimeout(saveToken(newToken), 1500, "saveToken()");
       console.log("[Auth] signIn: token saved");
     } catch (e) {
-      console.log("[Auth] signIn: saveToken failed", e);
+      console.log("[Auth] signIn: saveToken failed (or timed out)", e);
     }
 
     if (newUser) {
@@ -121,10 +137,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
 
     try {
-      await clearToken();
+      // ✅ keep timeout so storage can't hang the UI
+      await withTimeout(clearToken(), 1500, "clearToken()");
       console.log("[Auth] signOut: token cleared");
     } catch (e) {
-      console.log("[Auth] signOut: clearToken failed", e);
+      console.log("[Auth] signOut: clearToken failed (or timed out)", e);
     }
   };
 

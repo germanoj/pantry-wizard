@@ -1,45 +1,3 @@
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
-import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import "react-native-reanimated";
-import { View, Text } from "react-native";
-
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useFonts } from "expo-font";
-
-import { NotInterestedProvider } from "../src/state/NotInterestedContext";
-import { AuthProvider } from "../src/auth/AuthContext";
-import { SplashProvider } from "@/src/auth/SplashContext";
-import { AuthGate } from "../src/auth/AuthGate";
-import { GeneratedRecipesProvider } from "../src/state/GeneratedRecipesContext";
-import { ThemePreferenceProvider } from "@/src/theme/ThemePreferenceProvider";
-
-export const unstable_settings = {
-  anchor: "(tabs)",
-};
-
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
-  const [fontsLoaded] = useFonts({
-    Nunito: require("../assets/fonts/Nunito-Regular.ttf"),
-    NunitoSemiBold: require("../assets/fonts/Nunito-SemiBold.ttf"),
-    PrincessSofia: require("../assets/fonts/PrincessSofia-Regular.ttf"),
-    YuseiMagic: require("../assets/fonts/YuseiMagic-Regular.ttf"),
-  });
-
-  if (!fontsLoaded) {
-    return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <Text>Loading…</Text>
-      </View>
-    );
-  }
-
   return (
     <AuthProvider>
       <SplashProvider>
@@ -78,4 +36,3 @@ export default function RootLayout() {
       </SplashProvider>
     </AuthProvider>
   );
-}

@@ -3,8 +3,17 @@ import db from "#db/client";
 
 const PORT = process.env.PORT || 3000;
 
-await db.connect();
+async function start() {
+  try {
+    await db.connect();
 
-app.listen(PORT, () => {
-  console.log(`Listening on port ${PORT}...`);
-});
+    app.listen(PORT, () => {
+      console.log(`Listening on port ${PORT}...`);
+    });
+  } catch (err) {
+    console.error("Failed to connect to DB:", err);
+    process.exit(1);
+  }
+}
+
+start();

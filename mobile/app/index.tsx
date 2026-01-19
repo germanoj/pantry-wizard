@@ -4,9 +4,9 @@
 // 2 sparkle, poof animation
 // 3 pantry wizard logo appears
 // 4 buttons fade in (login, register, chat)
-// (no redirect, user chooses)
+// (no redirect, user chooses) — except when already authed (token)
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { View, Text, Pressable, StyleSheet, Platform } from "react-native";
 import { router } from "expo-router";
 import Animated, {
@@ -23,6 +23,7 @@ import { useSplash } from "@/src/auth/SplashContext";
 import { useAuth } from "@/src/auth/AuthContext";
 
 export default function IntroSplash() {
+  const isWeb = Platform.OS === "web";
   const [ready, setReady] = useState(false);
 
   // lottie refs
@@ -36,52 +37,57 @@ export default function IntroSplash() {
   const [showWand, setShowWand] = useState(true);
 
   // reanimated values
-  const logoOpacity = useSharedValue(0); //starts invisible, small and slightly lower (the y axis)
-  const logoScale = useSharedValue(0.2); //was .7, trying smaller start
-  const logoY = useSharedValue(24); //was 16, trying to start lower
+  const logoOpacity = useSharedValue(0); // starts invisible
+  const logoScale = useSharedValue(0.2); // starts small
+  const logoY = useSharedValue(24); // starts lower
 
   const actionsOpacity = useSharedValue(0);
   const actionsY = useSharedValue(12);
-
   const wandOpacity = useSharedValue(1);
 
-  //for redirecting away from splash screen
   const { setSplashDone } = useSplash();
   const { token, isLoading } = useAuth();
 
+  // reset when screen mounts
   useEffect(() => {
-    setSplashDone(false); // prevents authgate thinking splash mount is done each time
-    setReady(false); // optional: also reset buttons
+    setSplashDone(false);
+    setReady(false);
   }, [setSplashDone]);
 
-  //timeline
+  // Timeline: reveal logo, then actions (only if logged out)
   const startLogoTimeline = useCallback(() => {
-    //logo animation
-    logoOpacity.value = withDelay(40, withTiming(1, { duration: 220 })); //duration is ms, was 450
+    // logo animation
+    logoOpacity.value = withDelay(40, withTiming(1, { duration: 220 }));
     logoScale.value = withSequence(
-      withTiming(1.28, { duration: 420, easing: Easing.out(Easing.back(2.2)) }), //this increases it a little and then shrinks back, was 1.6
+      withTiming(1.28, {
+        duration: 420,
+        easing: Easing.out(Easing.back(2.2)),
+      }),
       withTiming(1, { duration: 240, easing: Easing.out(Easing.cubic) })
     );
-    logoY.value = withTiming(0, { duration: 420, easing: Easing.out(Easing.cubic) });
+    logoY.value = withTiming(0, {
+      duration: 420,
+      easing: Easing.out(Easing.cubic),
+    });
 
-    //actions if logged out , prevents seeing buttons DoNT TOUCH!!!!
+    // actions only when logged out
     if (!token) {
-      actionsOpacity.value = withDelay(450, withTiming(1, { duration: 350 })); //buttons fade in after the logo
+      actionsOpacity.value = withDelay(450, withTiming(1, { duration: 350 }));
       actionsY.value = withDelay(450, withTiming(0, { duration: 350 }));
-    } 
+    }
 
-    // Mark splash done + route decisions
-    setTimeout(
-      () => {
-        setSplashDone(true); //when splash and logo are done
-        if (!token) {
-          setReady(true); //only show button options if lohhed out
-        } else {
-          router.replace("/(tabs)");
-        }
-      },
-      token ? 700 : 850
-    ); // ready becomes true after UI, if token the movement is quicker
+    const t = setTimeout(() => {
+      setSplashDone(true);
+
+      if (!token) {
+        setReady(true);
+      } else {
+        // redirect away from splash when already authed
+        router.replace("/(tabs)/chatBot");
+      }
+    }, token ? 700 : 850);
+
+    return () => clearTimeout(t);
   }, [
     token,
     setSplashDone,
@@ -92,36 +98,28 @@ export default function IntroSplash() {
     actionsY,
   ]);
 
-  // Web fallback: no lottie timeline; show UI immediately
+  // Web: skip lottie; show UI immediately (prevents infinite splash)
   useEffect(() => {
-    if (Platform.OS !== "web") return;
     if (isLoading) return;
+    if (!isWeb) return;
 
-    // Hide lottie layers (they won't render on web anyway)
     setShowWand(false);
     setShowSparkles(false);
     setShowPoof(false);
 
-    // Show UI immediately
-    logoOpacity.value = withTiming(1, { duration: 0 });
-    logoScale.value = withTiming(1, { duration: 0 });
-    logoY.value = withTiming(0, { duration: 0 });
+    logoOpacity.value = 1;
+    logoScale.value = 1;
+    logoY.value = 0;
 
-    if (!token) {
-  actionsOpacity.value = withTiming(1, { duration: 0 });
-  actionsY.value = withTiming(0, { duration: 0 });
-  setReady(true);
-} else {
-  actionsOpacity.value = withTiming(0, { duration: 0 });
-  actionsY.value = withTiming(12, { duration: 0 });
-  // optionally: router.replace("/(tabs)");
-}
-setSplashDone(true);
+    actionsOpacity.value = token ? 0 : 1;
+    actionsY.value = token ? 20 : 0;
 
+    setSplashDone(true);
 
-    // Optional: if you WANT auto-redirect when logged in on web, do it explicitly:
-    // if (token) router.replace("/(tabs)/chatBot");
+    if (token) router.replace("/(tabs)/chatBot");
+    else setReady(true);
   }, [
+    isWeb,
     isLoading,
     token,
     setSplashDone,
@@ -132,49 +130,39 @@ setSplashDone(true);
     actionsY,
   ]);
 
-  // Native: kick off wand animation when auth state is known
+  // Native: when auth state is known, kick off wand (or skip if authed)
   useEffect(() => {
-    if (Platform.OS === "web") return;
+    if (isWeb) return;
     if (isLoading) return;
 
-    // reset visibility in case you ever revisit this screen
+    if (token) {
+      setSplashDone(true);
+      router.replace("/(tabs)/chatBot");
+      return;
+    }
+
+    // reset visibility in case you revisit this screen
     setShowWand(true);
     setShowSparkles(false);
     setShowPoof(false);
 
     wandOpacity.value = withTiming(1, { duration: 0 });
     wandRef.current?.play();
-  }, [isLoading, wandOpacity]);
+  }, [isWeb, isLoading, token, setSplashDone, wandOpacity]);
 
-  // Failsafe: if lottie never finishes, still proceed
+  // Native failsafe: if lottie never finishes, still proceed
   useEffect(() => {
-    if (Platform.OS === "web") return;
+    if (isWeb) return;
     if (isLoading) return;
+    if (token) return;
 
     const t = setTimeout(() => {
-      // only trigger if we’re still not ready / not navigated
       startLogoTimeline();
-      if (!token) setReady(true);
+      // don't setReady(true) here; the timeline will handle it
     }, 2500);
 
     return () => clearTimeout(t);
-  }, [isLoading, startLogoTimeline, token]);
-  {
-    /*
-  // Failsafe: if lottie callback never fires, still show UI.
-  useEffect(() => {
-    if (Platform.OS === "web") return;
-    const t = setTimeout(() => {
-      setReady((prev) => {
-        if (prev) return prev;
-        startLogoTimeline();
-        return true;
-      });
-    }, 2500);
-
-    return () => clearTimeout(t);
-  }, []); */
-  }
+  }, [isWeb, isLoading, token, startLogoTimeline]);
 
   const logoStyle = useAnimatedStyle(() => ({
     opacity: logoOpacity.value,
@@ -193,7 +181,7 @@ setSplashDone(true);
   return (
     <View style={styles.container}>
       {/* Wand (native only) */}
-      {showWand && Platform.OS !== "web" && (
+      {showWand && !isWeb && (
         <Animated.View
           style={[StyleSheet.absoluteFill, wandStyle]}
           pointerEvents="none"
@@ -224,7 +212,7 @@ setSplashDone(true);
       )}
 
       {/* Sparkles (native only) */}
-      {showSparkles && Platform.OS !== "web" && (
+      {showSparkles && !isWeb && (
         <View pointerEvents="none" style={StyleSheet.absoluteFill}>
           <LottieView
             ref={sparklesRef}
@@ -237,7 +225,7 @@ setSplashDone(true);
       )}
 
       {/* Poof (native only) */}
-      {showPoof && Platform.OS !== "web" && (
+      {showPoof && !isWeb && (
         <View pointerEvents="none" style={styles.poofWrap}>
           <LottieView
             ref={poofRef}
@@ -255,7 +243,7 @@ setSplashDone(true);
         <Text style={styles.logoText}>🧙 Pantry Wizard</Text>
       </Animated.View>
 
-      {/* Actions replace instead of router.push prevents swiping back to the splash screen */}
+      {/* Actions */}
       <Animated.View style={[styles.actions, actionsStyle]}>
         <Pressable
           disabled={!ready}
@@ -304,7 +292,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   logoText: {
-    fontSize: 36, //46-56 will give that big pop feel
+    fontSize: 36, // 46–56 will give that big pop feel
     fontWeight: "800",
     color: "white",
   },

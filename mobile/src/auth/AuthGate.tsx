@@ -6,65 +6,66 @@ import LoadingScreen from "@/src/components/LoadingScreen";
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { token, isLoading } = useAuth();
-  const {splashDone} = useSplash();
+  const { splashDone } = useSplash();
 
   const router = useRouter();
   const segments = useSegments();
 
-  const first = segments[0];
-  const second = segments[1];
+  const first = segments?.[0];
+  const second = segments?.[1];
+
+  const isIntroRoot = !first; // app/ index splash screen
   const isAuthGroup = first === "(auth)";
   const isTabsGroup = first === "(tabs)";
-  const atRoot = !first;
+  const isGenerate = first === "generate";
 
   useEffect(() => {
-    //dont run any redirects until auth loads
+    // don't run any redirects until auth loads
     if (isLoading) return;
-    
 
-    //const first = segments[0]; // "(tabs)", "(auth)", undefined
-    //const second = segments[1]; // "chatBot", "saved", etc.
-
-    //const isAuthGroup = first === "(auth)";
-    //const isTabsGroup = first === "(tabs)";
-    //const atRoot = !first; //this is the app/ index splash screen 
-
-    // logged-out allowed:
-    //const isIntroRoot = !first; // root index screen
-    const isGenerate = first === "generate";
-
-    const guestAllowedTabs = new Set(["index", "chatBot", "profile", "saved"]);
+    // logged-out allowed tabs (keep aligned with Tabs layout rules)
+    const guestAllowedTabs = new Set(["index", "chatBot", "profile"]);
     const isGuestAllowedTab =
       isTabsGroup && guestAllowedTabs.has(String(second));
 
-      //logged out users
+    // ✅ LOGGED OUT USERS
     if (!token) {
-      //if (isIntroRoot) return;
-      //if (isAuthGroup) return;
-      if (atRoot) return; //splash allowed
-      if (isAuthGroup) return; //login/reg allowed
+      if (isIntroRoot) return; // splash allowed
+      if (isAuthGroup) return; // login/reg allowed
       if (isGuestAllowedTab) return;
       if (isGenerate) return;
 
-      router.replace("/"); //sends to splash screen
+      // Block everything else for logged-out users: send to splash
+      router.replace("/");
       return;
     }
 
-    // logged in: keep out of auth pages
-    if (atRoot) {
+    // ✅ LOGGED IN USERS
+    // If we're on the intro root, wait for splash to finish before routing to tabs
+    if (isIntroRoot) {
       if (splashDone) router.replace("/(tabs)");
       return;
     }
 
+    // Keep logged-in users out of auth pages
     if (isAuthGroup) {
       router.replace("/(tabs)");
       return;
     }
-  }, [token, isLoading, splashDone, first, second, atRoot, isAuthGroup, isTabsGroup, router]);
+  }, [
+    token,
+    isLoading,
+    splashDone,
+    router,
+    isIntroRoot,
+    isAuthGroup,
+    isTabsGroup,
+    isGenerate,
+    second,
+  ]);
 
-  if (isLoading && !atRoot) {
-    return <LoadingScreen />;
-  }
+  // While auth initializes, let the intro splash render (no loading overlay).
+  if (isLoading && !isIntroRoot) return <LoadingScreen />;
 
   return <>{children}</>;
 }

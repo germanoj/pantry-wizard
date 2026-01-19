@@ -7,7 +7,10 @@ import {
   Image,
   Pressable,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 import { useTheme } from "@/src/theme/usetheme";
 import { ui } from "@/src/theme/theme";
@@ -54,6 +57,7 @@ export default function SingleRecipeCard({
   onBottomSecondaryAction,
 }: SingleRecipeCardProps) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
 
   // Only show footer if it has both label + handler
   const hasPrimaryBottomAction = !!bottomActionLabel && !!onBottomAction;
@@ -68,7 +72,8 @@ export default function SingleRecipeCard({
         contentContainerStyle={[
           styles.content,
           isNotInterested && styles.notInterested,
-          hasBottomBar && { paddingBottom: 120 }, // avoid overlapping footer
+          // avoid overlapping footer + account for safe area
+          hasBottomBar && { paddingBottom: 140 + insets.bottom },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -188,7 +193,13 @@ export default function SingleRecipeCard({
         <View
           style={[
             styles.bottomBar,
-            { borderTopColor: theme.border, backgroundColor: theme.surface },
+            {
+              borderTopColor: theme.border,
+              backgroundColor: theme.surface,
+              paddingBottom: ui.spacing.sm + insets.bottom, // ✅ safe area
+              zIndex: 9999,
+              elevation: 9999,
+            },
           ]}
         >
           <View style={styles.bottomRow}>
@@ -263,7 +274,7 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    marginTop: 0, // WizardTitle default adds marginTop; detail screen doesn't need extra
+    marginTop: 0,
   },
 
   time: {
@@ -328,7 +339,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: ui.spacing.md,
     paddingTop: ui.spacing.sm,
-    paddingBottom: ui.spacing.sm,
     borderTopWidth: 1,
   },
 
