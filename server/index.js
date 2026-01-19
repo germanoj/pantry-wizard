@@ -112,7 +112,9 @@ async function uploadPngDataUrlToCloudinary(dataUrl, publicId) {
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
-  console.warn("⚠️ Missing JWT_SECRET in server .env (auth will fail until set).");
+  console.warn(
+    "⚠️ Missing JWT_SECRET in server .env (auth will fail until set)."
+  );
 }
 
 function signToken(userId) {
@@ -192,7 +194,9 @@ console.log(
  * ----------------------------
  */
 function placeholderImageUrl(title = "recipe") {
-  const safe = String(title).toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const safe = String(title)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-");
   return `https://via.placeholder.com/1024?text=${encodeURIComponent(safe)}`;
 }
 
@@ -224,7 +228,10 @@ function withTimeout(promise, ms, label) {
   return Promise.race([
     promise,
     new Promise((_, reject) =>
-      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+      setTimeout(
+        () => reject(new Error(`${label} timed out after ${ms}ms`)),
+        ms
+      )
     ),
   ]);
 }
@@ -277,11 +284,15 @@ app.post("/auth/register", async (req, res) => {
     const { username, email, password } = req.body ?? {};
 
     if (!username || !email || !password) {
-      return res.status(400).json({ message: "username, email, password required" });
+      return res
+        .status(400)
+        .json({ message: "username, email, password required" });
     }
 
     if (String(password).length < 8) {
-      return res.status(400).json({ message: "password must be at least 8 characters" });
+      return res
+        .status(400)
+        .json({ message: "password must be at least 8 characters" });
     }
 
     const uname = String(username).trim();
@@ -293,7 +304,9 @@ app.post("/auth/register", async (req, res) => {
     );
 
     if (existing.rowCount > 0) {
-      return res.status(409).json({ message: "Email or username already in use" });
+      return res
+        .status(409)
+        .json({ message: "Email or username already in use" });
     }
 
     const hash = await bcrypt.hash(String(password), 10);
@@ -576,7 +589,11 @@ app.post("/api/generate", (req, res) => {
             title: "Chef’s Choice",
             ingredientsUsed: pantry.slice(0, 6),
             missingIngredients: ["protein", "vegetable", "sauce"],
-            steps: ["Choose a protein.", "Choose a vegetable.", "Cook and combine."],
+            steps: [
+              "Choose a protein.",
+              "Choose a vegetable.",
+              "Cook and combine.",
+            ],
             timeMinutes: 25,
           },
         ];
@@ -599,7 +616,9 @@ app.post("/api/generate-ai", async (req, res) => {
     }
 
     if (!process.env.OPENAI_API_KEY) {
-      return res.status(500).json({ error: "OPENAI_API_KEY not set on server" });
+      return res
+        .status(500)
+        .json({ error: "OPENAI_API_KEY not set on server" });
     }
 
     const pref = preferences || {};
@@ -692,7 +711,9 @@ Return ONLY valid JSON in this exact shape:
 
     if (!parsed || !Array.isArray(parsed.recipes)) {
       console.error("❌ Unexpected AI response shape:", parsed);
-      return res.status(500).json({ error: "AI returned unexpected JSON shape" });
+      return res
+        .status(500)
+        .json({ error: "AI returned unexpected JSON shape" });
     }
 
     for (const r of parsed.recipes ?? []) {
@@ -770,7 +791,14 @@ app.post("/api/user-recipes", requireUser, async (req, res) => {
     );
 
     const recipeId = inserted.rows[0].id;
-
+    console.log(
+      "[SAVE] inserted recipeId =",
+      recipeId,
+      "userId =",
+      userId,
+      "title =",
+      title
+    );
     await db.query(
       `INSERT INTO favorites (user_id, recipe_id)
        VALUES ($1, $2)
@@ -789,6 +817,13 @@ app.delete("/api/user-recipes/:id", requireUser, async (req, res) => {
   try {
     const userId = getUserId(req);
     const { id: recipeId } = req.params;
+
+    console.log(
+      "[UNSAVE] requested delete recipeId =",
+      recipeId,
+      "userId =",
+      userId
+    );
 
     const result = await db.query(
       `

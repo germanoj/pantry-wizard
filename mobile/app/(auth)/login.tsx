@@ -7,8 +7,7 @@ import { apiLogin, apiReactivate } from "@/src/auth/library";
 
 // These appear in your teammate's version; keep if they exist in your project
 import { Card } from "@/src/components/Card";
-import { WizardBody } from "@/src/components/WizardText";
-import { WizardButton } from "@/src/components/WizardButton";
+import { WizardBody, WizardButton } from "@/src/components/WizardText";
 import { useTheme } from "@/src/theme/usetheme";
 
 export default function LoginScreen() {
@@ -87,7 +86,11 @@ export default function LoginScreen() {
           }}
         />
 
-        <WizardButton onPress={onLogin} disabled={loading} style={{ marginTop: 12 }}>
+        <WizardButton
+          onPress={onLogin}
+          disabled={loading}
+          style={{ marginTop: 12 }}
+        >
           <WizardBody style={{ color: theme.primaryText }}>
             {loading ? "Casting spell..." : "Accio"}
           </WizardBody>
@@ -116,7 +119,10 @@ export default function LoginScreen() {
 
                 router.replace("/(tabs)/profile");
               } catch (err: any) {
-                Alert.alert("Reactivation failed", err?.message ?? "Try again.");
+                Alert.alert(
+                  "Reactivation failed",
+                  err?.message ?? "Try again."
+                );
               } finally {
                 setLoading(false);
               }
