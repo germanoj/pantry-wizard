@@ -6,6 +6,7 @@ export type GeneratedRecipe = Recipe & { _id: string };
 type Ctx = {
   recipes: GeneratedRecipe[];
   setRecipes: (r: GeneratedRecipe[]) => void;
+  clearRecipes: () => void;
   getById: (id: string) => GeneratedRecipe | undefined;
 };
 
@@ -22,6 +23,7 @@ export function GeneratedRecipesProvider({
     () => ({
       recipes,
       setRecipes,
+      clearRecipes: () => setRecipes([]),
       getById: (id: string) => recipes.find((x) => x._id === id),
     }),
     [recipes]
