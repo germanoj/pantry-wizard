@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   StyleSheet,
@@ -11,10 +11,11 @@ import {
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import LoadingScreen from "@/src/components/LoadingScreen";
 import { useTheme } from "@/src/theme/usetheme";
 import { WizardTitle, WizardBody } from "@/src/components/WizardText";
-import { useGeneratedRecipes } from "../../src/state/GeneratedRecipesContext";
+import { useGeneratedRecipes } from "@/src/state/GeneratedRecipesContext";
 import { saveUiRecipe } from "@/src/lib/saveRecipeAction";
 
 export default function RecipeDetailsScreen() {
@@ -22,7 +23,10 @@ export default function RecipeDetailsScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { getById } = useGeneratedRecipes();
+
   const [showSavingOverlay, setShowSavingOverlay] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [didSave, setDidSave] = useState(false); // local-only, screen-lifetime
 
   const recipe = getById(String(id));
 
@@ -47,35 +51,8 @@ export default function RecipeDetailsScreen() {
     : [];
   const steps = Array.isArray(recipe.steps) ? recipe.steps : [];
 
-  const [isSaved, setIsSaved] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  // Build a stable “signature” for this recipe in THIS session.
-  // (Better: use recipe.id as a stable key; see notes below.)
-  const recipeKey = useMemo(() => {
-    const title = recipe.title ?? "";
-    const used = ingredientsUsed.join("|");
-    const miss = missingIngredients.join("|");
-    const st = steps.join("|");
-    return `${title}::${recipe.timeMinutes ?? ""}::${used}::${miss}::${st}`;
-  }, [
-    recipe.title,
-    recipe.timeMinutes,
-    ingredientsUsed,
-    missingIngredients,
-    steps,
-  ]);
-
-  useEffect(() => {
-    // Session-only saved memory (prevents re-save while you stay in the app)
-    // This relies on saveUiRecipe remembering recipe keys.
-    // We'll add that in saveRecipeAction next.
-    const already = saveUiRecipe.hasSaved?.(recipeKey);
-    if (already) setIsSaved(true);
-  }, [recipeKey]);
-
   const onPressSave = async () => {
-    if (isSaved) {
+    if (didSave) {
       Alert.alert("Already saved", "This recipe has already been saved.");
       return;
     }
@@ -85,20 +62,17 @@ export default function RecipeDetailsScreen() {
     setShowSavingOverlay(true);
 
     try {
+      // ✅ Keep payload aligned with existing UiRecipe shape in your project.
+      // If your saveUiRecipe expects only these fields, this will compile cleanly.
       await saveUiRecipe({
-        title: recipe.title,
-        time: `${recipe.timeMinutes} min`,
+        title: recipe.title ?? "Untitled",
+        time: recipe.timeMinutes ? `${recipe.timeMinutes} min` : "",
         ingredients: ingredientsUsed,
         steps,
-        imageUrl: recipe.imageUrl,
-      });
+      } as any);
 
-      setIsSaved(true);
-
-      // Hide loader BEFORE alert so the alert is visible
+      setDidSave(true);
       setShowSavingOverlay(false);
-
-      // If saveUiRecipe already shows "Saved!" alert, remove this line.
       Alert.alert("Saved!", `'${recipe.title}' was saved.`);
     } catch (e: any) {
       setShowSavingOverlay(false);
@@ -121,9 +95,11 @@ export default function RecipeDetailsScreen() {
 
         {!!img && <Image source={img} style={styles.hero} />}
 
-        <WizardBody style={{ color: theme.textMuted }}>
-          {recipe.timeMinutes} min
-        </WizardBody>
+        {!!recipe.timeMinutes && (
+          <WizardBody style={{ color: theme.textMuted }}>
+            {recipe.timeMinutes} min
+          </WizardBody>
+        )}
 
         <WizardTitle style={styles.sectionTitle}>Ingredients</WizardTitle>
 
@@ -169,15 +145,15 @@ export default function RecipeDetailsScreen() {
           style={({ pressed }) => [
             styles.saveBtn,
             { backgroundColor: theme.primary },
-            isSaved && { opacity: 0.7 },
-            pressed && !isSaved && { opacity: 0.9 },
+            didSave && { opacity: 0.7 },
+            pressed && !didSave && { opacity: 0.9 },
           ]}
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="Save Recipe"
         >
           <Text style={[styles.saveBtnText, { color: theme.primaryText }]}>
-            {isSaved ? "Recipe Saved" : saving ? "Saving..." : "Save Recipe"}
+            {didSave ? "Recipe Saved" : saving ? "Saving..." : "Save Recipe"}
           </Text>
         </Pressable>
       </View>

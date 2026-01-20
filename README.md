@@ -1,11 +1,9 @@
 # Pantry Wizard 🧙‍♂️
 
-Pantry Wizard is an iOS mobile app that helps answer the question:
+Pantry Wizard is a mobile-first iOS app that helps answer the question:
 **"What should I make for dinner?"**
 
-Pantry Wizard is a mobile-first, AI-powered recipe generator that helps users create meal ideas based on the ingredients they already have. By entering pantry items and optional preferences, users receive structured, AI-generated recipes designed to reduce food waste and simplify meal planning.
-
-This project was built as a full-stack capstone application, with a deployed backend, real AI integration, and a React Native mobile frontend.
+Users enter the ingredients they have on hand and optional preferences to receive structured, AI-generated recipes—reducing food waste and simplifying meal planning.
 
 ---
 
@@ -38,7 +36,7 @@ This project was built as a full-stack capstone application, with a deployed bac
 - Cloudinary (image handling)
 
 **Deployment**
-- Render (backend/frontend hosting)
+- Render (backend API hosting)
 
 ---
 
@@ -51,6 +49,37 @@ This project was built as a full-stack capstone application, with a deployed bac
 5. The frontend renders the results as mobile-friendly recipe cards.
 
 ---
+
+## 📚 What I Learned
+
+- Designing and deploying a full-stack application
+- Integrating AI APIs into a real user workflow
+- Managing environment variables across local and deployed environments
+- Structuring backend APIs for mobile clients
+- Debugging real-world deployment and networking issues
+
+## 📌 Project Status
+
+Core functionality is complete and the project is considered production-complete for its intended scope.
+
+## 🤝 Team Contributions
+
+This project was built collaboratively as a team capstone. Primary areas of contribution are outlined below.
+
+### Jerrad Germano
+- Backend architecture and API development (Node.js, Express)
+- PostgreSQL database design and integration
+- OpenAI API integration and structured recipe parsing
+- Backend deployment and environment configuration (Render)
+- API debugging, networking, and deployment troubleshooting
+- Frontend–backend integration and API client configuration
+- Overall project architecture and technical direction
+
+### Hayley McVicar
+- 
+
+### Matt Zaleta
+- 
 
 ## ⚙️ Running the Project Locally
 

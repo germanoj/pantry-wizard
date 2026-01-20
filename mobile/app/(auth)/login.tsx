@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { View, StyleSheet, Alert,TextInput, Keyboard } from "react-native";
+import { View, StyleSheet, Alert, TextInput, Keyboard } from "react-native";
 import { Link, router } from "expo-router";
 
 import { useTheme } from "@/src/theme/usetheme";
