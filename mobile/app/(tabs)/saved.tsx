@@ -7,7 +7,11 @@ import {
   Pressable,
   Alert,
   Image,
+  ScrollView, 
+  Platform,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import SavedRecipeCard from "@/src/components/recipe-components/SavedRecipeCard";
@@ -38,6 +42,8 @@ type SavedRecipe = {
 
 export default function SavedRecipes() {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
+
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -140,45 +146,56 @@ export default function SavedRecipes() {
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
-      <FlatList
-        data={recipes}
-        keyExtractor={(item) => item.id}
-        showsVerticalScrollIndicator={false}
+      <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: ui.spacing.xl ?? ui.spacing.lg },
+          { paddingTop: insets.top + 16 },
+          { flexGrow: 1, width: "100%"},
         ]}
-        ListHeaderComponent={Header}
-        ItemSeparatorComponent={() => (
-          <View style={{ height: ui.spacing.md }} />
-        )}
-        ListEmptyComponent={
-          <Card>
-            <WizardTitle>No saved recipes yet</WizardTitle>
-            <WizardBody style={{ marginTop: 8 }}>
-              Save something from your recipe results to see it here.
-            </WizardBody>
-
-            <WizardButton
-              style={{ marginTop: 12 }}
-              onPress={() => router.replace("/(tabs)/recipes")}
-            >
-              <WizardBody style={{ color: theme.text }}>
-                Go to recipes
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+        showsVerticalScrollIndicator={false}
+      >
+        <FlatList
+          data={recipes}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: ui.spacing.xl ?? ui.spacing.lg },
+          ]}
+          ListHeaderComponent={Header}
+          ItemSeparatorComponent={() => (
+            <View style={{ height: ui.spacing.md }} />
+          )}
+          ListEmptyComponent={
+            <Card>
+              <WizardTitle>No saved recipes yet</WizardTitle>
+              <WizardBody style={{ marginTop: 8 }}>
+                Save something from your recipe results to see it here.
               </WizardBody>
-            </WizardButton>
-          </Card>
-        }
-        renderItem={({ item }) => (
-          <SavedRecipeCard
-            title={item.title}
-            timeMinutes={item.timeMinutes}
-            imageUrl={item.imageUrl}
-            onPress={() => router.push(`/saved/(details)/${item.id}`)}
-            onRemove={() => onDeleteRecipe(item.id)}
-          />
-        )}
-      />
+
+              <WizardButton
+                style={{ marginTop: 12 }}
+                onPress={() => router.replace("/(tabs)/recipes")}
+              >
+                <WizardBody style={{ color: theme.text }}>
+                  Go to recipes
+                </WizardBody>
+              </WizardButton>
+            </Card>
+          }
+          renderItem={({ item }) => (
+            <SavedRecipeCard
+              title={item.title}
+              timeMinutes={item.timeMinutes}
+              imageUrl={item.imageUrl}
+              onPress={() => router.push(`/saved/(details)/${item.id}`)}
+              onRemove={() => onDeleteRecipe(item.id)}
+            />
+          )}
+        />
+      </ScrollView>  
     </View>
   );
 }

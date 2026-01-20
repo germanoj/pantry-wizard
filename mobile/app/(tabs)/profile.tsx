@@ -25,7 +25,7 @@ export default function ProfilePage() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
-  const {preference, setPreference, toggleDarkMode, isHydrated} = useThemePreference();
+  const {preference, setPreference, isHydrated} = useThemePreference();
   const { token, user, signOut, setUser } = useAuth();
 
   const [showLogout, setShowLogout] = useState(false);
