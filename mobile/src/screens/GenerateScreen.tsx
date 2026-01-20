@@ -123,7 +123,9 @@ export default function GenerateScreen() {
               <WizardButton
                 key={opt.value}
                 onPress={() => setMealType(opt.value)}
-                style={[
+                variant="surface"
+                fullWidth={false}
+                style={({pressed}) => [
                   styles.pill,
                   {
                     borderColor: selected ? theme.text : theme.border,
@@ -131,6 +133,7 @@ export default function GenerateScreen() {
                       ? "rgba(255,255,255,0.08)"
                       : "transparent",
                   },
+                  pressed && { opacity: 0.85},
                 ]}
               >
                 <WizardBody
@@ -138,7 +141,6 @@ export default function GenerateScreen() {
                     color: theme.text,
                     fontSize: 13,
                     fontWeight: selected ? "700" : "600",
-                    marginTop: 0,
                   }}
                 >
                   {opt.label}
@@ -215,8 +217,13 @@ export default function GenerateScreen() {
         />
       </View>
 
-      <WizardButton onPress={onGenerate} loading={loading}>
-        <WizardBody style={{ color: "white", fontSize: 16, fontWeight: "700", marginTop: 0 }}>
+      <WizardButton 
+        onPress={onGenerate} 
+        loading={loading}
+        variant="primary"
+        fullWidth
+        style= {{marginTop: 12}}>
+        <WizardBody style={{ color: theme.primaryText, fontSize: 16, fontWeight: "700", textAlign: "center", width: "100%" }}>
           {loading ? "Brewing..." : "Summon!"}
         </WizardBody>
       </WizardButton>

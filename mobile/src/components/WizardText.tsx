@@ -76,9 +76,13 @@ export const WizardInput = forwardRef<TextInput, TextInputProps> (
 );
 
 /////////////BUTTON////////////
+type WizardButtonVariant = "primary" | "surface" | "danger";
+
 type WizardButtonProps = PressableProps & {
   loading?: boolean;
   children: React.ReactNode;
+  variant?: WizardButtonVariant;
+  fullWidth?: boolean;
 };
 
 export function WizardButton({
@@ -86,26 +90,54 @@ export function WizardButton({
   children,
   style,
   disabled,
+  variant = "surface",
+  fullWidth = true,
   ...rest
 }: WizardButtonProps) {
   const theme = useTheme();
 
+  const isDisabled = disabled || loading;
+
+  const variantStyle: ViewStyle =
+    variant === "primary"
+      ? {
+          backgroundColor: theme.primary,
+          borderColor: theme.primary,
+        }
+      : variant === "danger"
+      ? {
+          backgroundColor: theme.surface2,
+          borderColor: theme.danger,
+        }
+      : {
+          // "surface"
+          backgroundColor: theme.surface2,
+          borderColor: theme.border,
+        };
+
   const baseStyle: StyleProp<ViewStyle> = [
-    styles.button,
-    { backgroundColor: theme.primary, opacity: disabled || loading ? 0.6 : 1 },
+   {
+      width: fullWidth ? "100%" : undefined,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      borderRadius: 16,
+      alignItems: "center",
+      borderWidth: 1,
+    },
+    variantStyle,
   ];
 
   return (
     <Pressable
       {...rest}
-      disabled={disabled || loading}
+      disabled={isDisabled}
       style={(state: PressableStateCallbackType) => {
         const userStyle =
           typeof style === "function" ? style(state) : style;
 
         return [
           baseStyle,
-          state.pressed && { opacity: 0.85 },
+          state.pressed && !isDisabled && { opacity: 0.75, transform: [{ scale: 0.99 }] },
           userStyle,
         ];
       }}
