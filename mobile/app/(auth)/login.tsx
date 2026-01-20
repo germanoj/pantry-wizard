@@ -178,4 +178,5 @@ const styles = StyleSheet.create({
   button: { width: "100%" },
   buttonText: { fontSize: 16, fontWeight: "600" },
   linkRow: { marginTop: 12, fontSize: 14 },
+  link: {},
 });
