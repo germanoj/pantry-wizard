@@ -8,11 +8,12 @@ import { Text,
   PressableProps, 
   PressableStateCallbackType,
   StyleProp,
-  ViewStyle, 
+  ViewStyle,
+  Keyboard, 
 } from "react-native";
 import { useTheme } from "@/src/theme/usetheme";
 import { Card } from "@/src/components/Card";
-import React, { useState } from "react";
+import React, { useState, forwardRef } from "react";
 
 //////////TEXT///////////
 
@@ -45,27 +46,34 @@ export function WizardBody(props: TextProps) {
 
 //////////INPUT////////
 
-export function WizardInput(props: TextInputProps) {
+export const WizardInput = forwardRef<TextInput, TextInputProps> (
+  function WizardInput(props, ref) {
   const theme = useTheme();
   const [focused, setFocused] = useState(false);
 
   return (
     <TextInput
       {...props}
-      onFocus = {()=> setFocused(true)}
+      ref={ref}
+      onFocus={() => setFocused(true)}
       onBlur = {()=> setFocused(false)}
       placeholderTextColor={theme.textMuted}
       selectionColor={theme.accent}   // cursor + selection color
       style={[
-        styles.input,
         {
-        borderColor: focused ? theme.accent : theme.border,
-        color: theme.text,
+          borderWidth: 1,
+          borderRadius: 10,
+          padding: 12,
+          marginTop: 12,
+          borderColor: focused ? theme.accent : theme.border,
+          color: theme.text,
         },
+        props.style,
       ]}
     />
   );
 }
+);
 
 /////////////BUTTON////////////
 type WizardButtonProps = PressableProps & {

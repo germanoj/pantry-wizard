@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { useState, useRef } from "react";
+import { View, StyleSheet, Alert,TextInput, Keyboard } from "react-native";
 import { Link, router } from "expo-router";
 
 import { useTheme } from "@/src/theme/usetheme";
@@ -19,12 +19,16 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const passwordRef = useRef<TextInput>(null);
+
   const { signIn } = useAuth();
 
   const [canReactivate, setCanReactivate] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const onLogin = async () => {
+    if (loading) return;
+    Keyboard.dismiss();
     if (!email || !password) {
       Alert.alert("Missing info", "Email and password are required.");
       return;
@@ -78,14 +82,19 @@ export default function LoginPage() {
           placeholder="email"
           autoCapitalize="none"
           keyboardType="email-address"
+          returnKeyType="next"
+          onSubmitEditing={() => passwordRef.current?.focus()}
           style={styles.input}
         />
 
         <WizardInput
+          ref={passwordRef}
           value={password}
           onChangeText={setPassword}
           placeholder="password"
           secureTextEntry
+          returnKeyType="done"
+          onSubmitEditing={onLogin}
           style={styles.input}
         />
 
@@ -160,20 +169,13 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#fff",
     padding: 20,
   },
   input: {
     width: "100%",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 12,
-    padding: 12,
-    fontSize: 16,
     marginTop: 10,
   },
   button: { width: "100%" },
   buttonText: { fontSize: 16, fontWeight: "600" },
   linkRow: { marginTop: 12, fontSize: 14 },
-  link: {},
 });
