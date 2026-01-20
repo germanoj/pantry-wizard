@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -15,7 +15,7 @@ import LoadingScreen from "@/src/components/LoadingScreen";
 import { useTheme } from "@/src/theme/usetheme";
 import { WizardTitle, WizardBody } from "@/src/components/WizardText";
 import { useGeneratedRecipes } from "../../src/state/GeneratedRecipesContext";
-import { saveUiRecipe } from "@/src/lib/saveRecipeAction";
+import { saveUiRecipe, hasSaved } from "@/src/lib/saveRecipeAction";
 
 export default function RecipeDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -50,29 +50,9 @@ export default function RecipeDetailsScreen() {
   const [isSaved, setIsSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Build a stable “signature” for this recipe in THIS session.
-  // (Better: use recipe.id as a stable key; see notes below.)
-  const recipeKey = useMemo(() => {
-    const title = recipe.title ?? "";
-    const used = ingredientsUsed.join("|");
-    const miss = missingIngredients.join("|");
-    const st = steps.join("|");
-    return `${title}::${recipe.timeMinutes ?? ""}::${used}::${miss}::${st}`;
-  }, [
-    recipe.title,
-    recipe.timeMinutes,
-    ingredientsUsed,
-    missingIngredients,
-    steps,
-  ]);
-
   useEffect(() => {
-    // Session-only saved memory (prevents re-save while you stay in the app)
-    // This relies on saveUiRecipe remembering recipe keys.
-    // We'll add that in saveRecipeAction next.
-    const already = saveUiRecipe.hasSaved?.(recipeKey);
-    if (already) setIsSaved(true);
-  }, [recipeKey]);
+    if (hasSaved(String(id))) setIsSaved(true);
+  }, [id]);
 
   const onPressSave = async () => {
     if (isSaved) {
@@ -86,6 +66,7 @@ export default function RecipeDetailsScreen() {
 
     try {
       await saveUiRecipe({
+        id: String(id),
         title: recipe.title,
         time: `${recipe.timeMinutes} min`,
         ingredients: ingredientsUsed,
@@ -98,7 +79,6 @@ export default function RecipeDetailsScreen() {
       // Hide loader BEFORE alert so the alert is visible
       setShowSavingOverlay(false);
 
-      // If saveUiRecipe already shows "Saved!" alert, remove this line.
       Alert.alert("Saved!", `'${recipe.title}' was saved.`);
     } catch (e: any) {
       setShowSavingOverlay(false);

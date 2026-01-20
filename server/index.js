@@ -758,28 +758,55 @@ app.post("/api/user-recipes", requireUser, async (req, res) => {
     const timeMinutes = Number(recipe.timeMinutes);
 
     if (!title) return res.status(400).send("recipe.title is required");
-    if (!Number.isFinite(timeMinutes))
+    if (!Number.isFinite(timeMinutes)) {
       return res.status(400).send("recipe.timeMinutes must be a number");
+    }
 
     const userId = getUserId(req);
 
     const isVeggie = false;
     const isGf = false;
 
-    const newId = uuidv4();
+    // ✅ Treat incoming recipe.id as a *client dedupe key* (string OK)
+    const clientKey = recipe.id ? String(recipe.id) : null;
 
-    const inserted = await db.query(
+    // ✅ If this user already saved this clientKey, reuse the existing UUID recipe_id
+    let recipeId = null;
+    if (clientKey) {
+      const existing = await db.query(
+        `
+        SELECT r.id
+        FROM favorites f
+        JOIN recipes r ON r.id = f.recipe_id
+        WHERE f.user_id = $1
+          AND (r.recipe_json->>'clientKey') = $2
+        LIMIT 1
+        `,
+        [userId, clientKey]
+      );
+      if (existing.rowCount > 0) recipeId = existing.rows[0].id;
+    }
+
+    // If no existing match, create a new UUID id (DB expects uuid)
+    if (!recipeId) recipeId = uuidv4();
+
+    // Upsert by UUID primary key
+    await db.query(
       `INSERT INTO recipes (id, name, generated_by_ai, prompt_used, is_veggie, is_gf, recipe_json)
        VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
+       ON CONFLICT (id) DO UPDATE SET
+         name = EXCLUDED.name,
+         recipe_json = EXCLUDED.recipe_json
        RETURNING id`,
       [
-        newId,
+        recipeId,
         title,
         true,
         recipe.imagePrompt ?? null,
         isVeggie,
         isGf,
         JSON.stringify({
+          clientKey, // ✅ store dedupe key here
           title,
           ingredientsUsed,
           missingIngredients,
@@ -790,15 +817,18 @@ app.post("/api/user-recipes", requireUser, async (req, res) => {
       ]
     );
 
-    const recipeId = inserted.rows[0].id;
     console.log(
-      "[SAVE] inserted recipeId =",
+      "[SAVE] upsert recipeId =",
       recipeId,
       "userId =",
       userId,
       "title =",
-      title
+      title,
+      "clientKey =",
+      clientKey
     );
+
+    // favorites already dedupes same user+recipe_id
     await db.query(
       `INSERT INTO favorites (user_id, recipe_id)
        VALUES ($1, $2)
