@@ -128,307 +128,307 @@ export default function ProfilePage() {
   return (
   <View style={[styles.container, { backgroundColor: theme.background }]}>
     <ScrollView
-                contentContainerStyle={[
-                  styles.content,
-                  { paddingTop: insets.top + 16 },
-                  { flexGrow: 1, width: "100%"},
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: insets.top + 16 },
+          { flexGrow: 1, width: "100%"},
 
-                ]}
-                keyboardShouldPersistTaps="handled"
-                keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
-                showsVerticalScrollIndicator={false}
-            >
-      
-    <Card>
-      <WizardTitle style={{ textAlign: "center", alignSelf: "center" }}>
-        Welcome back, {user && user.username ? user.username : "wizard"}!
-      </WizardTitle>
-
-      <WizardBody>
-        Here you can find all the settings to personalize your wizarding
-        experience✨
-      </WizardBody>
-
-      {/* THEME SETTING */}
-      <View
-        style={[
-          styles.settingCard,
-          { borderColor: theme.border, backgroundColor: theme.surface2 },
         ]}
-      >
-        <WizardBody style={{ color: theme.textMuted, marginBottom: 10 }}>
-          Theme:
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+        showsVerticalScrollIndicator={false}
+    >
+      
+      <Card>
+        <WizardTitle style={{ textAlign: "center", alignSelf: "center" }}>
+          Welcome back, {user && user.username ? user.username : "wizard"}!
+        </WizardTitle>
+
+        <WizardBody>
+          Here you can find all the settings to personalize your wizarding
+          experience✨
         </WizardBody>
 
+        {/* THEME SETTING */}
         <View
           style={[
-            styles.segmentWrap,
-            { borderColor: theme.border, backgroundColor: theme.surface },
+            styles.settingCard,
+            { borderColor: theme.border, backgroundColor: theme.surface2 },
           ]}
         >
-          {(["system", "light", "dark"] as const).map((opt) => {
-            const selected = preference === opt;
+          <WizardBody style={{ color: theme.textMuted, marginBottom: 10 }}>
+            Theme:
+          </WizardBody>
 
-            return (
-              <Pressable
-                key={opt}
-                onPress={() => setPreference(opt)}
-                style={({ pressed }) => [
-                  styles.segmentBtn,
-                  selected && { backgroundColor: theme.primary },
-                  pressed && { opacity: 0.85 },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.segmentText,
-                    { color: selected ? theme.primaryText : theme.textOnSurface },
+          <View
+            style={[
+              styles.segmentWrap,
+              { borderColor: theme.border, backgroundColor: theme.surface },
+            ]}
+          >
+            {(["system", "light", "dark"] as const).map((opt) => {
+              const selected = preference === opt;
+
+              return (
+                <Pressable
+                  key={opt}
+                  onPress={() => setPreference(opt)}
+                  style={({ pressed }) => [
+                    styles.segmentBtn,
+                    selected && { backgroundColor: theme.primary },
+                    pressed && { opacity: 0.85 },
                   ]}
                 >
-                  {opt === "system" ? "System" : opt === "light" ? "Light" : "Dark"}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
-
-      {/* USERNAME SETTING */}
-      <View
-        style={[
-          styles.settingCard,
-          { borderColor: theme.border, backgroundColor: theme.surface2 },
-        ]}
-      >
-        <View style={styles.row}>
-          <WizardBody style={{ color: theme.textMuted }}>Username</WizardBody>
-          <WizardBody style={{ color: theme.textOnSurface }}>
-            {user && user.username ? user.username : "-"}
-          </WizardBody>
+                  <Text
+                    style={[
+                      styles.segmentText,
+                      { color: selected ? theme.primaryText : theme.textOnSurface },
+                    ]}
+                  >
+                    {opt === "system" ? "System" : opt === "light" ? "Light" : "Dark"}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
 
+        {/* USERNAME SETTING */}
+        <View
+          style={[
+            styles.settingCard,
+            { borderColor: theme.border, backgroundColor: theme.surface2 },
+          ]}
+        >
+          <View style={styles.row}>
+            <WizardBody style={{ color: theme.textMuted }}>Username</WizardBody>
+            <WizardBody style={{ color: theme.textOnSurface }}>
+              {user && user.username ? user.username : "-"}
+            </WizardBody>
+          </View>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.smallBtn,
+              { borderColor: theme.border, backgroundColor: theme.surface },
+              pressed && { opacity: 0.85 },
+            ]}
+            onPress={() => setShowEditName(true)}
+          >
+            <WizardBody style={{ color: theme.textOnSurface }}>
+              Change username
+            </WizardBody>
+          </Pressable>
+        </View>
+
+        {/* LOGOUT BUTTON */}
         <Pressable
           style={({ pressed }) => [
-            styles.smallBtn,
-            { borderColor: theme.border, backgroundColor: theme.surface },
-            pressed && { opacity: 0.85 },
+            styles.logoutButton,
+            { borderColor: theme.border, backgroundColor: theme.surface2 },
+            pressed && { opacity: 0.75 },
           ]}
-          onPress={() => setShowEditName(true)}
+          onPress={() => setShowLogout(true)}
         >
-          <WizardBody style={{ color: theme.textOnSurface }}>
-            Change username
+          <WizardBody style={[styles.logoutText, { color: theme.textOnSurface }]}>
+            Log out
           </WizardBody>
         </Pressable>
-      </View>
 
-      {/* LOGOUT BUTTON */}
-      <Pressable
-        style={({ pressed }) => [
-          styles.logoutButton,
-          { borderColor: theme.border, backgroundColor: theme.surface2 },
-          pressed && { opacity: 0.75 },
-        ]}
-        onPress={() => setShowLogout(true)}
-      >
-        <WizardBody style={[styles.logoutText, { color: theme.textOnSurface }]}>
-          Log out
-        </WizardBody>
-      </Pressable>
-
-      {/* DEACTIVATE BUTTON */}
-      <Pressable
-        style={({ pressed }) => [
-          styles.logoutButton,
-          { borderColor: theme.danger, backgroundColor: theme.surface2 },
-          pressed && { opacity: 0.75 },
-        ]}
-        onPress={() => setShowDeactivate(true)}
-      >
-        <WizardBody style={[styles.logoutText, { color: theme.danger }]}>
-          Deactivate account
-        </WizardBody>
-      </Pressable>
-
-    </Card>
-
-    {/* ========================= */}
-    {/* EDIT USERNAME MODAL (1)   */}
-    {/* ========================= */}
-    <Modal
-      visible={showEditName}
-      transparent
-      animationType="fade"
-      onRequestClose={() => setShowEditName(false)}
-    >
-      {/* Backdrop */}
-      <Pressable
-        style={[styles.backdrop, { backgroundColor: theme.overlay }]}
-        onPress={() => setShowEditName(false)}
-      >
-        {/* Inner card (stop backdrop closing) */}
+        {/* DEACTIVATE BUTTON */}
         <Pressable
-          onPress={() => {}}
-          style={[
-            styles.modalCard,
-            { backgroundColor: theme.surface, borderColor: theme.border },
+          style={({ pressed }) => [
+            styles.logoutButton,
+            { borderColor: theme.danger, backgroundColor: theme.surface2 },
+            pressed && { opacity: 0.75 },
           ]}
+          onPress={() => setShowDeactivate(true)}
         >
-          <WizardTitle>Change username</WizardTitle>
+          <WizardBody style={[styles.logoutText, { color: theme.danger }]}>
+            Deactivate account
+          </WizardBody>
+        </Pressable>
 
-          <WizardInput
-            value={nameDraft}
-            onChangeText={setNameDraft}
-            placeholder="new username"
-            placeholderTextColor={theme.textMuted}
-            autoCapitalize="none"
+      </Card>
+
+      {/* ========================= */}
+      {/* EDIT USERNAME MODAL (1)   */}
+      {/* ========================= */}
+      <Modal
+        visible={showEditName}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowEditName(false)}
+      >
+        {/* Backdrop */}
+        <Pressable
+          style={[styles.backdrop, { backgroundColor: theme.overlay }]}
+          onPress={() => setShowEditName(false)}
+        >
+          {/* Inner card (stop backdrop closing) */}
+          <Pressable
+            onPress={() => {}}
             style={[
-              styles.input,
-              {
-                color: theme.text,
-                borderColor: theme.border,
-                backgroundColor: theme.surface2,
-              },
+              styles.modalCard,
+              { backgroundColor: theme.surface, borderColor: theme.border },
             ]}
-          />
+          >
+            <WizardTitle>Change username</WizardTitle>
 
-          <View style={styles.modalButtons}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.modalBtn,
-                { borderColor: theme.border, backgroundColor: theme.surface2 },
-                pressed && { opacity: 0.75 },
+            <WizardInput
+              value={nameDraft}
+              onChangeText={setNameDraft}
+              placeholder="new username"
+              placeholderTextColor={theme.textMuted}
+              autoCapitalize="none"
+              style={[
+                styles.input,
+                {
+                  color: theme.text,
+                  borderColor: theme.border,
+                  backgroundColor: theme.surface2,
+                },
               ]}
-              onPress={() => setShowEditName(false)}
-            >
-              <WizardBody style={{ color: theme.textOnSurface }}>Cancel</WizardBody>
-            </Pressable>
+            />
 
-            <Pressable
-              style={({ pressed }) => [
-                styles.modalBtn,
-                { borderColor: theme.primary, backgroundColor: theme.primary },
-                pressed && { opacity: 0.75 },
-              ]}
-              onPress={saveUsername}
-            >
-              <WizardBody style={{ color: theme.primaryText }}>Save</WizardBody>
-            </Pressable>
-          </View>
+            <View style={styles.modalButtons}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.modalBtn,
+                  { borderColor: theme.border, backgroundColor: theme.surface2 },
+                  pressed && { opacity: 0.75 },
+                ]}
+                onPress={() => setShowEditName(false)}
+              >
+                <WizardBody style={{ color: theme.textOnSurface }}>Cancel</WizardBody>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.modalBtn,
+                  { borderColor: theme.primary, backgroundColor: theme.primary },
+                  pressed && { opacity: 0.75 },
+                ]}
+                onPress={saveUsername}
+              >
+                <WizardBody style={{ color: theme.primaryText }}>Save</WizardBody>
+              </Pressable>
+            </View>
+          </Pressable>
         </Pressable>
-      </Pressable>
-    </Modal>
+      </Modal>
 
-    {/* ========================= */}
-    {/* LOGOUT MODAL (2)          */}
-    {/* ========================= */}
-    <Modal
-      visible={showLogout}
-      transparent
-      animationType="fade"
-      onRequestClose={() => setShowLogout(false)}
-    >
-      {/* Backdrop */}
-      <Pressable
-        style={[styles.backdrop, { backgroundColor: theme.overlay }]}
-        onPress={() => setShowLogout(false)}
+      {/* ========================= */}
+      {/* LOGOUT MODAL (2)          */}
+      {/* ========================= */}
+      <Modal
+        visible={showLogout}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLogout(false)}
       >
-        {/* Inner card (stop backdrop closing) */}
+        {/* Backdrop */}
         <Pressable
-          onPress={() => {}}
-          style={[
-            styles.modalCard,
-            { backgroundColor: theme.surface, borderColor: theme.border },
-          ]}
+          style={[styles.backdrop, { backgroundColor: theme.overlay }]}
+          onPress={() => setShowLogout(false)}
         >
-          <WizardTitle>Log out?</WizardTitle>
+          {/* Inner card (stop backdrop closing) */}
+          <Pressable
+            onPress={() => {}}
+            style={[
+              styles.modalCard,
+              { backgroundColor: theme.surface, borderColor: theme.border },
+            ]}
+          >
+            <WizardTitle>Log out?</WizardTitle>
 
-          <WizardBody style={{ marginTop: 8, color: theme.textMuted }}>
-            You’ll be returned to the muggle world.
-          </WizardBody>
+            <WizardBody style={{ marginTop: 8, color: theme.textMuted }}>
+              You’ll be returned to the muggle world.
+            </WizardBody>
 
-          <View style={styles.modalButtons}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.modalBtn,
-                { borderColor: theme.border, backgroundColor: theme.surface2 },
-                pressed && { opacity: 0.75 },
-              ]}
-              onPress={() => setShowLogout(false)}
-            >
-              <WizardBody style={{ color: theme.textOnSurface }}>Cancel</WizardBody>
-            </Pressable>
+            <View style={styles.modalButtons}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.modalBtn,
+                  { borderColor: theme.border, backgroundColor: theme.surface2 },
+                  pressed && { opacity: 0.75 },
+                ]}
+                onPress={() => setShowLogout(false)}
+              >
+                <WizardBody style={{ color: theme.textOnSurface }}>Cancel</WizardBody>
+              </Pressable>
 
-            <Pressable
-              style={({ pressed }) => [
-                styles.modalBtn,
-                { borderColor: theme.danger, backgroundColor: theme.surface2 },
-                pressed && { opacity: 0.75 },
-              ]}
-              onPress={confirmLogout}
-            >
-              <WizardBody style={{ color: theme.danger }}>Log out</WizardBody>
-            </Pressable>
-          </View>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.modalBtn,
+                  { borderColor: theme.danger, backgroundColor: theme.surface2 },
+                  pressed && { opacity: 0.75 },
+                ]}
+                onPress={confirmLogout}
+              >
+                <WizardBody style={{ color: theme.danger }}>Log out</WizardBody>
+              </Pressable>
+            </View>
+          </Pressable>
         </Pressable>
-      </Pressable>
-    </Modal>
+      </Modal>
 
-    {/* ========================= */}
-    {/* DEACTIVATE MODAL (3)      */}
-    {/* ========================= */}
-    <Modal
-      visible={showDeactivate}
-      transparent
-      animationType="fade"
-      onRequestClose={() => setShowDeactivate(false)}
-    >
-      {/* Backdrop */}
-      <Pressable
-        style={[styles.backdrop, { backgroundColor: theme.overlay }]}
-        onPress={() => setShowDeactivate(false)}
+      {/* ========================= */}
+      {/* DEACTIVATE MODAL (3)      */}
+      {/* ========================= */}
+      <Modal
+        visible={showDeactivate}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDeactivate(false)}
       >
-        {/* Inner card (stop backdrop closing) */}
+        {/* Backdrop */}
         <Pressable
-          onPress={() => {}}
-          style={[
-            styles.modalCard,
-            { backgroundColor: theme.surface, borderColor: theme.border },
-          ]}
+          style={[styles.backdrop, { backgroundColor: theme.overlay }]}
+          onPress={() => setShowDeactivate(false)}
         >
-          <WizardTitle>Deactivate account?</WizardTitle>
+          {/* Inner card (stop backdrop closing) */}
+          <Pressable
+            onPress={() => {}}
+            style={[
+              styles.modalCard,
+              { backgroundColor: theme.surface, borderColor: theme.border },
+            ]}
+          >
+            <WizardTitle>Deactivate account?</WizardTitle>
 
-          <WizardBody style={{ marginTop: 8, color: theme.textMuted }}>
-            If you&apos;d like to exit through the wardrobe this will 
-            delete your login info until you reactivate your account and return to the magic.
-          </WizardBody>
+            <WizardBody style={{ marginTop: 8, color: theme.textMuted }}>
+              If you&apos;d like to exit through the wardrobe this will 
+              delete your login info until you reactivate your account and return to the magic.
+            </WizardBody>
 
-          <View style={styles.modalButtons}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.modalBtn,
-                { borderColor: theme.border, backgroundColor: theme.surface2 },
-                pressed && { opacity: 0.75 },
-              ]}
-              onPress={() => setShowDeactivate(false)}
-            >
-              <WizardBody style={{ color: theme.textOnSurface }}>Cancel</WizardBody>
-            </Pressable>
+            <View style={styles.modalButtons}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.modalBtn,
+                  { borderColor: theme.border, backgroundColor: theme.surface2 },
+                  pressed && { opacity: 0.75 },
+                ]}
+                onPress={() => setShowDeactivate(false)}
+              >
+                <WizardBody style={{ color: theme.textOnSurface }}>Cancel</WizardBody>
+              </Pressable>
 
-            <Pressable
-              style={({ pressed }) => [
-                styles.modalBtn,
-                { borderColor: theme.danger, backgroundColor: theme.surface2 },
-                pressed && { opacity: 0.75 },
-              ]}
-              onPress={confirmDeactivate}
-            >
-              <WizardBody style={{ color: theme.danger }}>Deactivate</WizardBody>
-            </Pressable>
-          </View>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.modalBtn,
+                  { borderColor: theme.danger, backgroundColor: theme.surface2 },
+                  pressed && { opacity: 0.75 },
+                ]}
+                onPress={confirmDeactivate}
+              >
+                <WizardBody style={{ color: theme.danger }}>Deactivate</WizardBody>
+              </Pressable>
+            </View>
+          </Pressable>
         </Pressable>
-      </Pressable>
-    </Modal>
-              </ScrollView>
+      </Modal>
+    </ScrollView>
   </View>
 );
 

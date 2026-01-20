@@ -1,7 +1,7 @@
-import { View, StyleSheet, Pressable } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { useTheme } from "@/src/theme/usetheme";
-import { WizardBody, WizardTitle } from "@/src/components/WizardText";
+import { WizardBody, WizardTitle, WizardButton } from "@/src/components/WizardText";
 import { Card } from "@/src/components/Card";
 
 export default function ChatBot() {
@@ -13,15 +13,10 @@ export default function ChatBot() {
           Time to whip you up a magical recipe!
         </WizardTitle>
         <WizardBody style={{ marginTop: 8, textAlign: "center" }}>Click below to get started</WizardBody>
-          <Pressable
-            onPress={() => router.push("/generate")}
-            style={({ pressed }) => [
-              styles.primaryButton,
-              { borderColor: theme.border, backgroundColor: theme.surface2 },
-              pressed && { opacity: 0.75, transform: [{ scale: 0.99}] },
-            ]}>
+          <WizardButton style={{ marginTop: 16 }}
+            onPress={() => router.push("/generate")} variant="surface">
             <WizardBody style={{ color: theme.textOnSurface, textAlign: "center", width: "100%" }}>Visit the Wizard</WizardBody>
-          </Pressable>
+          </WizardButton>
       </Card>
     </View>
   );
@@ -33,13 +28,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
-  },
-  primaryButton: {
-    marginTop: 16,
-    width: "100%",
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: "center",
-    borderWidth: 1,
   },
 });
