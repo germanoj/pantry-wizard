@@ -1,69 +1,110 @@
-import { useState } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { useState, useRef, useCallback } from "react";
+import {
+  StyleSheet,
+  Alert,
+  TextInput,
+  Keyboard,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform, 
+} from "react-native";
 import { Link, router } from "expo-router";
 
 import { useTheme } from "@/src/theme/usetheme";
 import { WizardBody, WizardTitle, WizardInput, WizardButton } from "@/src/components/WizardText";
 import { Card } from "@/src/components/Card";
+import WizardToast from "@/src/components/WizardToast";
 
 import { apiRegister } from "@/src/auth/library";
-// If you want auto-login after register, uncomment:
 import { useAuth } from "@/src/auth/AuthContext";
 
 export default function RegisterPage() {
   const theme = useTheme();
+  const { signIn } = useAuth();
 
-  const [username, setUsername] = useState(""); // NEW
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // If you want auto-login after register, uncomment:
-  const { signIn } = useAuth();
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMsg, setToastMsg] = useState("");
+  const isLocked = loading || toastVisible;
+
+
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+
+  const pendingAuthRef = useRef<{ token: string; user: any | null } | null>(
+    null
+  );
+
+    const handleToastHidden = useCallback(async () => {
+      setToastVisible(false);
+
+      const pending = pendingAuthRef.current;
+      pendingAuthRef.current = null;
+
+      if (!pending) return;
+
+      await signIn(pending.token, pending.user);
+      router.replace("/(tabs)");
+    }, [signIn]);
+
 
   const onRegister = async () => {
-  if (!username || !email || !password) {
-    Alert.alert("Missing info", "Username, email, and password are required.");
-    return;
-  }
+    Keyboard.dismiss();
 
-  if (password.length < 8) {
-    Alert.alert(
-      "Password too hackable friend!",
-      "Pls use at least 8 characters of your choosing."
-    );
-    return;
-  }
-
-  try {
-    setLoading(true);
-
-    //console.log("Registering:", { username, email });
-    const data = await apiRegister(username, email, password);
-    //console.log("Register success:", data);
-      if (data.user !== null && data.user !== undefined) {
-        await signIn(data.token, data.user);
-      } else {
-        await signIn(data.token, null);
-      }
-        Alert.alert("Poof!", "Your account has been created. Let's get cookin'!", [
-          { text: "OK", onPress: () => router.replace("/(tabs)")},
-        ]);
-  
-  } catch (err: any) {
-    //console.log("Register error:", err);
-    if (err && err.message) {
-      Alert.alert("Error", err.message);
-    } else {
-      Alert.alert("Error", String(err));
+    if (!username || !email || !password) {
+      Alert.alert("Missing info", "Username, email, and password are required.");
+      return;
     }
-  } finally {
-    setLoading(false);
-  }
-};
+
+    if (password.length < 8) {
+      Alert.alert(
+        "Password too hackable friend!",
+        "Pls use at least 8 characters of your choosing."
+      );
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const data = await apiRegister(username, email, password);
+
+      pendingAuthRef.current = { token: data.token, user: data.user || null };
+
+      setToastMsg("Poof! Account created ✨");
+      setToastVisible(true);
+    } catch (err: any) {
+      Alert.alert("Error", err?.message ?? String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <KeyboardAvoidingView
+    style={[styles.container, { backgroundColor: theme.background }]}
+    behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <WizardToast
+        visible={toastVisible}
+        message={toastMsg}
+        durationMs={1400}
+        placement="top"
+        onHidden={handleToastHidden}
+      />
+
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+        showsVerticalScrollIndicator={false}
+      >
+
       <Card>
         <WizardTitle>Welcome muggle!</WizardTitle>
         <WizardBody>Create your account:</WizardBody>
@@ -73,28 +114,47 @@ export default function RegisterPage() {
           onChangeText={setUsername}
           placeholder="username"
           autoCapitalize="none"
+          returnKeyType="next"
+          onSubmitEditing={() => emailRef.current?.focus()}
           style={styles.input}
         />
 
         <WizardInput
+          ref={emailRef}
           value={email}
           onChangeText={setEmail}
           placeholder="email"
           autoCapitalize="none"
           keyboardType="email-address"
+          returnKeyType="next"
+          onSubmitEditing={() => passwordRef.current?.focus()}
           style={styles.input}
         />
 
         <WizardInput
+          ref={passwordRef}
           value={password}
           onChangeText={setPassword}
           placeholder="password"
           secureTextEntry
+          returnKeyType="done"
+          onSubmitEditing={onRegister}
           style={styles.input}
         />
 
-        <WizardButton style={styles.button} onPress={onRegister} disabled={loading}>
-          <WizardBody style={[styles.buttonText, {color:theme.primaryText}]}>{loading ? "1...2...3..." : "Poof!"}</WizardBody>
+        <WizardButton 
+          style={styles.button} 
+          onPress={onRegister}   
+          loading={isLocked}
+          disabled={isLocked}
+        >
+          <WizardBody style={[styles.buttonText, {color:theme.textOnSurface}]}>
+            {loading 
+            ? "1...2...3..."
+            : toastVisible 
+            ? "✨ Success ✨"
+            : "Poof!"}
+            </WizardBody>
         </WizardButton>
 
         <WizardBody style={styles.linkRow}>
@@ -104,17 +164,20 @@ export default function RegisterPage() {
           </Link>
         </WizardBody>
       </Card>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  content: {
+    flexGrow: 1,
+    padding: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#fff",
-    padding: 20,
   },
   input: {
     width: "100%",
@@ -124,7 +187,7 @@ const styles = StyleSheet.create({
     width: "100%",
     marginTop: 12,
   },
-  buttonText: { fontSize: 16, fontWeight: "600" },
+  buttonText: { fontSize: 16, fontWeight: "600", marginTop: 0 },
   linkRow: { marginTop: 8, fontSize: 14 },
   link: {},
 });
