@@ -37,7 +37,7 @@ type SavedRecipe = {
   missingIngredients?: string[];
   steps?: string[];
   timeMinutes?: number;
-  imageUrl?: string;
+  imageUrl?: string | null;
 };
 
 export default function SavedRecipes() {
@@ -197,7 +197,7 @@ export default function SavedRecipes() {
           <SavedRecipeCard
             title={item.title}
             timeMinutes={item.timeMinutes}
-            imageUrl={item.imageUrl}
+            imageUrl={item.imageUrl ?? undefined}
             onPress={() => router.push(`/saved/(details)/${item.id}`)}
             onRemove={() => onDeleteRecipe(item.id)}
           />

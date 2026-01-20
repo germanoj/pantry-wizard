@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { View, StyleSheet, Alert,TextInput, Keyboard } from "react-native";
+import { View, StyleSheet, Alert, TextInput, Keyboard } from "react-native";
 import { Link, router } from "expo-router";
 
 import { useTheme } from "@/src/theme/usetheme";
@@ -178,4 +178,10 @@ const styles = StyleSheet.create({
   button: { width: "100%" },
   buttonText: { fontSize: 16, fontWeight: "600" },
   linkRow: { marginTop: 12, fontSize: 14 },
+
+  link: {
+    marginTop: 10,
+    fontSize: 14,
+    fontWeight: "700",
+  },
 });
