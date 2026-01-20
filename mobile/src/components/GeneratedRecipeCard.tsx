@@ -14,7 +14,11 @@ type Props = {
 export function GeneratedRecipeCard({ recipe, onPress }: Props) {
   const theme = useTheme();
 
-  const img = recipe.imageUrl ? { uri: recipe.imageUrl } : null;
+  const imageUrl = recipe.imageUrl?.startsWith("http://")
+    ? recipe.imageUrl.replace("http://", "https://")
+    : recipe.imageUrl;
+
+  const img = imageUrl ? { uri: imageUrl } : null;
 
   // Show "ingredientsUsed" only; keep it short to avoid scrolling.
   const preview = recipe.ingredientsUsed.slice(0, 5).join(", ");
@@ -32,7 +36,18 @@ export function GeneratedRecipeCard({ recipe, onPress }: Props) {
         ]}
       >
         {img ? (
-          <Image style={styles.image} source={img} />
+          <Image
+            style={styles.image}
+            source={img}
+            resizeMode="cover"
+            onError={(e) => {
+              console.log(
+                "[GeneratedRecipeCard] image failed:",
+                imageUrl,
+                e?.nativeEvent
+              );
+            }}
+          />
         ) : (
           <View
             style={[
