@@ -52,6 +52,33 @@ This project was built as a full-stack capstone application, with a deployed bac
 
 ---
 
+## 📚 What was Learned
+
+- Designing and deploying a full-stack application
+- Integrating AI APIs into a real user workflow
+- Managing environment variables across local and deployed environments
+- Structuring backend APIs for mobile clients
+- Debugging real-world deployment and networking issues
+
+## 🤝 Team Contributions
+
+This project was built collaboratively as a team capstone. Primary areas of contribution are outlined below.
+
+### Jerrad Germano
+- Backend architecture and API development (Node.js, Express)
+- PostgreSQL database design and integration
+- OpenAI API integration and structured recipe parsing
+- Backend deployment and environment configuration (Render)
+- API debugging, networking, and deployment troubleshooting
+- Frontend–backend integration and API client configuration
+- Overall project architecture and technical direction
+
+### Hayley McVicar
+- 
+
+### Matt Zaleta
+- 
+
 ## ⚙️ Running the Project Locally
 
 ### Prerequisites
