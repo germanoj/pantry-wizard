@@ -3,18 +3,65 @@
 Pantry Wizard is an iOS mobile app that helps answer the question:
 **"What should I make for dinner?"**
 
-Using a chat-style interface and AI-generated recipes, users can enter
-what they have in their pantry and receive healthy, simple meal ideas.
+Pantry Wizard is a mobile-first, AI-powered recipe generator that helps users create meal ideas based on the ingredients they already have. By entering pantry items and optional preferences, users receive structured, AI-generated recipes designed to reduce food waste and simplify meal planning.
 
-## MVP Goals
-- iOS mobile app (React Native)
-- Chat-style pantry input
-- Generate 3 healthy recipes (≤10 ingredients)
-- Save and rate recipes (yes/no or stars)
+This project was built as a full-stack capstone application, with a deployed backend, real AI integration, and a React Native mobile frontend.
 
-## Tech (MVP)
+---
+
+## 🚀 Features
+
+- Generate recipes from free-text pantry input
+- Optional meal-type filtering (breakfast, lunch, dinner, snack, dessert)
+- AI-generated, structured recipe responses
+- Recipe cards optimized for mobile viewing
+- Save generated recipes for later
+- Deployed backend API
+- Mobile-first user experience using React Native
+
+---
+
+## 🛠 Tech Stack
+
+**Frontend**
 - React Native (Expo)
-- Backend + AI API (TBD)
+- TypeScript
+- Expo Router
 
-## Status
-🚧 In early development
+**Backend**
+- Node.js
+- Express
+- PostgreSQL
+
+**AI & Media**
+- OpenAI API (recipe generation)
+- Cloudinary (image handling)
+
+**Deployment**
+- Render (backend/frontend hosting)
+
+---
+
+## 🧠 How It Works (High-Level Architecture)
+
+1. The Expo-based React Native frontend collects pantry input and meal preferences.
+2. The frontend sends a request to the Express API.
+3. The backend calls the OpenAI API to generate structured recipe data.
+4. Recipes are parsed, stored in PostgreSQL, and optionally associated with images.
+5. The frontend renders the results as mobile-friendly recipe cards.
+
+---
+
+## ⚙️ Running the Project Locally
+
+### Prerequisites
+- Node.js (v18+ recommended)
+- PostgreSQL
+- Expo CLI
+
+### Installation
+
+```bash
+git clone https://github.com/your-username/pantry-wizard.git
+cd pantry-wizard
+npm install

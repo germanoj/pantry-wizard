@@ -11,6 +11,7 @@ type Ctx = {
   notInterestedIds: Set<string>;
   isNotInterested: (id: string) => boolean;
   toggleNotInterested: (id: string) => void;
+  clearNotInterested: () => void;
 };
 
 const NotInterestedContext = createContext<Ctx | null>(null);
@@ -32,7 +33,7 @@ export function NotInterestedProvider({
       if (willBeNotInterested) next.add(id);
       else next.delete(id);
 
-      // Haptics: success-ish when marking yuck, light when undoing
+      // Haptics: stronger when marking "not interested", lighter when undoing
       if (willBeNotInterested) {
         Haptics.notificationAsync(
           Haptics.NotificationFeedbackType.Warning
@@ -45,9 +46,18 @@ export function NotInterestedProvider({
     });
   }, []);
 
+  const clearNotInterested = useCallback(() => {
+    setIds(new Set());
+  }, []);
+
   const value = useMemo(
-    () => ({ notInterestedIds: ids, isNotInterested, toggleNotInterested }),
-    [ids, isNotInterested, toggleNotInterested]
+    () => ({
+      notInterestedIds: ids,
+      isNotInterested,
+      toggleNotInterested,
+      clearNotInterested,
+    }),
+    [ids, isNotInterested, toggleNotInterested, clearNotInterested]
   );
 
   return (

@@ -41,36 +41,44 @@ app.use(express.json({ limit: "10mb" }));
 
 // CORS allowlist: localhost + deployed web
 const allowedOrigins = new Set([
-  "http://localhost:8081",
   "http://localhost:19006",
   "http://localhost:3000",
   "http://localhost:5173",
-  "http://localhost:8080",
   "https://pantry-wizard-yxez.onrender.com",
 ]);
 
-app.use(
-  cors({
-    origin: (origin, cb) => {
-      // Allow non-browser requests with no Origin header (native apps, curl, Postman)
-      if (!origin) return cb(null, true);
+// allow Expo web dev ports like 8081/8083/etc
+function isAllowedLocalhost(origin) {
+  try {
+    const u = new URL(origin);
+    return (
+      (u.hostname === "localhost" || u.hostname === "127.0.0.1") &&
+      u.port &&
+      Number(u.port) >= 8080 &&
+      Number(u.port) <= 8090
+    );
+  } catch {
+    return false;
+  }
+}
 
-      if (allowedOrigins.has(origin)) return cb(null, true);
+const corsOptions = {
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true); // native apps/curl/postman
+    if (allowedOrigins.has(origin) || isAllowedLocalhost(origin))
+      return cb(null, true);
 
-      console.warn("[CORS] Blocked origin:", origin);
-      return cb(null, false);
-    },
-    credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"],
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  })
-);
+    console.warn("[CORS] Blocked origin:", origin);
+    return cb(new Error("Not allowed by CORS"), false);
+  },
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+};
 
-// Request logger
-app.use((req, res, next) => {
-  console.log(`[REQ] ${req.method} ${req.originalUrl}`);
-  next();
-});
+app.use(cors(corsOptions));
+app.options("/api/generate-ai", cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 
 /**
  * ----------------------------

@@ -1,3 +1,4 @@
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -5,10 +6,12 @@ import {
   ScrollView,
   Pressable,
   Text,
+  Alert,
+  Modal,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
+import LoadingScreen from "@/src/components/LoadingScreen";
 import { useTheme } from "@/src/theme/usetheme";
 import { WizardTitle, WizardBody } from "@/src/components/WizardText";
 import { useGeneratedRecipes } from "../../src/state/GeneratedRecipesContext";
@@ -19,6 +22,7 @@ export default function RecipeDetailsScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { getById } = useGeneratedRecipes();
+  const [showSavingOverlay, setShowSavingOverlay] = useState(false);
 
   const recipe = getById(String(id));
 
@@ -42,6 +46,67 @@ export default function RecipeDetailsScreen() {
     ? recipe.missingIngredients
     : [];
   const steps = Array.isArray(recipe.steps) ? recipe.steps : [];
+
+  const [isSaved, setIsSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Build a stable “signature” for this recipe in THIS session.
+  // (Better: use recipe.id as a stable key; see notes below.)
+  const recipeKey = useMemo(() => {
+    const title = recipe.title ?? "";
+    const used = ingredientsUsed.join("|");
+    const miss = missingIngredients.join("|");
+    const st = steps.join("|");
+    return `${title}::${recipe.timeMinutes ?? ""}::${used}::${miss}::${st}`;
+  }, [
+    recipe.title,
+    recipe.timeMinutes,
+    ingredientsUsed,
+    missingIngredients,
+    steps,
+  ]);
+
+  useEffect(() => {
+    // Session-only saved memory (prevents re-save while you stay in the app)
+    // This relies on saveUiRecipe remembering recipe keys.
+    // We'll add that in saveRecipeAction next.
+    const already = saveUiRecipe.hasSaved?.(recipeKey);
+    if (already) setIsSaved(true);
+  }, [recipeKey]);
+
+  const onPressSave = async () => {
+    if (isSaved) {
+      Alert.alert("Already saved", "This recipe has already been saved.");
+      return;
+    }
+    if (saving) return;
+
+    setSaving(true);
+    setShowSavingOverlay(true);
+
+    try {
+      await saveUiRecipe({
+        title: recipe.title,
+        time: `${recipe.timeMinutes} min`,
+        ingredients: ingredientsUsed,
+        steps,
+        imageUrl: recipe.imageUrl,
+      });
+
+      setIsSaved(true);
+
+      // Hide loader BEFORE alert so the alert is visible
+      setShowSavingOverlay(false);
+
+      // If saveUiRecipe already shows "Saved!" alert, remove this line.
+      Alert.alert("Saved!", `'${recipe.title}' was saved.`);
+    } catch (e: any) {
+      setShowSavingOverlay(false);
+      Alert.alert("Save failed", e?.message ?? "Could not save recipe.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
@@ -100,28 +165,31 @@ export default function RecipeDetailsScreen() {
         ]}
       >
         <Pressable
-          onPress={() =>
-            saveUiRecipe({
-              title: recipe.title,
-              time: `${recipe.timeMinutes} min`,
-              ingredients: ingredientsUsed,
-              steps,
-            })
-          }
+          onPress={onPressSave}
           style={({ pressed }) => [
             styles.saveBtn,
             { backgroundColor: theme.primary },
-            pressed && { opacity: 0.9 },
+            isSaved && { opacity: 0.7 },
+            pressed && !isSaved && { opacity: 0.9 },
           ]}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="Save recipe"
+          accessibilityLabel="Save Recipe"
         >
           <Text style={[styles.saveBtnText, { color: theme.primaryText }]}>
-            Save Recipe
+            {isSaved ? "Recipe Saved" : saving ? "Saving..." : "Save Recipe"}
           </Text>
         </Pressable>
       </View>
+
+      {/* Saving overlay */}
+      <Modal
+        visible={showSavingOverlay}
+        animationType="fade"
+        presentationStyle="fullScreen"
+      >
+        <LoadingScreen />
+      </Modal>
     </View>
   );
 }
