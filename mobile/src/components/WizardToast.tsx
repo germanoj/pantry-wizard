@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { View, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
@@ -23,7 +23,7 @@ type WizardToastProps = {
 export default function WizardToast({
   visible,
   message,
-  durationMs = 1200,
+  durationMs = 600,
   placement = "top",
   onHidden,
 }: WizardToastProps) {
@@ -31,6 +31,11 @@ export default function WizardToast({
 
   const opacity = useSharedValue(0);
   const y = useSharedValue(placement === "top" ? -8 : 8);
+
+  const onHiddenRef = useRef<WizardToastProps["onHidden"]>(onHidden);
+  useEffect(() => {
+    onHiddenRef.current = onHidden;
+  }, [onHidden]);
 
   useEffect(() => {
   if (!visible) return;
@@ -40,7 +45,7 @@ export default function WizardToast({
     withDelay(
       durationMs,
       withTiming(0, { duration: 220, easing: Easing.in(Easing.cubic) }, (finished) => {
-        if (finished && onHidden) runOnJS(onHidden)();
+        if (finished && onHiddenRef.current) runOnJS(onHiddenRef.current)();
       })
     )
   );
@@ -51,7 +56,7 @@ export default function WizardToast({
   );
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [visible, durationMs, placement, onHidden]);
+}, [visible, durationMs, placement]);
 
 
   const animStyle = useAnimatedStyle(() => ({

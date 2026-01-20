@@ -29,6 +29,8 @@ export default function RegisterPage() {
 
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
+  const isLocked = loading || toastVisible;
+
 
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
@@ -140,8 +142,19 @@ export default function RegisterPage() {
           style={styles.input}
         />
 
-        <WizardButton style={styles.button} onPress={onRegister} loading={loading}>
-          <WizardBody style={[styles.buttonText, {color:theme.primaryText}]}>{loading ? "1...2...3..." : "Poof!"}</WizardBody>
+        <WizardButton 
+          style={styles.button} 
+          onPress={onRegister}   
+          loading={isLocked}
+          disabled={isLocked}
+        >
+          <WizardBody style={[styles.buttonText, {color:theme.textOnSurface}]}>
+            {loading 
+            ? "1...2...3..."
+            : toastVisible 
+            ? "✨ Success ✨"
+            : "Poof!"}
+            </WizardBody>
         </WizardButton>
 
         <WizardBody style={styles.linkRow}>
