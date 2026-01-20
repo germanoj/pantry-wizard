@@ -60,6 +60,10 @@ This project was built as a full-stack capstone application, with a deployed bac
 - Structuring backend APIs for mobile clients
 - Debugging real-world deployment and networking issues
 
+## 📌 Project Status
+
+Pantry Wizard is an actively developed capstone project. Core functionality is complete, with no additional features planned post-capstone.
+
 ## 🤝 Team Contributions
 
 This project was built collaboratively as a team capstone. Primary areas of contribution are outlined below.
