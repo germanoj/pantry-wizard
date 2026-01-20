@@ -77,16 +77,14 @@ export default function ProfilePage() {
   //changed to a modal set up instead so works on both web and mobile
 
   const confirmLogout = async () => {
+    setShowLogout(false);
     try {
       clearRecipes();
       clearNotInterested();
-
       await signOut();
-      setShowLogout(false);
-      router.replace("/(tabs)"); // sends to tab index (HomeScreen)
+      router.replace("/(tabs)");
     } catch (e) {
       console.log("Logout failed:", e);
-      setShowLogout(false);
     }
   };
 
@@ -97,13 +95,14 @@ export default function ProfilePage() {
         return;
       }
 
-      await apiDeactivateAccount(token); // calls POST /users/me/deactivate
+      setShowDeactivate(false);
+
+      await apiDeactivateAccount(token);
 
       clearRecipes();
       clearNotInterested();
 
-      await signOut(); // clears token locally
-      setShowDeactivate(false);
+      await signOut();
       router.replace("/(tabs)");
     } catch (e: any) {
       console.log("Deactivate failed:", e);
