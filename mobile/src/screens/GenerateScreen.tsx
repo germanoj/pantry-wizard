@@ -141,6 +141,11 @@ export default function GenerateScreen() {
                     color: theme.text,
                     fontSize: 13,
                     fontWeight: selected ? "700" : "600",
+                    marginTop: 0,          
+                    paddingTop: 0,
+                    paddingBottom: 0,
+                    lineHeight: 14,      
+                    textAlignVertical: "center", // mostly Android, harmless elsewhere
                   }}
                 >
                   {opt.label}
@@ -304,19 +309,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingVertical: 8,
     paddingHorizontal: 10,
-  },
-  button: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  errorText: {
-    color: "red",
+    justifyContent: "center",
   },
   emptyText: {
   },
