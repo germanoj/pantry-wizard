@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LoadingScreen from "@/src/components/LoadingScreen";
 import { useTheme } from "@/src/theme/usetheme";
 import { WizardTitle, WizardBody } from "@/src/components/WizardText";
-import { useGeneratedRecipes } from "../../src/state/GeneratedRecipesContext";
+import { useGeneratedRecipes } from "@/src/state/GeneratedRecipesContext";
 import { saveUiRecipe } from "@/src/lib/saveRecipeAction";
 
 export default function RecipeDetailsScreen() {

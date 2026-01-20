@@ -276,7 +276,12 @@ export default function GenerateScreen() {
             <GeneratedRecipeCard
               key={r._id}
               recipe={r}
-              onPress={() => router.push(`/recipe/${r._id}`)}
+              onPress={() =>
+                router.push({
+                  pathname: "/recipe/[id]",
+                  params: { id: r._id },
+                })
+              }
             />
           ))}
         </View>
