@@ -96,7 +96,7 @@ export default function RegisterPage() {
         durationMs={1400}
         placement="top"
         onHidden={handleToastHidden}
-      />
+      /> 
 
       <ScrollView
         contentContainerStyle={styles.content}
