@@ -1,5 +1,14 @@
-import { Modal, Pressable, StyleSheet, View, Text, Alert } from "react-native";
-
+import { 
+  Modal, 
+  Pressable, 
+  StyleSheet, 
+  View, 
+  Text, 
+  Alert, 
+  ScrollView,
+  Platform,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, Link } from "expo-router";
 import { useEffect, useState } from "react";
 
@@ -14,6 +23,8 @@ import { Card } from '@/src/components/Card';
 
 export default function ProfilePage() {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
+
   const {preference, setPreference, toggleDarkMode, isHydrated} = useThemePreference();
   const { token, user, signOut, setUser } = useAuth();
 
@@ -91,19 +102,43 @@ export default function ProfilePage() {
   if (!token) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <Card>
-          <WizardTitle style={{ textAlign: "center", alignSelf: "center" }}>Hey there stranger!👋</WizardTitle> 
-          <WizardBody>Make an 
-            <Link href="/(auth)/register" style={[ { color: theme.accent2 }]} > account </Link> 
-            and start saving your recipes✨
-          </WizardBody>
-        </Card>
+        <ScrollView
+                contentContainerStyle={[
+                  styles.content,
+                  { paddingTop: insets.top + 16 },
+                  { flexGrow: 1, width: "100%"},
+                ]}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+                showsVerticalScrollIndicator={false}
+            >
+      
+          <Card>
+            <WizardTitle style={{ textAlign: "center", alignSelf: "center" }}>Hey there stranger!👋</WizardTitle> 
+            <WizardBody>Make an 
+              <Link href="/(auth)/register" style={[ { color: theme.accent2 }]} > account </Link> 
+              and start saving your recipes✨
+            </WizardBody>
+          </Card>
+        </ScrollView>
       </View>
 
     );
   }
   return (
   <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <ScrollView
+                contentContainerStyle={[
+                  styles.content,
+                  { paddingTop: insets.top + 16 },
+                  { flexGrow: 1, width: "100%"},
+
+                ]}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+                showsVerticalScrollIndicator={false}
+            >
+      
     <Card>
       <WizardTitle style={{ textAlign: "center", alignSelf: "center" }}>
         Welcome back, {user && user.username ? user.username : "wizard"}!
@@ -393,7 +428,7 @@ export default function ProfilePage() {
         </Pressable>
       </Pressable>
     </Modal>
-
+              </ScrollView>
   </View>
 );
 
@@ -402,12 +437,12 @@ export default function ProfilePage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 24,
-    gap: 10,
+    },
+  content: {
+    padding: 16,
+    paddingBottom: 28,
+    gap: 12,
   },
-
   logoutButton: {
     marginTop: 16,
     width: "100%",
