@@ -76,7 +76,7 @@ export default function LoginPage() {
       const data = await apiLogin(email, password);
 
       pendingAuthRef.current = { token: data.token, user: data.user || null };
-      setToastMsg("Welcome back ✨");
+      setToastMsg("✨ Welcome back ✨");
       setToastVisible(true);
     } catch (err: any) {
       const msg =
@@ -149,8 +149,8 @@ export default function LoginPage() {
             {loading 
             ? "Accio!" 
             : toastVisible 
-            ? "✨ Welcome ✨"
-            : "Revelio"}
+            ? "✨ Revelio! ✨"
+            : "Accio"}
           </WizardBody> 
         </WizardButton>
 

@@ -75,7 +75,7 @@ export default function RegisterPage() {
 
       pendingAuthRef.current = { token: data.token, user: data.user || null };
 
-      setToastMsg("Poof! Account created ✨");
+      setToastMsg("✨ Success! Account created ✨");
       setToastVisible(true);
     } catch (err: any) {
       Alert.alert("Error", err?.message ?? String(err));
@@ -150,10 +150,10 @@ export default function RegisterPage() {
         >
           <WizardBody style={[styles.buttonText, {color:theme.textOnSurface}]}>
             {loading 
-            ? "1...2...3..."
+            ? "Bippity...boppity..."
             : toastVisible 
-            ? "✨ Success ✨"
-            : "Poof!"}
+            ? "✨ Boo! ✨"
+            : "Expecto Patronum!"}
             </WizardBody>
         </WizardButton>
 
