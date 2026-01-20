@@ -169,7 +169,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#fff",
     padding: 20,
   },
   input: {
@@ -179,5 +178,4 @@ const styles = StyleSheet.create({
   button: { width: "100%" },
   buttonText: { fontSize: 16, fontWeight: "600" },
   linkRow: { marginTop: 12, fontSize: 14 },
-  link: {},
 });

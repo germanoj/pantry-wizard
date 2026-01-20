@@ -15,7 +15,7 @@ export default function HomeScreen() {
     <View style={[styles.container, {backgroundColor: theme.background}]}>
       <Card centered>
         <WizardTitle style={{ textAlign: "center", alignSelf: "center" }}>Welcome to Pantry Wizard 🧙‍♂️</WizardTitle>
-        <WizardBody><Link href="/(auth)/login" style={[styles.link, { color: theme.accent2 }]}>Login</Link> to see past recipes and ask the wize wizard for more food inspo</WizardBody>
+        <WizardBody><Link href="/(auth)/login" style={[styles.link, { color: theme.accent2 }]}>Login</Link> to view your magical profile</WizardBody>
         <WizardBody> <Link href="/(auth)/register" style={[styles.link, { color: theme.accent2 }]}>Register </Link> a new account </WizardBody>
         <WizardBody> Or visit the <Link href="/(tabs)/chatBot" style={[styles.link, { color: theme.accent2 }]}>wizard</Link> as a guest</WizardBody>
       </Card>
@@ -39,7 +39,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#fff",
     padding: 24,
     gap: 16,
   },
