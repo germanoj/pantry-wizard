@@ -7,7 +7,7 @@ import {
   Pressable,
   Alert,
   Image,
-  ScrollView, 
+  ScrollView,
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -43,7 +43,6 @@ type SavedRecipe = {
 export default function SavedRecipes() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -146,56 +145,56 @@ export default function SavedRecipes() {
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          { paddingTop: insets.top + 16 },
-          { flexGrow: 1, width: "100%"},
-        ]}
+      <FlatList
+        data={recipes}
+        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
-        showsVerticalScrollIndicator={false}
-      >
-        <FlatList
-          data={recipes}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={[
-            styles.content,
-            { paddingBottom: ui.spacing.xl ?? ui.spacing.lg },
-          ]}
-          ListHeaderComponent={Header}
-          ItemSeparatorComponent={() => (
-            <View style={{ height: ui.spacing.md }} />
-          )}
-          ListEmptyComponent={
-            <Card>
-              <WizardTitle>No saved recipes yet</WizardTitle>
-              <WizardBody style={{ marginTop: 8 }}>
-                Save something from your recipe results to see it here.
-              </WizardBody>
+        contentContainerStyle={{
+          paddingTop: insets.top + 16,
+          paddingHorizontal: ui.spacing.md,
+          paddingBottom: ui.spacing.xl ?? ui.spacing.lg,
+          flexGrow: 1,
+        }}
+        ListHeaderComponent={
+          <View style={{ marginBottom: ui.spacing.md }}>
+            <WizardTitle>Saved recipes</WizardTitle>
+            <WizardBody style={{ marginTop: 6, opacity: 0.9 }}>
+              {recipes.length} recipe{recipes.length === 1 ? "" : "s"} saved
+            </WizardBody>
+          </View>
+        }
+        ItemSeparatorComponent={() => (
+          <View style={{ height: ui.spacing.md }} />
+        )}
+        ListEmptyComponent={
+          <Card>
+            <WizardTitle>No saved recipes yet</WizardTitle>
+            <WizardBody style={{ marginTop: 8 }}>
+              Save something from your recipe results to see it here.
+            </WizardBody>
 
-              <WizardButton
-                style={{ marginTop: 12 }}
-                onPress={() => router.replace("/(tabs)/recipes")}
-              >
-                <WizardBody style={{ color: theme.text }}>
-                  Go to recipes
-                </WizardBody>
-              </WizardButton>
-            </Card>
-          }
-          renderItem={({ item }) => (
-            <SavedRecipeCard
-              title={item.title}
-              timeMinutes={item.timeMinutes}
-              imageUrl={item.imageUrl}
-              onPress={() => router.push(`/saved/(details)/${item.id}`)}
-              onRemove={() => onDeleteRecipe(item.id)}
-            />
-          )}
-        />
-      </ScrollView>  
+            <WizardButton
+              style={{ marginTop: 12 }}
+              onPress={() => router.replace("/(tabs)/recipes")}
+            >
+              <WizardBody style={{ color: theme.text }}>
+                Go to recipes
+              </WizardBody>
+            </WizardButton>
+          </Card>
+        }
+        renderItem={({ item }) => (
+          <SavedRecipeCard
+            title={item.title}
+            timeMinutes={item.timeMinutes}
+            imageUrl={item.imageUrl}
+            onPress={() => router.push(`/saved/(details)/${item.id}`)}
+            onRemove={() => onDeleteRecipe(item.id)}
+          />
+        )}
+      />
     </View>
   );
 }
