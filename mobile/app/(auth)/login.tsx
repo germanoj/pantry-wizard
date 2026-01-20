@@ -151,7 +151,7 @@ export default function LoginPage() {
             : toastVisible 
             ? "✨ Welcome ✨"
             : "Revelio"}
-          </WizardBody>
+          </WizardBody> 
         </WizardButton>
 
         {errorMsg && (

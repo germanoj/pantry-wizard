@@ -27,8 +27,8 @@ export default function HomeScreen() {
     <View style={[styles.container, {backgroundColor: theme.background}]}>
       <Card>
         <WizardTitle style={{ textAlign: "center", alignSelf: "center" }}>Welcome back fellow magician✨</WizardTitle>
-        <Link href="/chatBot"><WizardBody>Visit the Wizard for new recipe ideas</WizardBody></Link>
-        <Link href="/saved"><WizardBody>Check out your saved recipes</WizardBody></Link>
+        <WizardBody>Visit <Link href="/chatBot" style={[styles.link, { color: theme.accent2 }]}> The Wizard</Link> for new recipe ideas</WizardBody>
+        <WizardBody>Check out your<Link href="/saved" style={[styles.link, { color: theme.accent2 }]}> saved recipes 💖</Link></WizardBody>
       </Card>
     </View>
   );
