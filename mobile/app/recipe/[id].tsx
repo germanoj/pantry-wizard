@@ -8,6 +8,7 @@ import {
   Text,
   Alert,
   Modal,
+  Platform,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -33,10 +34,17 @@ export default function RecipeDetailsScreen() {
   if (!recipe) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <WizardTitle>Recipe not found</WizardTitle>
-        <WizardBody style={{ color: theme.textMuted }}>
-          Generate recipes again and tap one.
-        </WizardBody>
+         <ScrollView
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+            showsVerticalScrollIndicator={false}
+          >
+          <WizardTitle>Recipe not found</WizardTitle>
+          <WizardBody style={{ color: theme.textMuted }}>
+            Generate recipes again and tap one.
+          </WizardBody>
+        </ScrollView>
       </View>
     );
   }
@@ -88,7 +96,8 @@ export default function RecipeDetailsScreen() {
         style={{ backgroundColor: theme.background }}
         contentContainerStyle={[
           styles.container,
-          { paddingBottom: 140 + insets.bottom },
+          { paddingTop: insets.top + 8,
+            paddingBottom: 140 + insets.bottom },
         ]}
       >
         <WizardTitle>{recipe.title}</WizardTitle>
@@ -174,6 +183,12 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
     gap: 10,
+  },
+  content: {
+    flexGrow: 1,
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
   },
   hero: {
     width: "100%",
