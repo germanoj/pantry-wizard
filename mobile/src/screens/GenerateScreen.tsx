@@ -193,7 +193,7 @@ export default function GenerateScreen() {
           <View style={styles.inlineRow}>
             <View style={styles.inlineCol}>
               <WizardBody style={[styles.label, { color: theme.textMuted }]}>
-                Max time (min)
+                Max time in minutes (optional)
               </WizardBody>
               <WizardInput
                 value={maxTimeMinutes}
@@ -207,7 +207,7 @@ export default function GenerateScreen() {
 
             <View style={styles.inlineCol}>
               <WizardBody style={[styles.label, { color: theme.textMuted }]}>
-                Max ingredients
+                Max ingredients (optional)
               </WizardBody>
               <WizardInput
                 value={maxIngredients}
@@ -224,7 +224,7 @@ export default function GenerateScreen() {
         {/* ✅ Ingredients */}
         <View style={styles.section}>
           <WizardBody style={[styles.label, { color: theme.textMuted }]}>
-            Ingredients
+            Ingredients (required)
           </WizardBody>
 
           <WizardInput
