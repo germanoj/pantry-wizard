@@ -193,7 +193,7 @@ export default function GenerateScreen() {
           <View style={styles.inlineRow}>
             <View style={styles.inlineCol}>
               <WizardBody style={[styles.label, { color: theme.textMuted }]}>
-                Max time in minutes (optional)
+                Max time minutes (optional)
               </WizardBody>
               <WizardInput
                 value={maxTimeMinutes}
