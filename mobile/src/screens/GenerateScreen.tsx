@@ -230,7 +230,7 @@ export default function GenerateScreen() {
           <WizardInput
             value={pantryText}
             onChangeText={setPantryText}
-            placeholder="Enter ingredients (comma or new lines)."
+            placeholder="Enter ingredients you want to use (separate by comma)"
             placeholderTextColor={theme.textMuted}
             style={styles.input}
             multiline
