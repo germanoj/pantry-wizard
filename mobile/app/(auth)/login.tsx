@@ -1,5 +1,13 @@
-import { useState } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { useState, useRef, useCallback } from "react";
+import { 
+  StyleSheet,
+  Alert,
+  TextInput,
+  Keyboard,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,  
+} from "react-native";
 import { Link, router } from "expo-router";
 
 import { useTheme } from "@/src/theme/usetheme";
@@ -10,21 +18,51 @@ import {
   WizardButton,
 } from "@/src/components/WizardText";
 import { Card } from "@/src/components/Card";
+import WizardToast from "@/src/components/WizardToast";
 
 import { useAuth } from "@/src/auth/AuthContext";
 import { apiLogin, apiReactivate } from "@/src/auth/library";
 
 export default function LoginPage() {
+  const theme = useTheme();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMsg, setToastMsg] = useState("");
+  const isLocked = loading || toastVisible;
+
+
+  const passwordRef = useRef<TextInput>(null);
 
   const { signIn } = useAuth();
 
   const [canReactivate, setCanReactivate] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  
+  const pendingAuthRef = useRef<{ token: string; user: any | null } | null>(
+    null
+  );
+
+    const handleToastHidden = useCallback(async () => {
+  setToastVisible(false);
+
+  const pending = pendingAuthRef.current;
+  pendingAuthRef.current = null;
+
+  if (!pending) return;
+
+  await signIn(pending.token, pending.user);
+  router.replace("/(tabs)/chatBot");
+}, [signIn, router]);
+
 
   const onLogin = async () => {
+    if (loading) return;
+    Keyboard.dismiss();
+
     if (!email || !password) {
       Alert.alert("Missing info", "Email and password are required.");
       return;
@@ -32,25 +70,18 @@ export default function LoginPage() {
 
     try {
       setLoading(true);
-
       setCanReactivate(false);
       setErrorMsg(null);
 
       const data = await apiLogin(email, password);
 
-      // data.user may be undefined if backend changes or fails
-      if (data.user !== null && data.user !== undefined) {
-        await signIn(data.token, data.user);
-      } else {
-        await signIn(data.token, null);
-      }
-
-      Alert.alert("Welcome back!", "You're logged in. Let's get cookin'!");
-      router.replace("/(tabs)/chatBot");
+      pendingAuthRef.current = { token: data.token, user: data.user || null };
+      setToastMsg("✨ Welcome back ✨");
+      setToastVisible(true);
     } catch (err: any) {
       const msg =
         err?.message ||
-        "Hmm the magic isn't magic-ing... login failed. Try again?";
+        "Hmm the magic isn't magic-ing... login failed :(";
 
       setErrorMsg(msg);
 
@@ -65,11 +96,25 @@ export default function LoginPage() {
     }
   };
 
-  const theme = useTheme();
-
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Card>
+    <KeyboardAvoidingView
+    style={[styles.container, { backgroundColor: theme.background }]}
+    behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <WizardToast
+              visible={toastVisible}
+              message={toastMsg}
+              durationMs={1400}
+              placement="top"
+              onHidden={handleToastHidden}
+            />
+      <ScrollView
+              contentContainerStyle={styles.content}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+              showsVerticalScrollIndicator={false}
+            >
+    <Card>
         <WizardTitle>Log in</WizardTitle>
 
         <WizardInput
@@ -78,25 +123,35 @@ export default function LoginPage() {
           placeholder="email"
           autoCapitalize="none"
           keyboardType="email-address"
+          returnKeyType="next"
+          onSubmitEditing={() => passwordRef.current?.focus()}
           style={styles.input}
         />
 
         <WizardInput
+          ref={passwordRef}
           value={password}
           onChangeText={setPassword}
           placeholder="password"
           secureTextEntry
+          returnKeyType="done"
+          onSubmitEditing={onLogin}
           style={styles.input}
         />
 
         <WizardButton
           style={styles.button}
           onPress={onLogin}
-          disabled={loading}
+          loading={isLocked}
+          disabled={isLocked}
         >
-          <WizardBody style={[styles.buttonText, { color: theme.primaryText }]}>
-            {loading ? "Casting spell..." : "Accio"}
-          </WizardBody>
+          <WizardBody style={[styles.buttonText, { color: theme.textOnSurface }]}>
+            {loading 
+            ? "Accio!" 
+            : toastVisible 
+            ? "✨ Revelio! ✨"
+            : "Accio"}
+          </WizardBody> 
         </WizardButton>
 
         {errorMsg && (
@@ -151,29 +206,27 @@ export default function LoginPage() {
           </Link>
         </WizardBody>
       </Card>
-    </View>
+    </ScrollView>
+  </KeyboardAvoidingView>  
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+    content: {
+    flexGrow: 1,
+    padding: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#fff",
-    padding: 20,
   },
   input: {
     width: "100%",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 12,
-    padding: 12,
-    fontSize: 16,
     marginTop: 10,
   },
-  button: { width: "100%" },
-  buttonText: { fontSize: 16, fontWeight: "600" },
-  linkRow: { marginTop: 12, fontSize: 14 },
+  button: { width: "100%", marginTop: 12 },
+  buttonText: { fontSize: 16, fontWeight: "600", marginTop: 0 },
+  linkRow: { marginTop: 8, fontSize: 14 },
   link: {},
 });

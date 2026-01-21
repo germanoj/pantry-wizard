@@ -8,13 +8,15 @@ import {
   Text,
   Alert,
   Modal,
+  Platform,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import LoadingScreen from "@/src/components/LoadingScreen";
 import { useTheme } from "@/src/theme/usetheme";
 import { WizardTitle, WizardBody } from "@/src/components/WizardText";
-import { useGeneratedRecipes } from "../../src/state/GeneratedRecipesContext";
+import { useGeneratedRecipes } from "@/src/state/GeneratedRecipesContext";
 import { saveUiRecipe, hasSaved } from "@/src/lib/saveRecipeAction";
 
 export default function RecipeDetailsScreen() {
@@ -22,17 +24,27 @@ export default function RecipeDetailsScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { getById } = useGeneratedRecipes();
+
   const [showSavingOverlay, setShowSavingOverlay] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [didSave, setDidSave] = useState(false); // local-only, screen-lifetime
 
   const recipe = getById(String(id));
 
   if (!recipe) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <WizardTitle>Recipe not found</WizardTitle>
-        <WizardBody style={{ color: theme.textMuted }}>
-          Generate recipes again and tap one.
-        </WizardBody>
+         <ScrollView
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+            showsVerticalScrollIndicator={false}
+          >
+          <WizardTitle>Recipe not found</WizardTitle>
+          <WizardBody style={{ color: theme.textMuted }}>
+            Generate recipes again and tap one.
+          </WizardBody>
+        </ScrollView>
       </View>
     );
   }
@@ -47,36 +59,39 @@ export default function RecipeDetailsScreen() {
     : [];
   const steps = Array.isArray(recipe.steps) ? recipe.steps : [];
 
-  const [isSaved, setIsSaved] = useState(false);
-  const [saving, setSaving] = useState(false);
+const [isSaved, setIsSaved] = useState(false);
 
-  useEffect(() => {
-    if (hasSaved(String(id))) setIsSaved(true);
-  }, [id]);
-
-  const onPressSave = async () => {
-    if (isSaved) {
-      Alert.alert("Already saved", "This recipe has already been saved.");
-      return;
-    }
-    if (saving) return;
+useEffect(() => {
+  try {
+    setIsSaved(hasSaved(String(id)));
+  } catch {
+    setIsSaved(false);
+  }
+}, [id]);
+  
+const onPressSave = async () => {
+if (didSave || isSaved) {
+  Alert.alert("Already saved", "This recipe has already been saved.");
+  return;
+}
+  if (saving) return;
 
     setSaving(true);
     setShowSavingOverlay(true);
 
     try {
+      // ✅ Keep payload aligned with existing UiRecipe shape in your project.
+      // If your saveUiRecipe expects only these fields, this will compile cleanly.
       await saveUiRecipe({
-        id: String(id),
-        title: recipe.title,
-        time: `${recipe.timeMinutes} min`,
+id: String(id),
+title: recipe.title ?? "Untitled",
+time: recipe.timeMinutes ? `${recipe.timeMinutes} min` : "",
         ingredients: ingredientsUsed,
         steps,
-        imageUrl: recipe.imageUrl,
-      });
+      } as any);
 
+      setDidSave(true);
       setIsSaved(true);
-
-      // Hide loader BEFORE alert so the alert is visible
       setShowSavingOverlay(false);
 
       Alert.alert("Saved!", `'${recipe.title}' was saved.`);
@@ -94,16 +109,19 @@ export default function RecipeDetailsScreen() {
         style={{ backgroundColor: theme.background }}
         contentContainerStyle={[
           styles.container,
-          { paddingBottom: 140 + insets.bottom },
+          { paddingTop: insets.top + 8,
+            paddingBottom: 140 + insets.bottom },
         ]}
       >
         <WizardTitle>{recipe.title}</WizardTitle>
 
         {!!img && <Image source={img} style={styles.hero} />}
 
-        <WizardBody style={{ color: theme.textMuted }}>
-          {recipe.timeMinutes} min
-        </WizardBody>
+        {!!recipe.timeMinutes && (
+          <WizardBody style={{ color: theme.textMuted }}>
+            {recipe.timeMinutes} min
+          </WizardBody>
+        )}
 
         <WizardTitle style={styles.sectionTitle}>Ingredients</WizardTitle>
 
@@ -149,15 +167,16 @@ export default function RecipeDetailsScreen() {
           style={({ pressed }) => [
             styles.saveBtn,
             { backgroundColor: theme.primary },
-            isSaved && { opacity: 0.7 },
-            pressed && !isSaved && { opacity: 0.9 },
+(didSave || isSaved) && { opacity: 0.7 },
+pressed && !(didSave || isSaved) && { opacity: 0.9 },
+
           ]}
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="Save Recipe"
         >
           <Text style={[styles.saveBtnText, { color: theme.primaryText }]}>
-            {isSaved ? "Recipe Saved" : saving ? "Saving..." : "Save Recipe"}
+            {didSave || isSaved ? "Recipe Saved" : saving ? "Saving..." : "Save Recipe"}
           </Text>
         </Pressable>
       </View>
@@ -178,6 +197,12 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
     gap: 10,
+  },
+  content: {
+    flexGrow: 1,
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
   },
   hero: {
     width: "100%",

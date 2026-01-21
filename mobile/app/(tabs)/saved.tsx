@@ -37,7 +37,7 @@ type SavedRecipe = {
   missingIngredients?: string[];
   steps?: string[];
   timeMinutes?: number;
-  imageUrl?: string;
+  imageUrl?: string | null;
 };
 
 export default function SavedRecipes() {
@@ -151,12 +151,20 @@ export default function SavedRecipes() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
-        contentContainerStyle={{
-          paddingTop: insets.top + 16,
-          paddingHorizontal: ui.spacing.md,
-          paddingBottom: ui.spacing.xl ?? ui.spacing.lg,
-          flexGrow: 1,
-        }}
+        contentContainerStyle={[
+          {
+            paddingTop: insets.top + 16,
+            paddingHorizontal: ui.spacing.md,
+            paddingBottom:
+              Platform.OS === "web" ? 120 : ui.spacing.xl ?? ui.spacing.lg,
+            flexGrow: 1,
+          },
+          Platform.OS === "web" && {
+            width: "100%",
+            maxWidth: 720,
+            alignSelf: "center",
+          },
+        ]}
         ListHeaderComponent={
           <View style={{ marginBottom: ui.spacing.md }}>
             <WizardTitle>Saved recipes</WizardTitle>
@@ -177,7 +185,7 @@ export default function SavedRecipes() {
 
             <WizardButton
               style={{ marginTop: 12 }}
-              onPress={() => router.replace("/(tabs)/recipes")}
+              onPress={() => router.replace("/(tabs)")}
             >
               <WizardBody style={{ color: theme.text }}>
                 Go to recipes
@@ -189,7 +197,7 @@ export default function SavedRecipes() {
           <SavedRecipeCard
             title={item.title}
             timeMinutes={item.timeMinutes}
-            imageUrl={item.imageUrl}
+            imageUrl={item.imageUrl ?? undefined}
             onPress={() => router.push(`/saved/(details)/${item.id}`)}
             onRemove={() => onDeleteRecipe(item.id)}
           />
