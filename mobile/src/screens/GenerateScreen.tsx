@@ -277,7 +277,10 @@ export default function GenerateScreen() {
               key={r._id}
               recipe={r}
               onPress={() =>
-                router.push(`/recipe/${encodeURIComponent(String(r._id))}`)
+                router.push({
+                  pathname: "/recipe/[id]",
+                  params: { id: r._id },
+                })
               }
             />
           ))}
