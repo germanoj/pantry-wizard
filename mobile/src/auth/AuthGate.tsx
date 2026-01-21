@@ -18,28 +18,27 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const isAuthGroup = first === "(auth)";
   const isTabsGroup = first === "(tabs)";
   const isGenerate = first === "generate";
+  const isRecipe = first === "recipe";
 
   useEffect(() => {
     // don't run any redirects until auth loads
     if (isLoading) return;
     if (!token) {
-    console.log("GUEST SEGMENTS:", segments);
-  }
+      console.log("GUEST SEGMENTS:", segments);
+    }
     // logged-out allowed tabs (keep aligned with Tabs layout rules)
     const guestAllowedTabs = new Set(["index", "chatBot", "profile"]);
     const isGuestAllowedTab =
       isTabsGroup && guestAllowedTabs.has(String(second));
     const isRecipeDetail = first === "recipe" && second === "[id]";
 
-    // ✅ LOGGED OUT USERS
     if (!token) {
       if (isIntroRoot) return; // splash allowed
       if (isAuthGroup) return; // login/reg allowed
       if (isGuestAllowedTab) return;
       if (isGenerate) return;
-      if (isRecipeDetail) return;
+      if (isRecipe) return; // ✅ allow recipe details
 
-      // Block everything else for logged-out users: send to splash
       router.replace("/");
       return;
     }
