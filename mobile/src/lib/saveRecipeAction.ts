@@ -1,12 +1,19 @@
-import { Alert } from "react-native";
 import { saveRecipe } from "./savedRecipes";
 import type { Recipe as ApiRecipe } from "../types/recipe";
 
-type UiRecipe = {
+const savedKeys = new Set<string>();
+
+export function hasSaved(key: string) {
+  return savedKeys.has(key);
+}
+
+export type UiRecipe = {
+  id?: string;
   title: string;
-  time: string; // e.g. "25 min"
+  time: string;
   ingredients?: string[];
   steps?: string[];
+  imageUrl?: string;
 };
 
 function parseMinutes(time: string | number | undefined | null) {
@@ -20,18 +27,16 @@ export async function saveUiRecipe(item: UiRecipe) {
   const timeMinutes = parseMinutes(item.time);
 
   const payload: ApiRecipe = {
+    ...(item.id ? ({ id: item.id } as any) : {}),
     title: item.title,
     ingredientsUsed: item.ingredients ?? [],
-    missingIngredients: [], // later: compute this
+    missingIngredients: [],
     steps: item.steps ?? [],
     timeMinutes: Number.isFinite(timeMinutes) ? timeMinutes : 0,
+    ...(item.imageUrl ? ({ imageUrl: item.imageUrl } as any) : {}),
   };
 
-  try {
-    await saveRecipe(payload);
-    Alert.alert("Saved!", `"${item.title}" was saved.`);
-  } catch (e: any) {
-    Alert.alert("Save failed", e?.message ?? "Could not save recipe.");
-    throw e;
-  }
+  await saveRecipe(payload);
+
+  if (item.id) savedKeys.add(item.id);
 }

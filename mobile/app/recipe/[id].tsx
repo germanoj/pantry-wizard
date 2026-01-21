@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -17,7 +17,7 @@ import LoadingScreen from "@/src/components/LoadingScreen";
 import { useTheme } from "@/src/theme/usetheme";
 import { WizardTitle, WizardBody } from "@/src/components/WizardText";
 import { useGeneratedRecipes } from "@/src/state/GeneratedRecipesContext";
-import { saveUiRecipe } from "@/src/lib/saveRecipeAction";
+import { saveUiRecipe, hasSaved } from "@/src/lib/saveRecipeAction";
 
 export default function RecipeDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -59,12 +59,22 @@ export default function RecipeDetailsScreen() {
     : [];
   const steps = Array.isArray(recipe.steps) ? recipe.steps : [];
 
-  const onPressSave = async () => {
-    if (didSave) {
-      Alert.alert("Already saved", "This recipe has already been saved.");
-      return;
-    }
-    if (saving) return;
+const [isSaved, setIsSaved] = useState(false);
+
+useEffect(() => {
+  try {
+    setIsSaved(hasSaved(String(id)));
+  } catch {
+    setIsSaved(false);
+  }
+}, [id]);
+  
+const onPressSave = async () => {
+if (didSave || isSaved) {
+  Alert.alert("Already saved", "This recipe has already been saved.");
+  return;
+}
+  if (saving) return;
 
     setSaving(true);
     setShowSavingOverlay(true);
@@ -73,14 +83,17 @@ export default function RecipeDetailsScreen() {
       // ✅ Keep payload aligned with existing UiRecipe shape in your project.
       // If your saveUiRecipe expects only these fields, this will compile cleanly.
       await saveUiRecipe({
-        title: recipe.title ?? "Untitled",
-        time: recipe.timeMinutes ? `${recipe.timeMinutes} min` : "",
+id: String(id),
+title: recipe.title ?? "Untitled",
+time: recipe.timeMinutes ? `${recipe.timeMinutes} min` : "",
         ingredients: ingredientsUsed,
         steps,
       } as any);
 
       setDidSave(true);
+      setIsSaved(true);
       setShowSavingOverlay(false);
+
       Alert.alert("Saved!", `'${recipe.title}' was saved.`);
     } catch (e: any) {
       setShowSavingOverlay(false);
@@ -154,15 +167,16 @@ export default function RecipeDetailsScreen() {
           style={({ pressed }) => [
             styles.saveBtn,
             { backgroundColor: theme.primary },
-            didSave && { opacity: 0.7 },
-            pressed && !didSave && { opacity: 0.9 },
+(didSave || isSaved) && { opacity: 0.7 },
+pressed && !(didSave || isSaved) && { opacity: 0.9 },
+
           ]}
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="Save Recipe"
         >
           <Text style={[styles.saveBtnText, { color: theme.primaryText }]}>
-            {didSave ? "Recipe Saved" : saving ? "Saving..." : "Save Recipe"}
+            {didSave || isSaved ? "Recipe Saved" : saving ? "Saving..." : "Save Recipe"}
           </Text>
         </Pressable>
       </View>
