@@ -116,9 +116,8 @@ export default function ProfilePage() {
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <ScrollView
           contentContainerStyle={[
-            styles.content,
-            { paddingTop: insets.top + 16 },
-            { flexGrow: 1, width: "100%" },
+            styles.guestContent,
+            { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 },
           ]}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={
@@ -499,6 +498,12 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 28,
     gap: 12,
+  },
+  guestContent: {
+    flexGrow: 1,
+    padding: 16,
+    justifyContent: "center", 
+    alignItems: "center",     
   },
   logoutButton: {
     marginTop: 16,
