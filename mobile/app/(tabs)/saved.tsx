@@ -98,11 +98,8 @@ export default function SavedRecipes() {
   );
 
   const Header = (
-    <View style={{ marginBottom: ui.spacing.md }}>
-      <WizardTitle>Saved recipes</WizardTitle>
-      <WizardBody style={{ marginTop: 6, opacity: 0.9 }}>
-        {recipes.length} recipe{recipes.length === 1 ? "" : "s"} saved
-      </WizardBody>
+    <View style={styles.countRow}>
+      <WizardBody style={{ opacity: 0.85 }}>{recipes.length} saved</WizardBody>
     </View>
   );
 
@@ -167,7 +164,6 @@ export default function SavedRecipes() {
         ]}
         ListHeaderComponent={
           <View style={{ marginBottom: ui.spacing.md }}>
-            <WizardTitle>Saved recipes</WizardTitle>
             <WizardBody style={{ marginTop: 6, opacity: 0.9 }}>
               {recipes.length} recipe{recipes.length === 1 ? "" : "s"} saved
             </WizardBody>
