@@ -79,7 +79,11 @@ This project was built collaboratively as a team capstone. Primary areas of cont
 - 
 
 ### Matt Zaleta
-- 
+- Mobile-first recipe card components in React Native, optimized for readability, touch interaction, and constrained screen sizes
+- Saved Recipes flow, save/remove actions, persistent storage integration, and navigation
+- State management for generated vs. saved recipes, ensuring smooth transitions and predictable UI behavior across screens
+- Collaboration to align API responses with frontend data models, iterating on schema and UI needs during development
+- React Native UI patterns (cards, lists, headers, empty states) ensuring a cohesive, polished iOS experience
 
 ## ⚙️ Running the Project Locally
 
