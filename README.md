@@ -7,6 +7,10 @@ Users enter the ingredients they have on hand and optional preferences to receiv
 
 ---
 
+## 🎥 Demo Video
+Watch a short demo of Pantry Wizard here:  
+👉 https://www.youtube.com/watch?v=1hcKl-8bsFo
+
 ## 🚀 Features
 
 - Generate recipes from free-text pantry input
