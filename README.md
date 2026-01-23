@@ -76,7 +76,12 @@ This project was built collaboratively as a team capstone. Primary areas of cont
 - Overall project architecture and technical direction
 
 ### Hayley McVicar
-- 
+- Designed and implemente mobile-first React Native interface using Expo and TypeScript, with a strong focus on clarity, accessibility, and constrained screen sizes
+- Built reusable UI components (cards, buttons, inputs, typography) and established a consistent wizard-themed design system across the app
+- Implemented animated user feedback and transitions (loading states, toasts, splash/intro animations) to create a polished, engaging user experience
+- Developed authentication flows (login, registration, logout, soft deactivation) and client-side token handling using context and route gating
+- Debugged and resolved real-world mobile issues including networking configuration, environment variables, Expo routing edge cases, and deployment-related inconsistencies
+- Contributed heavily to overall product direction, UX decisions, and feature prioritization throughout the project lifecycle
 
 ### Matt Zaleta
 - Shaping of project concept and development direction, collaborating to define scope and priorities
